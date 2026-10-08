@@ -149,6 +149,9 @@ namespace HotkeyDaemon
                 {
                     ShowBalloonNotification("Live Search Hotkey", $"Captured {spec.Name}. Opening Live Search view.");
                 }
+                
+                await Task.Delay(100);
+                GameInputSimulator.RestoreFocusToGameWindow();
             }
             else
             {
@@ -169,6 +172,10 @@ namespace HotkeyDaemon
                 {
                     ShowBalloonNotification("Game Bar Signal Sent", $"Captured {spec.Name}. Attempting to restore widget.");
                 }
+
+                // Restore active keyboard focus to game window after overlay card displays
+                await Task.Delay(100);
+                GameInputSimulator.RestoreFocusToGameWindow();
             }
         }
 

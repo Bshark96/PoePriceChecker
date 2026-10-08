@@ -1007,7 +1007,7 @@ namespace GameBarWidget.Services
                     string gemName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : item.BaseType;
                     if (item.IsTransfiguredGem || gemName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase) > 0)
                     {
-                        sb.Append($",\"type\":{{\"option\":\"{EscapeJson(gemName)}\",\"discriminator\":\"alt_x\"}}");
+                        sb.Append($",\"type\":{{\"option\":\"{EscapeJson(gemName)}\"}}");
                     }
                     else
                     {
