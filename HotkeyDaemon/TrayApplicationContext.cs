@@ -1,5 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using HotkeyDaemon.Services;
@@ -12,12 +15,19 @@ namespace HotkeyDaemon
     /// </summary>
     public sealed class TrayApplicationContext : ApplicationContext
     {
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
         private readonly NotifyIcon _trayIcon;
         private readonly ContextMenuStrip _contextMenu;
         private readonly ToolStripMenuItem _statusItem;
         private readonly ToolStripMenuItem _connectionItem;
         private readonly AppServiceClient _appServiceClient;
         private readonly HotkeyListener _hotkeyListener;
+        private IntPtr _lastActiveWindow = IntPtr.Zero;
 
         public TrayApplicationContext()
         {
@@ -106,6 +116,10 @@ namespace HotkeyDaemon
             {
                 ShowPoeLoginForm();
             };
+            _appServiceClient.ForegroundFocusRequested += (s, e) =>
+            {
+                RestoreGameWindowFocus();
+            };
             _hotkeyListener.HotkeyPressed += OnHotkeyPressed;
 
             // Start Services
@@ -142,6 +156,12 @@ namespace HotkeyDaemon
         {
             if (spec == null) return;
 
+            IntPtr activeWnd = GetForegroundWindow();
+            if (activeWnd != IntPtr.Zero)
+            {
+                _lastActiveWindow = activeWnd;
+            }
+
             if (spec.IsLiveSearch)
             {
                 bool success = await _appServiceClient.SendLiveSearchCommandAsync(spec.Name);
@@ -170,6 +190,33 @@ namespace HotkeyDaemon
                     ShowBalloonNotification("Game Bar Signal Sent", $"Captured {spec.Name}. Attempting to restore widget.");
                 }
             }
+        }
+
+        private void RestoreGameWindowFocus()
+        {
+            try
+            {
+                if (_lastActiveWindow != IntPtr.Zero)
+                {
+                    SetForegroundWindow(_lastActiveWindow);
+                    return;
+                }
+
+                var processes = Process.GetProcessesByName("PathOfExile_x64")
+                    .Concat(Process.GetProcessesByName("PathOfExile"))
+                    .Concat(Process.GetProcessesByName("PathOfExileSteam"))
+                    .Concat(Process.GetProcessesByName("PathOfExile_x64E"));
+
+                foreach (var proc in processes)
+                {
+                    if (proc.MainWindowHandle != IntPtr.Zero)
+                    {
+                        SetForegroundWindow(proc.MainWindowHandle);
+                        break;
+                    }
+                }
+            }
+            catch { }
         }
 
         private async void OnTriggerClicked(object? sender, EventArgs e)
