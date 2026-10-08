@@ -1165,7 +1165,11 @@ namespace GameBarWidget.Services
 
             if (item.Namespace == ItemNamespace.Gem)
             {
-                if (item.GemLevel > 0)
+                if (item.FilterGemLevelActive && item.FilterGemLevelMin.HasValue)
+                {
+                    miscFilters.Add($"\"gem_level\":{{\"min\":{item.FilterGemLevelMin.Value}}}");
+                }
+                else if (item.GemLevel > 0)
                 {
                     miscFilters.Add($"\"gem_level\":{{\"min\":{item.GemLevel}}}");
                 }

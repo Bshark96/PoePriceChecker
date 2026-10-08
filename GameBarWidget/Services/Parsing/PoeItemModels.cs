@@ -112,6 +112,10 @@ namespace GameBarWidget.Services
         public int? FilterQualityMax { get; set; }
         public bool FilterQualityActive { get; set; } = false;
 
+        public int? FilterGemLevelMin { get; set; }
+        public int? FilterGemLevelMax { get; set; }
+        public bool FilterGemLevelActive { get; set; } = false;
+
         public double AttacksPerSecond { get; set; }
         public double CritChance { get; set; }
         public double PhysDamageMin { get; set; }

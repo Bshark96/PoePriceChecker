@@ -670,6 +670,18 @@ namespace GameBarWidget
             // Populate Categorized Modifiers
             ModContainer.Children.Clear();
 
+            // Gem Handling: Render Gem Level & Quality Properties only (Awakened PoE Trade standard)
+            if (item.Rarity == PoeRarity.Gem || item.Namespace == ItemNamespace.Gem)
+            {
+                item.FilterGemLevelMin = item.GemLevel > 0 ? item.GemLevel : (int?)null;
+                item.FilterGemLevelActive = item.GemLevel > 0;
+                item.FilterQualityMin = item.Quality > 0 ? item.Quality : (int?)null;
+                item.FilterQualityActive = item.Quality > 0;
+
+                ModContainer.Children.Add(CreateGemPropertiesGroupSection(item));
+                return;
+            }
+
             // Group modifiers into distinct categories
             var pseudoMods = item.PseudoModifiers;
             var implicitMods = new List<ItemModifier>();
@@ -920,6 +932,51 @@ namespace GameBarWidget
                 DesignPalette.GetSectionAccentColor("SOCKETS"),
                 rows,
                 () => (item.FilterSocketsActive ? 1 : 0) + (item.FilterLinksActive ? 1 : 0));
+        }
+
+        private UIElement CreateGemPropertiesGroupSection(PoeItem item)
+        {
+            var rows = new List<UIElement>();
+
+            if (item.GemLevel > 0)
+            {
+                rows.Add(CreateItemPropertyFilterRow(
+                    "Gem Level",
+                    "LVL",
+                    Windows.UI.Color.FromArgb(255, 22, 101, 52),
+                    DesignPalette.AccentGreen,
+                    item.FilterGemLevelMin,
+                    item.FilterGemLevelMax,
+                    item.FilterGemLevelActive,
+                    isActive => item.FilterGemLevelActive = isActive,
+                    min => item.FilterGemLevelMin = min,
+                    max => item.FilterGemLevelMax = max,
+                    () => { },
+                    30));
+            }
+
+            if (item.Quality > 0)
+            {
+                rows.Add(CreateItemPropertyFilterRow(
+                    "Quality",
+                    "QUAL",
+                    Windows.UI.Color.FromArgb(255, 15, 60, 55),
+                    DesignPalette.AccentTeal,
+                    item.FilterQualityMin,
+                    item.FilterQualityMax,
+                    item.FilterQualityActive,
+                    isActive => item.FilterQualityActive = isActive,
+                    min => item.FilterQualityMin = min,
+                    max => item.FilterQualityMax = max,
+                    () => { },
+                    30));
+            }
+
+            return CreateGenericGroupSection(
+                "GEM PROPERTIES",
+                DesignPalette.AccentGreen,
+                rows,
+                () => (item.FilterGemLevelActive ? 1 : 0) + (item.FilterQualityActive ? 1 : 0));
         }
 
         private UIElement CreateQualityGroupSection(PoeItem item)
