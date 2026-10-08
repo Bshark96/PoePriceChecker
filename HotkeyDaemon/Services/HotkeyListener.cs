@@ -1,13 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace HotkeyDaemon.Services
 {
-    /// <summary>
-    /// Captures global keyboard shortcuts using a low-level Win32 hook.
-    /// Intercepts CTRL+D without interfering with the system message stream.
-    /// </summary>
+    public sealed class HotkeySpec
+    {
+        public string Name { get; set; } = string.Empty;
+        public int VkCode { get; set; }
+        public bool RequireCtrl { get; set; }
+        public bool RequireAlt { get; set; }
+        public bool IsLiveSearch { get; set; }
+    }
+
     public sealed class HotkeyListener : IDisposable
     {
         private const int WH_KEYBOARD_LL = 13;
@@ -17,45 +23,67 @@ namespace HotkeyDaemon.Services
         private const int WM_SYSKEYUP = 0x0105;
 
         private const int VK_CONTROL = 0x11;
-        private const int VK_MENU = 0x12; // ALT key
-        private const int VK_D = 0x44;
+        private const int VK_MENU = 0x12;
 
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
         private readonly LowLevelKeyboardProc _proc;
         private IntPtr _hookId = IntPtr.Zero;
 
-        private int _targetVkCode = VK_D;
-        private bool _requireCtrl = true;
-        private bool _requireAlt = false;
-        private string _hotkeyString = "CTRL+D";
-
+        private readonly List<HotkeySpec> _specs = new List<HotkeySpec>();
         private bool _isKeyPressed = false;
         private DateTime _lastTriggerTime = DateTime.MinValue;
         private readonly TimeSpan _debounceInterval = TimeSpan.FromMilliseconds(400);
 
-        public event EventHandler<string>? HotkeyPressed;
+        public event EventHandler<HotkeySpec>? HotkeyPressed;
         public event EventHandler<string>? LogMessage;
-
-        public string CurrentHotkey => _hotkeyString;
 
         public HotkeyListener()
         {
             _proc = HookCallback;
+            ConfigureHotkeys("CTRL+D", "ALT+A");
+        }
+
+        public void ConfigureHotkeys(string priceCheckHotkey, string liveSearchHotkey)
+        {
+            _specs.Clear();
+
+            var priceSpec = ParseHotkey(priceCheckHotkey, false);
+            if (priceSpec != null) _specs.Add(priceSpec);
+
+            var liveSpec = ParseHotkey(liveSearchHotkey, true);
+            if (liveSpec != null) _specs.Add(liveSpec);
+
+            LogMessage?.Invoke(this, $"[HotkeyListener] Configured hotkeys: PriceCheck={priceCheckHotkey}, LiveSearch={liveSearchHotkey}");
         }
 
         public void ConfigureHotkey(string hotkey)
         {
-            if (string.IsNullOrWhiteSpace(hotkey)) return;
+            ConfigureHotkeys(hotkey, "ALT+A");
+        }
+
+        private static HotkeySpec? ParseHotkey(string hotkey, bool isLiveSearch)
+        {
+            if (string.IsNullOrWhiteSpace(hotkey)) return null;
             string upper = hotkey.ToUpperInvariant().Trim();
-            _hotkeyString = upper;
 
-            _requireCtrl = upper.Contains("CTRL") || upper.Contains("CONTROL");
-            _requireAlt = upper.Contains("ALT");
+            bool reqCtrl = upper.Contains("CTRL") || upper.Contains("CONTROL");
+            bool reqAlt = upper.Contains("ALT");
 
-            if (upper.EndsWith("E")) _targetVkCode = 0x45;
-            else if (upper.EndsWith("F")) _targetVkCode = 0x46;
-            else if (upper.EndsWith("C")) _targetVkCode = 0x43;
-            else _targetVkCode = VK_D;
+            int vk = 0x44; // Default 'D'
+            char lastChar = upper[upper.Length - 1];
+            if (lastChar >= 'A' && lastChar <= 'Z')
+            {
+                vk = 0x41 + (lastChar - 'A');
+            }
+
+            return new HotkeySpec
+            {
+                Name = upper,
+                VkCode = vk,
+                RequireCtrl = reqCtrl,
+                RequireAlt = reqAlt,
+                IsLiveSearch = isLiveSearch
+            };
         }
 
         public void Start()
@@ -63,7 +91,7 @@ namespace HotkeyDaemon.Services
             if (_hookId == IntPtr.Zero)
             {
                 _hookId = SetHook(_proc);
-                LogMessage?.Invoke(this, $"[HotkeyListener] Keyboard hook installed. Listening for {_hotkeyString}.");
+                LogMessage?.Invoke(this, "[HotkeyListener] Keyboard hook installed.");
             }
         }
 
@@ -94,34 +122,41 @@ namespace HotkeyDaemon.Services
 
                 if (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
                 {
-                    if (vkCode == _targetVkCode)
+                    bool isCtrlPressed = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+                    bool isAltPressed = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+
+                    foreach (var spec in _specs)
                     {
-                        bool isCtrlPressed = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-                        bool isAltPressed = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
-
-                        bool ctrlMatches = !_requireCtrl || isCtrlPressed;
-                        bool altMatches = !_requireAlt || isAltPressed;
-
-                        if (ctrlMatches && altMatches && !_isKeyPressed)
+                        if (vkCode == spec.VkCode)
                         {
-                            _isKeyPressed = true;
-                            var now = DateTime.UtcNow;
+                            bool ctrlMatches = !spec.RequireCtrl || isCtrlPressed;
+                            bool altMatches = !spec.RequireAlt || isAltPressed;
 
-                            if (now - _lastTriggerTime > _debounceInterval)
+                            if (ctrlMatches && altMatches && !_isKeyPressed)
                             {
-                                _lastTriggerTime = now;
-                                string hk = _hotkeyString;
-                                LogMessage?.Invoke(this, $"[HotkeyListener] Detected global hotkey: {hk}");
-                                Task.Run(() => HotkeyPressed?.Invoke(this, hk));
+                                _isKeyPressed = true;
+                                var now = DateTime.UtcNow;
+
+                                if (now - _lastTriggerTime > _debounceInterval)
+                                {
+                                    _lastTriggerTime = now;
+                                    LogMessage?.Invoke(this, $"[HotkeyListener] Detected global hotkey: {spec.Name} (LiveSearch={spec.IsLiveSearch})");
+                                    Task.Run(() => HotkeyPressed?.Invoke(this, spec));
+                                }
+                                break;
                             }
                         }
                     }
                 }
                 else if (message == WM_KEYUP || message == WM_SYSKEYUP)
                 {
-                    if (vkCode == _targetVkCode)
+                    foreach (var spec in _specs)
                     {
-                        _isKeyPressed = false;
+                        if (vkCode == spec.VkCode)
+                        {
+                            _isKeyPressed = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -149,7 +184,7 @@ namespace HotkeyDaemon.Services
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string? lpModuleName);
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
         private static extern short GetAsyncKeyState(int vKey);
 
         #endregion

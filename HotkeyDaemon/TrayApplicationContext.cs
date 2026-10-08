@@ -91,13 +91,15 @@ namespace HotkeyDaemon
             };
             _appServiceClient.SettingsUpdated += (s, settings) =>
             {
-                if (settings != null && settings.ContainsKey("Hotkey"))
+                if (settings != null)
                 {
-                    string hotkey = settings["Hotkey"]?.ToString() ?? "CTRL+D";
-                    _hotkeyListener.ConfigureHotkey(hotkey);
-                    _statusItem.Text = $"Hotkey: {hotkey} (Active)";
+                    string hotkey = settings.ContainsKey("Hotkey") ? settings["Hotkey"]?.ToString() ?? "CTRL+D" : "CTRL+D";
+                    string liveHotkey = settings.ContainsKey("LiveSearchHotkey") ? settings["LiveSearchHotkey"]?.ToString() ?? "ALT+A" : "ALT+A";
+
+                    _hotkeyListener.ConfigureHotkeys(hotkey, liveHotkey);
+                    _statusItem.Text = $"PriceCheck: {hotkey} | LiveSearch: {liveHotkey}";
                     _trayIcon.Text = $"Xbox Game Bar Hotkey Daemon ({hotkey})";
-                    ShowBalloonNotification("Settings Updated", $"Daemon hotkey configured to: {hotkey}");
+                    ShowBalloonNotification("Settings Updated", $"PriceCheck: {hotkey} | LiveSearch: {liveHotkey}");
                 }
             };
             _appServiceClient.PoeLoginRequested += (s, e) =>
@@ -113,7 +115,7 @@ namespace HotkeyDaemon
                 await _appServiceClient.EnsureConnectedAsync();
             });
 
-            ShowBalloonNotification("Hotkey Daemon Started", "Listening for CTRL+D to restore Xbox Game Bar overlay.");
+            ShowBalloonNotification("Hotkey Daemon Started", "Listening for CTRL+D (PriceCheck) and ALT+A (LiveSearch).");
         }
 
         private void OnAppServiceStatusChanged(object? sender, bool connected)
@@ -127,33 +129,46 @@ namespace HotkeyDaemon
             if (connected)
             {
                 _connectionItem.Text = "AppService: Connected to Widget";
-                _trayIcon.Text = "Game Bar Daemon: Connected (CTRL+D)";
+                _trayIcon.Text = "Game Bar Daemon: Connected";
             }
             else
             {
                 _connectionItem.Text = "AppService: Disconnected (Will Reconnect)";
-                _trayIcon.Text = "Game Bar Daemon: Standby (CTRL+D)";
+                _trayIcon.Text = "Game Bar Daemon: Standby";
             }
         }
 
-        private async void OnHotkeyPressed(object? sender, string hotkey)
+        private async void OnHotkeyPressed(object? sender, HotkeySpec spec)
         {
-            // Synthesize Ctrl+Alt+C and capture highlighted POE item from clipboard
-            string? itemText = await GameInputSimulator.CaptureClipboardItemAsync();
+            if (spec == null) return;
 
-            bool success;
-            if (!string.IsNullOrWhiteSpace(itemText))
+            if (spec.IsLiveSearch)
             {
-                success = await _appServiceClient.SendPriceCheckCommandAsync(itemText, hotkey);
+                bool success = await _appServiceClient.SendLiveSearchCommandAsync(spec.Name);
+                if (!success)
+                {
+                    ShowBalloonNotification("Live Search Hotkey", $"Captured {spec.Name}. Opening Live Search view.");
+                }
             }
             else
             {
-                success = await _appServiceClient.SendRestoreCommandAsync(hotkey);
-            }
+                // Synthesize Ctrl+Alt+C and capture highlighted POE item from clipboard
+                string? itemText = await GameInputSimulator.CaptureClipboardItemAsync();
 
-            if (!success)
-            {
-                ShowBalloonNotification("Game Bar Signal Sent", $"Captured {hotkey}. Attempting to restore widget.");
+                bool success;
+                if (!string.IsNullOrWhiteSpace(itemText))
+                {
+                    success = await _appServiceClient.SendPriceCheckCommandAsync(itemText, spec.Name);
+                }
+                else
+                {
+                    success = await _appServiceClient.SendRestoreCommandAsync(spec.Name);
+                }
+
+                if (!success)
+                {
+                    ShowBalloonNotification("Game Bar Signal Sent", $"Captured {spec.Name}. Attempting to restore widget.");
+                }
             }
         }
 

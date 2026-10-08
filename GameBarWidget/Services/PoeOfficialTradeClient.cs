@@ -1454,5 +1454,46 @@ namespace GameBarWidget.Services
                 return (false, $"Trade API error: {ex.Message}");
             }
         }
+
+        public async Task<string> ResolveSearchIdAsync(string league, string rawSearchId)
+        {
+            if (string.IsNullOrWhiteSpace(rawSearchId)) return rawSearchId;
+            if (rawSearchId.Length <= 20) return rawSearchId;
+
+            try
+            {
+                string url = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{Uri.EscapeDataString(rawSearchId)}";
+                using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                    request.Headers.TryAddWithoutValidation("Accept", "application/json");
+                    request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
+                    request.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
+                    request.Headers.Referrer = new Uri($"https://www.pathofexile.com/trade/search/{Uri.EscapeDataString(league)}");
+
+                    string sessionId = PoeSettingsManager.Instance.PoeSessionId;
+                    if (!string.IsNullOrWhiteSpace(sessionId))
+                    {
+                        request.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={sessionId.Trim()}");
+                    }
+
+                    var response = await _httpClient.SendAsync(request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string json = await response.Content.ReadAsStringAsync();
+                        if (JsonObject.TryParse(json, out var obj) && obj.ContainsKey("id"))
+                        {
+                            string id = obj.GetNamedString("id");
+                            if (!string.IsNullOrWhiteSpace(id))
+                            {
+                                return id;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return rawSearchId;
+        }
     }
 }

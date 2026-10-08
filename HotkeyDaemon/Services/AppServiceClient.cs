@@ -268,6 +268,38 @@ namespace HotkeyDaemon.Services
             }
         }
 
+        public async Task<bool> SendLiveSearchCommandAsync(string hotkeyName)
+        {
+            if (_uwpConnection == null)
+            {
+                bool connected = await ConnectAsync();
+                if (!connected || _uwpConnection == null)
+                {
+                    LogMessage?.Invoke(this, "[AppService] Cannot send Live Search signal: Game Bar widget connection unavailable.");
+                    return false;
+                }
+            }
+
+            try
+            {
+                var message = new ValueSet
+                {
+                    { "Command", "ShowLiveSearch" },
+                    { "Hotkey", hotkeyName },
+                    { "Timestamp", DateTime.UtcNow.ToString("o") }
+                };
+
+                LogMessage?.Invoke(this, $"[AppService] Sending 'ShowLiveSearch' signal for {hotkeyName}...");
+                AppServiceResponse response = await _uwpConnection.SendMessageAsync(message);
+                return response.Status == AppServiceResponseStatus.Success;
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke(this, $"[AppService] Live Search signal error: {ex.Message}");
+                return false;
+            }
+        }
+
         private void OnConnectionRequestReceived(AppServiceConnection sender, AppServiceRequestReceivedEventArgs args)
         {
             try

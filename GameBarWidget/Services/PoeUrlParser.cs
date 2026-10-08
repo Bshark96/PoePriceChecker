@@ -15,7 +15,7 @@ namespace GameBarWidget.Services
     public static class PoeUrlParser
     {
         private static readonly Regex TradeUrlRegex = new Regex(
-            @"pathofexile\.com/trade/(?:search|live)/(?<league>[^/]+)/(?<searchId>[a-zA-Z0-9]+)",
+            @"pathofexile\.com/trade/(?:search|live)/(?<league>[^/]+)/(?<searchId>[^/?#\s]+)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public static PoeTradeUrlInfo Parse(string url)
@@ -30,12 +30,25 @@ namespace GameBarWidget.Services
             }
 
             string trimmed = url.Trim();
+            if (trimmed.EndsWith("/live", StringComparison.OrdinalIgnoreCase))
+            {
+                trimmed = trimmed.Substring(0, trimmed.Length - 5);
+            }
+            else if (trimmed.EndsWith("live", StringComparison.OrdinalIgnoreCase))
+            {
+                trimmed = trimmed.Substring(0, trimmed.Length - 4).TrimEnd('/');
+            }
+
             var match = TradeUrlRegex.Match(trimmed);
 
             if (match.Success)
             {
                 string league = Uri.UnescapeDataString(match.Groups["league"].Value ?? string.Empty).Trim();
                 string searchId = match.Groups["searchId"].Value?.Trim() ?? string.Empty;
+                if (searchId.EndsWith("live", StringComparison.OrdinalIgnoreCase))
+                {
+                    searchId = searchId.Substring(0, searchId.Length - 4).TrimEnd('/');
+                }
 
                 if (!string.IsNullOrEmpty(league) && !string.IsNullOrEmpty(searchId))
                 {

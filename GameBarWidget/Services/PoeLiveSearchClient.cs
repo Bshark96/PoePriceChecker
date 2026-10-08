@@ -135,17 +135,30 @@ namespace GameBarWidget.Services
                 {
                     try
                     {
+                        string effectiveId = _query.SearchId;
+                        if (effectiveId.Length > 20 || effectiveId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _onStatus(_query.Id, "Resolving search ID...", false);
+                            string resolved = await PoeOfficialTradeClient.Instance.ResolveSearchIdAsync(_query.League, effectiveId);
+                            if (!string.IsNullOrWhiteSpace(resolved))
+                            {
+                                effectiveId = resolved;
+                            }
+                        }
+
                         _onStatus(_query.Id, "Connecting...", false);
                         _ws = new ClientWebSocket();
+
+                        _ws.Options.SetRequestHeader("Origin", "https://www.pathofexile.com");
+                        _ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) PoE1Overlay/1.0");
 
                         string sessionId = PoeSettingsManager.Instance.PoeSessionId;
                         if (!string.IsNullOrWhiteSpace(sessionId))
                         {
                             _ws.Options.SetRequestHeader("Cookie", $"POESESSID={sessionId}");
                         }
-                        _ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) PoE1Overlay/1.0");
 
-                        string wsUrl = $"wss://www.pathofexile.com/api/trade/live/{Uri.EscapeDataString(_query.League)}/{Uri.EscapeDataString(_query.SearchId)}";
+                        string wsUrl = $"wss://www.pathofexile.com/api/trade/live/{Uri.EscapeDataString(_query.League)}/{Uri.EscapeDataString(effectiveId)}";
                         await _ws.ConnectAsync(new Uri(wsUrl), ct);
 
                         _onStatus(_query.Id, "Connected", true);

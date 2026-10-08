@@ -313,12 +313,13 @@ namespace GameBarWidget
                 currency = "chaos";
             }
 
+            string shortId = urlInfo.SearchId.Length > 12 ? urlInfo.SearchId.Substring(0, 10) + "..." : urlInfo.SearchId;
             var query = new PoeLiveSearchQuery
             {
                 League = urlInfo.League,
                 SearchId = urlInfo.SearchId,
                 RawUrl = urlInfo.RawUrl,
-                Label = $"{urlInfo.League}/{urlInfo.SearchId}",
+                Label = $"{urlInfo.League}/{shortId}",
                 MaxPriceAmount = maxPrice,
                 MaxPriceCurrency = currency,
                 IsActive = true
