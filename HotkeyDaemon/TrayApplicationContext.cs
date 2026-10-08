@@ -21,6 +21,25 @@ namespace HotkeyDaemon
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+        private const byte VK_MENU = 0x12;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
+
+        private static void ForceForegroundWindow(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero) return;
+            try
+            {
+                // Simulate ALT key press/release to bypass Windows foreground locks and release GameBar input focus
+                keybd_event(VK_MENU, 0, 0, UIntPtr.Zero);
+                SetForegroundWindow(hWnd);
+                keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            }
+            catch { }
+        }
+
         private readonly NotifyIcon _trayIcon;
         private readonly ContextMenuStrip _contextMenu;
         private readonly ToolStripMenuItem _statusItem;
@@ -198,7 +217,7 @@ namespace HotkeyDaemon
             {
                 if (_lastActiveWindow != IntPtr.Zero)
                 {
-                    SetForegroundWindow(_lastActiveWindow);
+                    ForceForegroundWindow(_lastActiveWindow);
                     return;
                 }
 
@@ -211,7 +230,7 @@ namespace HotkeyDaemon
                 {
                     if (proc.MainWindowHandle != IntPtr.Zero)
                     {
-                        SetForegroundWindow(proc.MainWindowHandle);
+                        ForceForegroundWindow(proc.MainWindowHandle);
                         break;
                     }
                 }
