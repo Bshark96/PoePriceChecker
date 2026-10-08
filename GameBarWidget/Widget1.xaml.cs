@@ -46,8 +46,11 @@ namespace GameBarWidget
             this.Loaded += Widget1_Loaded;
             this.Unloaded += Widget1_Unloaded;
 
-            // Pause countdown on mouse hover
+            // Pause countdown on mouse hover or click interaction
             this.PointerEntered += (s, e) => _isTimerPaused = true;
+            this.PointerMoved += (s, e) => _isTimerPaused = true;
+            this.PointerPressed += (s, e) => _isTimerPaused = true;
+            this.PointerReleased += (s, e) => _isTimerPaused = true;
             this.PointerExited += (s, e) => _isTimerPaused = false;
 
             // Bind ESC key to dismiss
