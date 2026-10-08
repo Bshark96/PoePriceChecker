@@ -115,14 +115,23 @@ namespace GameBarWidget.Design
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
 
-            var mainStack = new StackPanel
+            // 2. INNER GRID LAYOUT FOR CARD (Row 0: Center Content, Row 1: Bottom Action Buttons)
+            var innerGrid = new Grid
             {
-                Spacing = 8,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
+            innerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            innerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // 2. CENTER ITEM NAME & BASE TYPE
+            var centerStack = new StackPanel
+            {
+                Spacing = 10,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            // ITEM NAME & BASE TYPE
             string qTitle = query != null && !string.IsNullOrEmpty(query.Label) ? query.Label : "Live Search Item";
             string itemName = !string.IsNullOrEmpty(l.ItemName) ? l.ItemName : (!string.IsNullOrEmpty(l.ItemBaseType) ? l.ItemBaseType : qTitle);
             string baseType = l.ItemBaseType;
@@ -161,9 +170,9 @@ namespace GameBarWidget.Design
                 titleStack.Children.Add(baseTextBlock);
             }
 
-            mainStack.Children.Add(titleStack);
+            centerStack.Children.Add(titleStack);
 
-            // 3. MASSIVE CENTERED PRICE DISPLAY
+            // MASSIVE CENTERED PRICE DISPLAY
             string currencyUpper = (l.PriceCurrency ?? "chaos").ToUpperInvariant();
             string priceString = $"{l.PriceAmount:0.##} {currencyUpper} (≈{l.PriceInChaos:0.##}c)";
 
@@ -175,11 +184,11 @@ namespace GameBarWidget.Design
                 Foreground = DesignPalette.Brush(Color.FromArgb(255, 245, 158, 11)), // Golden Amber Yellow
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 4, 0, 4)
+                Margin = new Thickness(0, 6, 0, 6)
             };
-            mainStack.Children.Add(priceTextBlock);
+            centerStack.Children.Add(priceTextBlock);
 
-            // 4. SELLER ACCOUNT TAG
+            // SELLER ACCOUNT TAG
             string sellerTag = !string.IsNullOrEmpty(l.AccountName) ? $"@{l.AccountName}" : "@Exile";
             var sellerTextBlock = new TextBlock
             {
@@ -189,12 +198,15 @@ namespace GameBarWidget.Design
                 Foreground = DesignPalette.Brush(Color.FromArgb(255, 148, 163, 184)), // Muted Slate Light Blue
                 TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 10)
+                Margin = new Thickness(0, 0, 0, 4)
             };
-            mainStack.Children.Add(sellerTextBlock);
+            centerStack.Children.Add(sellerTextBlock);
 
-            // 5. BOTTOM ACTION BUTTON GRID (TO HIDEOUT / WHISPER & DISMISS)
-            var actionGrid = new Grid { Margin = new Thickness(0, 6, 0, 0) };
+            Grid.SetRow(centerStack, 0);
+            innerGrid.Children.Add(centerStack);
+
+            // 3. BOTTOM ACTION BUTTON GRID (TO HIDEOUT / WHISPER & DISMISS)
+            var actionGrid = new Grid { Margin = new Thickness(0, 8, 0, 0) };
             actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // Spacing
             actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -290,9 +302,10 @@ namespace GameBarWidget.Design
             Grid.SetColumn(dismissBtn, 2);
             actionGrid.Children.Add(dismissBtn);
 
-            mainStack.Children.Add(actionGrid);
+            Grid.SetRow(actionGrid, 1);
+            innerGrid.Children.Add(actionGrid);
 
-            cardBorder.Child = mainStack;
+            cardBorder.Child = innerGrid;
             rootGrid.Children.Add(cardBorder);
 
             // 6. TOP CENTERED LIVE ALERT BADGE (Positioned directly over top border line)
