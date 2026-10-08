@@ -96,7 +96,11 @@ namespace GameBarWidget.Design
             if (l == null) return new Grid();
 
             // Root Grid allowing badge to overlap top border line at exact midpoint
-            var rootGrid = new Grid();
+            var rootGrid = new Grid
+            {
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
 
             // 1. OUTER CARD CONTAINER (Top margin offset at y=18 so badge intersects top border line)
             var cardBorder = new Border
@@ -106,10 +110,17 @@ namespace GameBarWidget.Design
                 BorderThickness = new Thickness(2),
                 CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(16, 22, 16, 14),
-                Margin = new Thickness(4, 18, 4, 4)
+                Margin = new Thickness(4, 18, 4, 4),
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch
             };
 
-            var mainStack = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
+            var mainStack = new StackPanel
+            {
+                Spacing = 8,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.SpaceAround
+            };
 
             // 2. CENTER ITEM NAME & BASE TYPE
             string qTitle = query != null && !string.IsNullOrEmpty(query.Label) ? query.Label : "Live Search Item";
