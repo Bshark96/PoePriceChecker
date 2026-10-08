@@ -1433,6 +1433,12 @@ namespace GameBarWidget
                 {
                     await _widgetControl.RestoreAsync("Widget1");
                 }
+                if (_widget != null)
+                {
+                    await _widget.ActivateAsync();
+                }
+                Window.Current?.Activate();
+                this.Focus(FocusState.Programmatic);
             }
             catch { }
         }
