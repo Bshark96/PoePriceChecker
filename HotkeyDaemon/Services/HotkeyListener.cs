@@ -12,6 +12,7 @@ namespace HotkeyDaemon.Services
         public bool RequireCtrl { get; set; }
         public bool RequireAlt { get; set; }
         public bool IsLiveSearch { get; set; }
+        public bool IsDismiss { get; set; }
     }
 
     public sealed class HotkeyListener : IDisposable
@@ -52,6 +53,16 @@ namespace HotkeyDaemon.Services
 
             var liveSpec = ParseHotkey(liveSearchHotkey, true);
             if (liveSpec != null) _specs.Add(liveSpec);
+
+            // Register global ESC key for instant overlay dismissal
+            _specs.Add(new HotkeySpec
+            {
+                Name = "ESC",
+                VkCode = 0x1B, // VK_ESCAPE
+                RequireCtrl = false,
+                RequireAlt = false,
+                IsDismiss = true
+            });
 
             LogMessage?.Invoke(this, $"[HotkeyListener] Configured hotkeys: PriceCheck={priceCheckHotkey}, LiveSearch={liveSearchHotkey}");
         }
