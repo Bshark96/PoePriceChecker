@@ -142,18 +142,16 @@ namespace GameBarWidget.Services
                 {
                     try
                     {
-                        List<string> pendingHashes = null;
                         string effectiveId = _query.SearchId;
                         if (effectiveId.Length > 20 || effectiveId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
                         {
                             _onStatus(_query.Id, "Resolving search ID...", false);
-                            var (resolved, hashes) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
+                            var (resolved, _) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
                             if (!string.IsNullOrWhiteSpace(resolved) && resolved != effectiveId)
                             {
                                 _query.SearchId = resolved;
                                 effectiveId = resolved;
                             }
-                            pendingHashes = hashes;
                         }
 
                         _onStatus(_query.Id, "Connecting...", false);
@@ -174,22 +172,6 @@ namespace GameBarWidget.Services
                         IsConnected = true;
                         _onStatus(_query.Id, "Connected", true);
                         attempt = 0;
-
-                        // Render initial active listings immediately
-                        _ = Task.Run(async () =>
-                        {
-                            var initialListings = pendingHashes != null && pendingHashes.Count > 0
-                                ? await PoeOfficialTradeClient.Instance.FetchListingsAsync(pendingHashes, _query.League, effectiveId)
-                                : await PoeOfficialTradeClient.Instance.GetInitialSearchListingsAsync(_query.League, effectiveId);
-
-                            if (initialListings != null)
-                            {
-                                foreach (var item in initialListings)
-                                {
-                                    _onItem(_query, item);
-                                }
-                            }
-                        });
 
                         // Start 30s heartbeat ping task
                         var heartbeatTask = Task.Run(() => HeartbeatLoopAsync(ct), ct);

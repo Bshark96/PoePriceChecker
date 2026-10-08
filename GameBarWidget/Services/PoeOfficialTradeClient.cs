@@ -1509,6 +1509,31 @@ namespace GameBarWidget.Services
                     string decompressed = reader.ReadToEnd();
                     if (!string.IsNullOrWhiteSpace(decompressed))
                     {
+                        if (JsonObject.TryParse(decompressed, out var queryObj))
+                        {
+                            // Override status filter to 'any' so live search streams all online, offline, securable, and whisper listings
+                            if (queryObj.ContainsKey("query") && queryObj.GetNamedValue("query").ValueType == JsonValueType.Object)
+                            {
+                                var qSub = queryObj.GetNamedObject("query");
+                                var stObj = new JsonObject();
+                                stObj.Add("option", JsonValue.CreateStringValue("any"));
+                                qSub["status"] = stObj;
+                            }
+                            else if (queryObj.ContainsKey("status") && queryObj.GetNamedValue("status").ValueType == JsonValueType.Object)
+                            {
+                                var stObj = new JsonObject();
+                                stObj.Add("option", JsonValue.CreateStringValue("any"));
+                                queryObj["status"] = stObj;
+                            }
+
+                            string jsonStr = queryObj.Stringify();
+                            if (!jsonStr.StartsWith("{\"query\"", StringComparison.OrdinalIgnoreCase))
+                            {
+                                jsonStr = $"{{\"query\":{jsonStr}}}";
+                            }
+                            return jsonStr;
+                        }
+
                         if (!decompressed.StartsWith("{\"query\"", StringComparison.OrdinalIgnoreCase))
                         {
                             decompressed = $"{{\"query\":{decompressed}}}";
