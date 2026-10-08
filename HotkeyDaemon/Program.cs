@@ -19,6 +19,17 @@ namespace HotkeyDaemon
                 return;
             }
 
+            // Add global unhandled exception traps to prevent silent process termination
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (s, e) =>
+            {
+                System.Diagnostics.Debug.WriteLine($"[HotkeyDaemon] Thread Exception: {e.Exception}");
+            };
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                System.Diagnostics.Debug.WriteLine($"[HotkeyDaemon] Unhandled Exception: {e.ExceptionObject}");
+            };
+
             ApplicationConfiguration.Initialize();
             Application.Run(new TrayApplicationContext());
         }

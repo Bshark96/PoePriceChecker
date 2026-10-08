@@ -77,6 +77,9 @@ namespace HotkeyDaemon.Services
         [DllImport("user32.dll")]
         private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
+        [DllImport("kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
+
         private static IntPtr _lastGameHwnd = IntPtr.Zero;
 
         public static void RememberGameWindow()
@@ -113,12 +116,19 @@ namespace HotkeyDaemon.Services
                     IntPtr currentForeground = GetForegroundWindow();
                     if (currentForeground != _lastGameHwnd)
                     {
-                        uint currentThreadId = (uint)Environment.CurrentManagedThreadId;
+                        uint currentThreadId = GetCurrentThreadId();
                         uint gameThreadId = GetWindowThreadProcessId(_lastGameHwnd, out _);
 
-                        AttachThreadInput(currentThreadId, gameThreadId, true);
-                        SetForegroundWindow(_lastGameHwnd);
-                        AttachThreadInput(currentThreadId, gameThreadId, false);
+                        if (currentThreadId > 0 && gameThreadId > 0 && currentThreadId != gameThreadId)
+                        {
+                            AttachThreadInput(currentThreadId, gameThreadId, true);
+                            SetForegroundWindow(_lastGameHwnd);
+                            AttachThreadInput(currentThreadId, gameThreadId, false);
+                        }
+                        else
+                        {
+                            SetForegroundWindow(_lastGameHwnd);
+                        }
                     }
                 }
                 ReleaseStuckModifierKeys();
