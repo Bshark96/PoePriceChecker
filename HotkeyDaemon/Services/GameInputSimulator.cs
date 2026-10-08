@@ -219,8 +219,7 @@ Corrupted
 
         private static void SendKey(byte vkCode, byte scanCode, bool keyUp)
         {
-            uint flags = KEYEVENTF_SCANCODE;
-            if (keyUp) flags |= KEYEVENTF_KEYUP;
+            uint flags = keyUp ? KEYEVENTF_KEYUP : 0;
             keybd_event(vkCode, scanCode, flags, UIntPtr.Zero);
         }
 
