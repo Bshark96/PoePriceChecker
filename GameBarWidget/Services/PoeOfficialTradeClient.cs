@@ -1524,26 +1524,34 @@ namespace GameBarWidget.Services
 
         public async Task<string> ResolveSearchIdAsync(string league, string rawSearchId)
         {
-            if (string.IsNullOrWhiteSpace(rawSearchId)) return rawSearchId;
+            var (id, _) = await ResolveSearchIdAndHashesAsync(league, rawSearchId);
+            return id;
+        }
 
-            if (rawSearchId.Length <= 20 && !rawSearchId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
-            {
-                return rawSearchId;
-            }
+        public async Task<(string searchId, List<string> initialHashes)> ResolveSearchIdAndHashesAsync(string league, string rawSearchId)
+        {
+            if (string.IsNullOrWhiteSpace(rawSearchId)) return (rawSearchId, new List<string>());
+
+            var hashes = new List<string>();
 
             try
             {
-                // Decompress GZip base64 state token (H4sI...) if present
                 string payloadJson = TryDecompressSearchState(rawSearchId);
-                string url = !string.IsNullOrEmpty(payloadJson)
+                bool isCompressed = !string.IsNullOrEmpty(payloadJson);
+
+                string url = isCompressed
                     ? $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}"
                     : $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{rawSearchId}";
 
-                string requestBody = !string.IsNullOrEmpty(payloadJson) ? payloadJson : "{}";
+                HttpMethod method = isCompressed ? HttpMethod.Post : HttpMethod.Get;
 
-                using (var request = new HttpRequestMessage(HttpMethod.Post, url))
+                using (var request = new HttpRequestMessage(method, url))
                 {
-                    request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+                    if (isCompressed)
+                    {
+                        request.Content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
+                    }
+
                     request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
                     request.Headers.TryAddWithoutValidation("Accept", "application/json");
                     request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
@@ -1561,20 +1569,31 @@ namespace GameBarWidget.Services
                     if (response.IsSuccessStatusCode)
                     {
                         string json = await response.Content.ReadAsStringAsync();
-                        if (JsonObject.TryParse(json, out var obj) && obj.ContainsKey("id"))
+                        if (JsonObject.TryParse(json, out var obj))
                         {
-                            string id = obj.GetNamedString("id");
-                            if (!string.IsNullOrWhiteSpace(id))
+                            string id = obj.ContainsKey("id") ? obj.GetNamedString("id") : rawSearchId;
+
+                            if (obj.ContainsKey("result") && obj.GetNamedValue("result").ValueType == JsonValueType.Array)
                             {
-                                return id;
+                                var arr = obj.GetNamedArray("result");
+                                foreach (var elem in arr)
+                                {
+                                    if (elem.ValueType == JsonValueType.String)
+                                    {
+                                        hashes.Add(elem.GetString());
+                                        if (hashes.Count >= 10) break;
+                                    }
+                                }
                             }
+
+                            return (id, hashes);
                         }
                     }
                 }
             }
             catch { }
 
-            return rawSearchId;
+            return (rawSearchId, hashes);
         }
 
         public async Task<List<TradeListing>> GetInitialSearchListingsAsync(string league, string searchId)
@@ -1584,47 +1603,10 @@ namespace GameBarWidget.Services
 
             try
             {
-                string resolvedId = await ResolveSearchIdAsync(league, searchId);
-                string url = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{resolvedId}";
-
-                using (var request = new HttpRequestMessage(HttpMethod.Post, url))
+                var (resolvedId, hashes) = await ResolveSearchIdAndHashesAsync(league, searchId);
+                if (hashes != null && hashes.Count > 0)
                 {
-                    request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
-                    request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
-                    request.Headers.TryAddWithoutValidation("Accept", "application/json");
-                    request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
-                    request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
-                    request.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
-
-                    string sessionId = PoeSettingsManager.Instance.PoeSessionId;
-                    if (!string.IsNullOrWhiteSpace(sessionId))
-                    {
-                        request.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={sessionId.Trim()}");
-                    }
-
-                    var response = await PoeTradeRateLimiter.Instance.SendThrottledAsync(_httpClient, request);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string json = await response.Content.ReadAsStringAsync();
-                        if (JsonObject.TryParse(json, out var obj) && obj.ContainsKey("result") && obj.GetNamedValue("result").ValueType == JsonValueType.Array)
-                        {
-                            var arr = obj.GetNamedArray("result");
-                            var hashes = new List<string>();
-                            foreach (var elem in arr)
-                            {
-                                if (elem.ValueType == JsonValueType.String)
-                                {
-                                    hashes.Add(elem.GetString());
-                                    if (hashes.Count >= 10) break;
-                                }
-                            }
-
-                            if (hashes.Count > 0)
-                            {
-                                return await FetchListingsAsync(hashes, league, resolvedId);
-                            }
-                        }
-                    }
+                    return await FetchListingsAsync(hashes, league, resolvedId);
                 }
             }
             catch { }

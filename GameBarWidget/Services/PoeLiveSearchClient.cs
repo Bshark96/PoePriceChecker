@@ -142,16 +142,18 @@ namespace GameBarWidget.Services
                 {
                     try
                     {
+                        List<string> pendingHashes = null;
                         string effectiveId = _query.SearchId;
                         if (effectiveId.Length > 20 || effectiveId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
                         {
                             _onStatus(_query.Id, "Resolving search ID...", false);
-                            string resolved = await PoeOfficialTradeClient.Instance.ResolveSearchIdAsync(_query.League, effectiveId);
+                            var (resolved, hashes) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
                             if (!string.IsNullOrWhiteSpace(resolved) && resolved != effectiveId)
                             {
                                 _query.SearchId = resolved;
                                 effectiveId = resolved;
                             }
+                            pendingHashes = hashes;
                         }
 
                         _onStatus(_query.Id, "Connecting...", false);
@@ -173,10 +175,13 @@ namespace GameBarWidget.Services
                         _onStatus(_query.Id, "Connected", true);
                         attempt = 0;
 
-                        // Fetch initial current listings from trade query so user sees current active results immediately
+                        // Render initial active listings immediately
                         _ = Task.Run(async () =>
                         {
-                            var initialListings = await PoeOfficialTradeClient.Instance.GetInitialSearchListingsAsync(_query.League, effectiveId);
+                            var initialListings = pendingHashes != null && pendingHashes.Count > 0
+                                ? await PoeOfficialTradeClient.Instance.FetchListingsAsync(pendingHashes, _query.League, effectiveId)
+                                : await PoeOfficialTradeClient.Instance.GetInitialSearchListingsAsync(_query.League, effectiveId);
+
                             if (initialListings != null)
                             {
                                 foreach (var item in initialListings)
