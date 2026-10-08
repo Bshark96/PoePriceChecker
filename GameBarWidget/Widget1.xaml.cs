@@ -405,7 +405,7 @@ namespace GameBarWidget
             {
                 if (e.Query != null && e.Listing != null)
                 {
-                    // 1. Update View 2 Live Listings Stream
+                    // 1. Update View 2 Live Listings Stream (Keep only 10 latest items)
                     if (LiveListingsContainer.Children.Count == 1 && LiveListingsContainer.Children[0] is TextBlock)
                     {
                         LiveListingsContainer.Children.Clear();
@@ -414,24 +414,25 @@ namespace GameBarWidget
                     var card = LiveSearchCardBuilder.BuildLiveListingNotificationCard(e.Query, e.Listing, CopyWhisperToClipboard);
                     LiveListingsContainer.Children.Insert(0, card);
 
-                    while (LiveListingsContainer.Children.Count > 100)
+                    while (LiveListingsContainer.Children.Count > 10)
                     {
                         LiveListingsContainer.Children.RemoveAt(LiveListingsContainer.Children.Count - 1);
                     }
 
-                    // 2. Update View 3 Live Notification Card Overlay
-                    if (NotificationCardsContainer.Children.Count == 1 && NotificationCardsContainer.Children[0] is TextBlock)
-                    {
-                        NotificationCardsContainer.Children.Clear();
-                    }
+                    // 2. Update View 3 Live Notification Card Overlay (Show ONLY 1 latest item card with Dismiss action)
+                    NotificationCardsContainer.Children.Clear();
 
-                    var notificationCard = LiveSearchCardBuilder.BuildLiveListingNotificationCard(e.Query, e.Listing, CopyWhisperToClipboard);
-                    NotificationCardsContainer.Children.Insert(0, notificationCard);
+                    var notificationCard = LiveSearchCardBuilder.BuildLiveListingNotificationCard(
+                        e.Query,
+                        e.Listing,
+                        CopyWhisperToClipboard,
+                        () =>
+                        {
+                            DismissOverlay();
+                            ClearNotificationBtn_Click(null, null);
+                        });
 
-                    while (NotificationCardsContainer.Children.Count > 50)
-                    {
-                        NotificationCardsContainer.Children.RemoveAt(NotificationCardsContainer.Children.Count - 1);
-                    }
+                    NotificationCardsContainer.Children.Add(notificationCard);
 
                     // 3. Automatically restore window and switch to View 3 ONLY IF window was minimized/hidden
                     bool isMinimizedOrHidden = (_widget == null || !_widget.Visible);

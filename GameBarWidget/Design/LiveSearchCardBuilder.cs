@@ -90,7 +90,8 @@ namespace GameBarWidget.Design
         public static UIElement BuildLiveListingNotificationCard(
             PoeLiveSearchQuery query,
             TradeListing l,
-            Action<string> copyWhisper)
+            Action<string> copyWhisper,
+            Action dismissAction = null)
         {
             if (l == null) return new Grid();
 
@@ -147,7 +148,7 @@ namespace GameBarWidget.Design
             mainStack.Children.Add(topHeader);
 
             // Listing details row using TradeRowBuilder
-            var tradeRow = TradeRowBuilder.BuildTradeListingRow(l, copyWhisper);
+            var tradeRow = TradeRowBuilder.BuildTradeListingRow(l, copyWhisper, dismissAction);
             mainStack.Children.Add(tradeRow);
 
             card.Child = mainStack;

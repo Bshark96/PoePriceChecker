@@ -11,7 +11,7 @@ namespace GameBarWidget.Design
 {
     public static class TradeRowBuilder
     {
-        public static UIElement BuildTradeListingRow(TradeListing l, Action<string> copyWhisperToClipboard)
+        public static UIElement BuildTradeListingRow(TradeListing l, Action<string> copyWhisperToClipboard, Action dismissAction = null)
         {
             if (l == null) return new Grid();
 
@@ -159,13 +159,33 @@ namespace GameBarWidget.Design
                 CornerRadius = new CornerRadius(3)
             };
 
-            var itemFlyout = TradeCardBuilder.CreateTradeListingFlyout(l);
-            FlyoutBase.SetAttachedFlyout(previewBtn, itemFlyout);
-            previewBtn.Click += (s, e) =>
+            if (dismissAction != null)
             {
-                FlyoutBase.ShowAttachedFlyout(previewBtn);
-            };
-            btnStack.Children.Add(previewBtn);
+                var dismissBtn = new Button
+                {
+                    Content = "Dismiss",
+                    FontSize = 9,
+                    FontWeight = FontWeights.SemiBold,
+                    Padding = new Thickness(5, 2, 5, 2),
+                    Background = DesignPalette.Brush(Color.FromArgb(255, 45, 20, 25)),
+                    Foreground = DesignPalette.Brush(Color.FromArgb(255, 248, 113, 113)),
+                    BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 127, 29, 29)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(3)
+                };
+                dismissBtn.Click += (s, e) => dismissAction();
+                btnStack.Children.Add(dismissBtn);
+            }
+            else
+            {
+                var itemFlyout = TradeCardBuilder.CreateTradeListingFlyout(l);
+                FlyoutBase.SetAttachedFlyout(previewBtn, itemFlyout);
+                previewBtn.Click += (s, e) =>
+                {
+                    FlyoutBase.ShowAttachedFlyout(previewBtn);
+                };
+                btnStack.Children.Add(previewBtn);
+            }
 
             Grid.SetColumn(btnStack, 1);
             row.Children.Add(btnStack);
