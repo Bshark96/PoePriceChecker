@@ -91,6 +91,7 @@ namespace GameBarWidget
 
             // Load saved settings into UI
             LoadSettingsIntoUi();
+            ApplyModifierCompactState(PoeSettingsManager.Instance.CompactModifiers);
 
             // Validate and sync live league
             try
@@ -437,6 +438,61 @@ namespace GameBarWidget
                     Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184))
                 });
             }
+
+            ApplyModifierCompactState(PoeSettingsManager.Instance.CompactModifiers);
+        }
+
+        private void ToggleCompactModsBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var settings = PoeSettingsManager.Instance;
+            settings.CompactModifiers = !settings.CompactModifiers;
+            settings.Save();
+            ApplyModifierCompactState(settings.CompactModifiers);
+        }
+
+        private void ApplyModifierCompactState(bool compact)
+        {
+            if (ModContainer != null)
+            {
+                ModContainer.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            if (ToggleCompactModsBtn != null)
+            {
+                int activeCount = 0;
+                if (_currentItem != null)
+                {
+                    if (_currentItem.Modifiers != null)
+                    {
+                        foreach (var m in _currentItem.Modifiers)
+                        {
+                            if (m.IsActive) activeCount++;
+                        }
+                    }
+                    if (_currentItem.PseudoModifiers != null)
+                    {
+                        foreach (var p in _currentItem.PseudoModifiers)
+                        {
+                            if (p.IsActive) activeCount++;
+                        }
+                    }
+                }
+
+                if (compact)
+                {
+                    ToggleCompactModsBtn.Content = activeCount > 0 ? $"Expand ({activeCount})" : "Expand";
+                    ToggleCompactModsBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 56, 189, 248));
+                    ToggleCompactModsBtn.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 14, 116, 144));
+                    ToggleCompactModsBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42));
+                }
+                else
+                {
+                    ToggleCompactModsBtn.Content = "Collapse";
+                    ToggleCompactModsBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+                    ToggleCompactModsBtn.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 51, 65, 85));
+                    ToggleCompactModsBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 41, 59));
+                }
+            }
         }
 
         private static UIElement CreateStatGroupHeader(string title, Windows.UI.Color accentColor, int count)
@@ -683,8 +739,16 @@ namespace GameBarWidget
             bool showRollInputs = !mod.IsUnscalable && (mod.NumberValue.HasValue || mod.MinRoll.HasValue || mod.MaxRoll.HasValue);
             if (!showRollInputs)
             {
-                cb.Checked += (s, e) => { mod.IsActive = true; };
-                cb.Unchecked += (s, e) => { mod.IsActive = false; };
+                cb.Checked += (s, e) =>
+                {
+                    mod.IsActive = true;
+                    if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
+                };
+                cb.Unchecked += (s, e) =>
+                {
+                    mod.IsActive = false;
+                    if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
+                };
                 leftStack.Children.Insert(0, cb);
                 cardBorder.Child = grid;
                 return cardBorder;
@@ -694,7 +758,7 @@ namespace GameBarWidget
             var inputStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
 
             // 1. Min Input
-            string initialMinText = mod.MinRoll.HasValue ? mod.MinRoll.Value.ToString(CultureInfo.InvariantCulture) : (mod.NumberValue.HasValue ? mod.NumberValue.Value.ToString(CultureInfo.InvariantCulture) : "");
+            string initialMinText = mod.MinRoll.HasValue ? Math.Abs(mod.MinRoll.Value).ToString(CultureInfo.InvariantCulture) : (mod.NumberValue.HasValue ? Math.Abs(mod.NumberValue.Value).ToString(CultureInfo.InvariantCulture) : "");
             var minBox = new TextBox
             {
                 Text = initialMinText,
@@ -736,9 +800,10 @@ namespace GameBarWidget
                 if (delta != 0)
                 {
                     e.Handled = true;
-                    double cur = mod.MinRoll ?? mod.NumberValue ?? 0;
+                    double cur = Math.Abs(mod.MinRoll ?? mod.NumberValue ?? 0);
                     double step = (cur >= 100) ? 5 : ((cur >= 10) ? 1 : 0.5);
                     cur = (delta > 0) ? cur + step : Math.Max(0, cur - step);
+                    cur = Math.Abs(cur);
                     minBox.Text = cur.ToString(CultureInfo.InvariantCulture);
                     mod.MinRoll = cur;
                     mod.IsActive = true;
@@ -757,7 +822,7 @@ namespace GameBarWidget
             {
                 if (double.TryParse(minBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double customMin))
                 {
-                    mod.MinRoll = customMin;
+                    mod.MinRoll = Math.Abs(customMin);
                     mod.IsActive = true;
                     cb.IsChecked = true;
                 }
@@ -768,7 +833,7 @@ namespace GameBarWidget
             };
 
             // 2. Max Input
-            string initialMaxText = mod.MaxRoll.HasValue ? mod.MaxRoll.Value.ToString(CultureInfo.InvariantCulture) : "";
+            string initialMaxText = mod.MaxRoll.HasValue ? Math.Abs(mod.MaxRoll.Value).ToString(CultureInfo.InvariantCulture) : "";
             var maxBox = new TextBox
             {
                 Text = initialMaxText,
@@ -810,9 +875,10 @@ namespace GameBarWidget
                 if (delta != 0)
                 {
                     e.Handled = true;
-                    double cur = mod.MaxRoll ?? mod.NumberValue ?? 0;
+                    double cur = Math.Abs(mod.MaxRoll ?? mod.NumberValue ?? 0);
                     double step = (cur >= 100) ? 5 : ((cur >= 10) ? 1 : 0.5);
                     cur = (delta > 0) ? cur + step : Math.Max(0, cur - step);
+                    cur = Math.Abs(cur);
                     maxBox.Text = cur.ToString(CultureInfo.InvariantCulture);
                     mod.MaxRoll = cur;
                     mod.IsActive = true;
@@ -831,7 +897,7 @@ namespace GameBarWidget
             {
                 if (double.TryParse(maxBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double customMax))
                 {
-                    mod.MaxRoll = customMax;
+                    mod.MaxRoll = Math.Abs(customMax);
                     mod.IsActive = true;
                     cb.IsChecked = true;
                 }
@@ -847,14 +913,19 @@ namespace GameBarWidget
                 mod.IsActive = true;
                 if (!mod.MinRoll.HasValue && double.TryParse(minBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minV))
                 {
-                    mod.MinRoll = minV;
+                    mod.MinRoll = Math.Abs(minV);
                 }
                 if (!mod.MaxRoll.HasValue && double.TryParse(maxBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double maxV))
                 {
-                    mod.MaxRoll = maxV;
+                    mod.MaxRoll = Math.Abs(maxV);
                 }
+                if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
             };
-            cb.Unchecked += (s, e) => { mod.IsActive = false; };
+            cb.Unchecked += (s, e) =>
+            {
+                mod.IsActive = false;
+                if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
+            };
             leftStack.Children.Insert(0, cb);
 
             AttachQuickRollFlyout(minBox, mod, true, cb);
@@ -911,7 +982,7 @@ namespace GameBarWidget
                 };
                 btn.Click += (s, e) =>
                 {
-                    double cur = (isMin ? mod.MinRoll : mod.MaxRoll) ?? mod.NumberValue ?? 0;
+                    double cur = Math.Abs((isMin ? mod.MinRoll : mod.MaxRoll) ?? mod.NumberValue ?? 0);
                     cur = Math.Max(0, cur + step);
                     targetBox.Text = cur.ToString(CultureInfo.InvariantCulture);
                     if (isMin) mod.MinRoll = cur; else mod.MaxRoll = cur;
@@ -926,18 +997,18 @@ namespace GameBarWidget
             var presets = new List<(string Label, double Val)>();
             if (mod.NumberValue.HasValue)
             {
-                double exact = mod.NumberValue.Value;
+                double exact = Math.Abs(mod.NumberValue.Value);
                 presets.Add(("Exact", exact));
                 presets.Add(("-10%", Math.Floor(exact * 0.9)));
                 presets.Add(("-20%", Math.Floor(exact * 0.8)));
             }
-            if (mod.MinRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - mod.MinRoll.Value) < 0.01))
+            if (mod.MinRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - Math.Abs(mod.MinRoll.Value)) < 0.01))
             {
-                presets.Add(("Min Tier", mod.MinRoll.Value));
+                presets.Add(("Min Tier", Math.Abs(mod.MinRoll.Value)));
             }
-            if (mod.MaxRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - mod.MaxRoll.Value) < 0.01))
+            if (mod.MaxRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - Math.Abs(mod.MaxRoll.Value)) < 0.01))
             {
-                presets.Add(("Max Tier", mod.MaxRoll.Value));
+                presets.Add(("Max Tier", Math.Abs(mod.MaxRoll.Value)));
             }
 
             if (presets.Count > 0)

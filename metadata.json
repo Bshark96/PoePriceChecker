@@ -1,0 +1,6 @@
+{
+  "name": "GameBar PoE Trade",
+  "description": "Game Bar widget and daemon for PoE trade",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

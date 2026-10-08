@@ -80,10 +80,10 @@ namespace GameBarWidget.Services
             set => SetValue("AccountName", value);
         }
 
-        // Online Status Filter: defaults to "async" (Async only / Faustus instant buyout)
+        // Online Status Filter: defaults to "securable" (Only async / Faustus instant buyout)
         public string OnlineStatusFilter
         {
-            get => GetValue("OnlineStatusFilter", "async");
+            get => GetValue("OnlineStatusFilter", "securable");
             set => SetValue("OnlineStatusFilter", value);
         }
 

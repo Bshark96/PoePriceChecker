@@ -119,13 +119,17 @@ namespace GameBarWidget
             PoeSessIdBox.Password = settings.PoeSessionId;
             AccountNameBox.Text = settings.AccountName;
             string filter = settings.OnlineStatusFilter;
-            if (filter.Equals("online", StringComparison.OrdinalIgnoreCase) || filter.Equals("onlineleague", StringComparison.OrdinalIgnoreCase))
+            if (filter.Equals("any", StringComparison.OrdinalIgnoreCase))
             {
-                OnlineStatusCombo.SelectedIndex = 1; // Sync Trade Only
+                OnlineStatusCombo.SelectedIndex = 1; // Any (Both async and not async)
+            }
+            else if (filter.Equals("online", StringComparison.OrdinalIgnoreCase) || filter.Equals("sync", StringComparison.OrdinalIgnoreCase) || filter.Equals("onlineleague", StringComparison.OrdinalIgnoreCase))
+            {
+                OnlineStatusCombo.SelectedIndex = 2; // Only sync
             }
             else
             {
-                OnlineStatusCombo.SelectedIndex = 0; // Async Only (Default)
+                OnlineStatusCombo.SelectedIndex = 0; // Only async (Default)
             }
             AutoSearchCheck.IsChecked = settings.AutoSearchOfficialTrade;
 
@@ -272,11 +276,15 @@ namespace GameBarWidget
             settings.AccountName = AccountNameBox.Text.Trim();
             if (OnlineStatusCombo.SelectedIndex == 1)
             {
-                settings.OnlineStatusFilter = "online"; // Sync Trade Only
+                settings.OnlineStatusFilter = "any"; // Any (Both async and not async)
+            }
+            else if (OnlineStatusCombo.SelectedIndex == 2)
+            {
+                settings.OnlineStatusFilter = "online"; // Only sync
             }
             else
             {
-                settings.OnlineStatusFilter = "any"; // ANY (Async Trade Included) (Default)
+                settings.OnlineStatusFilter = "securable"; // Only async (Default)
             }
             settings.AutoSearchOfficialTrade = AutoSearchCheck.IsChecked == true;
             settings.ModRollTolerancePercent = (int)ToleranceSlider.Value;

@@ -168,11 +168,25 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="MODIFIER FILTERS" 
-                                               FontSize="8.5" 
-                                               FontWeight="SemiBold" 
-                                               Foreground="#94a3b8" 
-                                               VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <TextBlock Text="MODIFIER FILTERS" 
+                                                   FontSize="8.5" 
+                                                   FontWeight="SemiBold" 
+                                                   Foreground="#94a3b8" 
+                                                   VerticalAlignment="Center"/>
+                                        <Button x:Name="ToggleCompactModsBtn" 
+                                                Content="Collapse" 
+                                                Click="ToggleCompactModsBtn_Click" 
+                                                Background="#1e293b" 
+                                                Foreground="#94a3b8" 
+                                                BorderBrush="#334155" 
+                                                BorderThickness="1" 
+                                                FontSize="8" 
+                                                FontWeight="SemiBold" 
+                                                Padding="4,1" 
+                                                CornerRadius="2"
+                                                VerticalAlignment="Center"/>
+                                    </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
                                         <Button x:Name="OpenBrowserBtn" 
                                                 Content="Open in Trade" 

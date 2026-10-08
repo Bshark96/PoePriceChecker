@@ -159,10 +159,11 @@
                 <StackPanel Spacing="3">
                     <TextBlock Text="Trade Mode:" FontSize="11" Foreground="#cbd5e1"/>
                     <ComboBox x:Name="OnlineStatusCombo" SelectedIndex="0" Background="#111924" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" HorizontalAlignment="Stretch">
-                        <ComboBoxItem Content="Async Only (Default)"/>
-                        <ComboBoxItem Content="Sync Trade Only"/>
+                        <ComboBoxItem Content="Only async (Default)"/>
+                        <ComboBoxItem Content="Any (Both async and not async)"/>
+                        <ComboBoxItem Content="Only sync"/>
                     </ComboBox>
-                    <TextBlock Text="Async Only searches Faustus asynchronous trade and instant buyout listings. Sync Trade Only filters for active in-game sellers." FontSize="9" Foreground="#94a3b8" TextWrapping="Wrap"/>
+                    <TextBlock Text="Only async filters for Faustus instant buyout / securable listings. Any includes both async and direct whisper listings. Only sync filters for active in-game sellers." FontSize="9" Foreground="#94a3b8" TextWrapping="Wrap"/>
                 </StackPanel>
 
                 <!-- Modifier Roll Tolerance -->

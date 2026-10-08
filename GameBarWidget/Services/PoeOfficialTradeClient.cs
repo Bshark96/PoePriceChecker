@@ -780,16 +780,20 @@ namespace GameBarWidget.Services
             string onlineStatus = PoeSettingsManager.Instance.OnlineStatusFilter;
             if (string.IsNullOrWhiteSpace(onlineStatus))
             {
-                onlineStatus = "async";
+                onlineStatus = "securable";
             }
 
             var sb = new StringBuilder();
             sb.Append("{\"query\":{");
-            if (onlineStatus.Equals("async", StringComparison.OrdinalIgnoreCase))
+            if (onlineStatus.Equals("async", StringComparison.OrdinalIgnoreCase) || onlineStatus.Equals("securable", StringComparison.OrdinalIgnoreCase))
+            {
+                sb.Append("\"status\":{\"option\":\"securable\"}");
+            }
+            else if (onlineStatus.Equals("any", StringComparison.OrdinalIgnoreCase))
             {
                 sb.Append("\"status\":{\"option\":\"any\"}");
             }
-            else if (onlineStatus.Equals("online", StringComparison.OrdinalIgnoreCase))
+            else if (onlineStatus.Equals("online", StringComparison.OrdinalIgnoreCase) || onlineStatus.Equals("sync", StringComparison.OrdinalIgnoreCase))
             {
                 sb.Append("\"status\":{\"option\":\"online\"}");
             }
@@ -856,13 +860,20 @@ namespace GameBarWidget.Services
                         filter.Append($"{{\"id\":\"{pseudo.StatId}\"");
 
                         var valueParts = new List<string>();
-                        if (pseudo.MinRoll.HasValue)
+                        if (pseudo.MinRoll.HasValue && pseudo.MaxRoll.HasValue)
                         {
-                            valueParts.Add($"\"min\":{pseudo.MinRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            double p1 = Math.Abs(pseudo.MinRoll.Value);
+                            double p2 = Math.Abs(pseudo.MaxRoll.Value);
+                            valueParts.Add($"\"min\":{Math.Min(p1, p2).ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"max\":{Math.Max(p1, p2).ToString(CultureInfo.InvariantCulture)}");
                         }
-                        if (pseudo.MaxRoll.HasValue)
+                        else if (pseudo.MinRoll.HasValue)
                         {
-                            valueParts.Add($"\"max\":{pseudo.MaxRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"min\":{Math.Abs(pseudo.MinRoll.Value).ToString(CultureInfo.InvariantCulture)}");
+                        }
+                        else if (pseudo.MaxRoll.HasValue)
+                        {
+                            valueParts.Add($"\"max\":{Math.Abs(pseudo.MaxRoll.Value).ToString(CultureInfo.InvariantCulture)}");
                         }
 
                         if (valueParts.Count > 0)
@@ -883,13 +894,20 @@ namespace GameBarWidget.Services
                         filter.Append($"{{\"id\":\"{mod.StatId}\"");
 
                         var valueParts = new List<string>();
-                        if (mod.MinRoll.HasValue)
+                        if (mod.MinRoll.HasValue && mod.MaxRoll.HasValue)
                         {
-                            valueParts.Add($"\"min\":{mod.MinRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            double m1 = Math.Abs(mod.MinRoll.Value);
+                            double m2 = Math.Abs(mod.MaxRoll.Value);
+                            valueParts.Add($"\"min\":{Math.Min(m1, m2).ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"max\":{Math.Max(m1, m2).ToString(CultureInfo.InvariantCulture)}");
                         }
-                        if (mod.MaxRoll.HasValue)
+                        else if (mod.MinRoll.HasValue)
                         {
-                            valueParts.Add($"\"max\":{mod.MaxRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"min\":{Math.Abs(mod.MinRoll.Value).ToString(CultureInfo.InvariantCulture)}");
+                        }
+                        else if (mod.MaxRoll.HasValue)
+                        {
+                            valueParts.Add($"\"max\":{Math.Abs(mod.MaxRoll.Value).ToString(CultureInfo.InvariantCulture)}");
                         }
 
                         if (valueParts.Count > 0)
@@ -1123,7 +1141,8 @@ namespace GameBarWidget.Services
                         if (sObj.ContainsKey("y")) stashY = (int)sObj.GetNamedNumber("y");
                     }
 
-                    bool isFaustus = goldFee > 0 ||
+                    bool isFaustus = (listingObj.ContainsKey("securable") && listingObj.GetNamedBoolean("securable")) ||
+                                     goldFee > 0 ||
                                      !string.IsNullOrEmpty(hideoutToken) ||
                                      (listingObj.ContainsKey("method") && listingObj.GetNamedString("method").Equals("stash", StringComparison.OrdinalIgnoreCase));
 

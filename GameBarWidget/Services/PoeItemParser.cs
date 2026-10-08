@@ -447,21 +447,34 @@ namespace GameBarWidget.Services
             // 1. Direct scoped dictionary lookup
             if (scopedMap.TryGetValue(template, out string sid1)) return sid1;
             if (template.StartsWith("+") && scopedMap.TryGetValue(template.Substring(1), out string sid2)) return sid2;
+            if (template.StartsWith("-") && scopedMap.TryGetValue("+" + template.Substring(1), out string sidPos1)) return sidPos1;
+            if (template.StartsWith("-") && scopedMap.TryGetValue(template.Substring(1), out string sidPos2)) return sidPos2;
             if (scopedMap.TryGetValue(cleanText, out string sid3)) return sid3;
+            if (cleanText.StartsWith("-") && scopedMap.TryGetValue("+" + cleanText.Substring(1), out string sidCleanPos1)) return sidCleanPos1;
+            if (cleanText.StartsWith("-") && scopedMap.TryGetValue(cleanText.Substring(1), out string sidCleanPos2)) return sidCleanPos2;
 
             // 2. Exact scope suffix lookup in global database
             string scopeSuffix = $" ({type.ToString().ToLowerInvariant()})";
             if (StatTemplateMap.TryGetValue(template + scopeSuffix, out string g1)) return g1;
             if (template.StartsWith("+") && StatTemplateMap.TryGetValue(template.Substring(1) + scopeSuffix, out string g2)) return g2;
+            if (template.StartsWith("-") && StatTemplateMap.TryGetValue("+" + template.Substring(1) + scopeSuffix, out string gPos1)) return gPos1;
+            if (template.StartsWith("-") && StatTemplateMap.TryGetValue(template.Substring(1) + scopeSuffix, out string gPos2)) return gPos2;
             if (StatTemplateMap.TryGetValue(cleanText + scopeSuffix, out string g3)) return g3;
+            if (cleanText.StartsWith("-") && StatTemplateMap.TryGetValue("+" + cleanText.Substring(1) + scopeSuffix, out string gCleanPos1)) return gCleanPos1;
+            if (cleanText.StartsWith("-") && StatTemplateMap.TryGetValue(cleanText.Substring(1) + scopeSuffix, out string gCleanPos2)) return gCleanPos2;
 
             // 3. General template match
             if (StatTemplateMap.TryGetValue(template, out string g4)) return g4;
             if (template.StartsWith("+") && StatTemplateMap.TryGetValue(template.Substring(1), out string g5)) return g5;
+            if (template.StartsWith("-") && StatTemplateMap.TryGetValue("+" + template.Substring(1), out string gPos3)) return gPos3;
+            if (template.StartsWith("-") && StatTemplateMap.TryGetValue(template.Substring(1), out string gPos4)) return gPos4;
             if (StatTemplateMap.TryGetValue(cleanText, out string g6)) return g6;
+            if (cleanText.StartsWith("-") && StatTemplateMap.TryGetValue("+" + cleanText.Substring(1), out string gCleanPos3)) return gCleanPos3;
+            if (cleanText.StartsWith("-") && StatTemplateMap.TryGetValue(cleanText.Substring(1), out string gCleanPos4)) return gCleanPos4;
 
             // 4. Fallback heuristics
-            return GuessStatId(cleanText);
+            string cleanForHeuristics = cleanText.StartsWith("-") ? cleanText.Substring(1) : cleanText;
+            return GuessStatId(cleanForHeuristics);
         }
 
         private static ItemModifier ParseModifier(string line, ModifierType headerType, string tierInfo, string category)
@@ -551,6 +564,10 @@ namespace GameBarWidget.Services
             else
             {
                 string template = DigitsOnlyRegex.Replace(clean, "#");
+                if (template.StartsWith("-"))
+                {
+                    template = "+" + template.Substring(1);
+                }
                 mod.Template = template;
                 mod.StatId = LookupScopedStatId(template, mod.Type, clean, category);
 
