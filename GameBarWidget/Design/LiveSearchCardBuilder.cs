@@ -162,6 +162,7 @@ namespace GameBarWidget.Design
                 FontSize = 28,
                 FontWeight = FontWeights.ExtraBold,
                 Foreground = DesignPalette.Brush(Color.FromArgb(255, 245, 158, 11)), // Golden Amber Yellow
+                TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 4, 0, 4)
             };
@@ -175,6 +176,7 @@ namespace GameBarWidget.Design
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
                 Foreground = DesignPalette.Brush(Color.FromArgb(255, 148, 163, 184)), // Muted Slate Light Blue
+                TextAlignment = TextAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 10)
             };
