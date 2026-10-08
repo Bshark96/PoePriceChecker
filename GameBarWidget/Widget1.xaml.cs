@@ -26,6 +26,7 @@ namespace GameBarWidget
         private double _totalDurationSeconds = 10;
         private double _remainingSeconds = 10;
         private bool _isTimerPaused = false;
+        private DateTime _settingsOpenedTime = DateTime.MinValue;
         private PoeItem _currentItem;
         private string _activeSearchUrl = string.Empty;
         private readonly HashSet<string> _collapsedGroups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -79,6 +80,7 @@ namespace GameBarWidget
 
         private async void OnWidgetSettingsClicked(XboxGameBarWidget sender, object args)
         {
+            _settingsOpenedTime = DateTime.UtcNow;
             PoeSettingsManager.Instance.IsSettingsOpen = true;
             try
             {
@@ -90,6 +92,28 @@ namespace GameBarWidget
         private async void Widget1_Loaded(object sender, RoutedEventArgs e)
         {
             AppServiceManager.Instance.MessageReceived += OnAppServiceMessageReceived;
+
+            this.PointerEntered += (s, ev) =>
+            {
+                if (PoeSettingsManager.Instance.IsSettingsOpen && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 2)
+                {
+                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                }
+            };
+            this.PointerPressed += (s, ev) =>
+            {
+                if (PoeSettingsManager.Instance.IsSettingsOpen)
+                {
+                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                }
+            };
+            if (CountdownText != null)
+            {
+                CountdownText.PointerPressed += (s, ev) =>
+                {
+                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                };
+            }
 
             // Load full official stat database (21k+ entries)
             await PoeItemParser.InitializeStatsDatabaseAsync();
@@ -189,6 +213,7 @@ namespace GameBarWidget
                     }
 
                     // Restore window & restart countdown
+                    PoeSettingsManager.Instance.IsSettingsOpen = false;
                     await RestoreWidgetAsync();
                     StartAutoMinimizeCountdown();
                 }
@@ -2337,8 +2362,15 @@ namespace GameBarWidget
         {
             if (PoeSettingsManager.Instance.IsSettingsOpen)
             {
-                CountdownText.Text = "Paused (Settings Open)";
-                return;
+                if (_settingsOpenedTime != DateTime.MinValue && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 45)
+                {
+                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                }
+                else
+                {
+                    CountdownText.Text = "Paused (Settings Open)";
+                    return;
+                }
             }
 
             if (_isTimerPaused)
@@ -2361,8 +2393,27 @@ namespace GameBarWidget
             CountdownText.Text = $"Auto-minimizing in {_remainingSeconds:F1}s (Hover to pause)";
         }
 
-        private void OnWidgetWindowStateChanged(XboxGameBarWidget sender, object args) { }
-        private void OnWidgetVisibleChanged(XboxGameBarWidget sender, object args) { }
+        private void OnWidgetWindowStateChanged(XboxGameBarWidget sender, object args)
+        {
+            if (sender != null && sender.Visible)
+            {
+                if (PoeSettingsManager.Instance.IsSettingsOpen && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 3)
+                {
+                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                }
+            }
+        }
+
+        private void OnWidgetVisibleChanged(XboxGameBarWidget sender, object args)
+        {
+            if (sender != null && sender.Visible)
+            {
+                if (PoeSettingsManager.Instance.IsSettingsOpen && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 3)
+                {
+                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                }
+            }
+        }
 
         #endregion
     }

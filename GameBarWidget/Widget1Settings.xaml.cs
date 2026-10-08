@@ -80,6 +80,12 @@ namespace GameBarWidget
             }
         }
 
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            PoeSettingsManager.Instance.IsSettingsOpen = false;
+        }
+
         private void OnWidgetVisibleChanged(XboxGameBarWidget sender, object args)
         {
             if (sender != null)
@@ -286,6 +292,7 @@ namespace GameBarWidget
         private async void SaveSettingsBtn_Click(object sender, RoutedEventArgs e)
         {
             var settings = PoeSettingsManager.Instance;
+            settings.IsSettingsOpen = false;
 
             if (LeagueCombo.SelectedItem is ComboBoxItem selectedLeagueItem && selectedLeagueItem.Content != null)
             {
