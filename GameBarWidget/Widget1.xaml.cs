@@ -256,11 +256,6 @@ namespace GameBarWidget
             SwitchToLiveSearchView();
         }
 
-        private void LiveNotificationTabBtn_Click(object sender, RoutedEventArgs e)
-        {
-            SwitchToLiveNotificationView();
-        }
-
         private void SwitchToPriceCheckView()
         {
             PriceCheckView.Visibility = Visibility.Visible;
@@ -272,9 +267,6 @@ namespace GameBarWidget
 
             LiveSearchTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
             LiveSearchTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
-
-            LiveNotificationTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
-            LiveNotificationTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
         }
 
         private void SwitchToLiveSearchView()
@@ -288,9 +280,6 @@ namespace GameBarWidget
 
             PriceCheckTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
             PriceCheckTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
-
-            LiveNotificationTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
-            LiveNotificationTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
         }
 
         private void SwitchToLiveNotificationView()
@@ -298,9 +287,6 @@ namespace GameBarWidget
             PriceCheckView.Visibility = Visibility.Collapsed;
             LiveSearchView.Visibility = Visibility.Collapsed;
             LiveNotificationView.Visibility = Visibility.Visible;
-
-            LiveNotificationTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 34, 197, 94));
-            LiveNotificationTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
 
             PriceCheckTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
             PriceCheckTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
