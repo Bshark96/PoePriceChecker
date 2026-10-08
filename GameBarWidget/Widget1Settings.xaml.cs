@@ -26,7 +26,7 @@ namespace GameBarWidget
             AppServiceManager.Instance.MessageReceived += OnAppServiceMessageReceived;
         }
 
-        private void Widget1Settings_Unloaded(object sender, RoutedEventArgs e)
+        private async void Widget1Settings_Unloaded(object sender, RoutedEventArgs e)
         {
             PoeSettingsManager.Instance.IsSettingsOpen = false;
             if (_widget != null)
@@ -34,6 +34,13 @@ namespace GameBarWidget
                 _widget.VisibleChanged -= OnWidgetVisibleChanged;
             }
             AppServiceManager.Instance.MessageReceived -= OnAppServiceMessageReceived;
+
+            try
+            {
+                var msg = new ValueSet { { "Command", "RestoreFocus" } };
+                await AppServiceManager.Instance.SendToDaemonAsync(msg);
+            }
+            catch { }
         }
 
         private async void OnAppServiceMessageReceived(object sender, ValueSet message)
