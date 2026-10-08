@@ -95,61 +95,209 @@ namespace GameBarWidget.Design
         {
             if (l == null) return new Grid();
 
+            // Outer Card Container (Neon Green Border, Dark Background)
             var card = new Border
             {
-                Background = DesignPalette.Brush(Color.FromArgb(255, 18, 32, 28)),
-                BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 34, 197, 94)),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(6, 4, 6, 4),
-                Margin = new Thickness(0, 2, 0, 2)
+                Background = DesignPalette.Brush(Color.FromArgb(255, 3, 14, 22)),
+                BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 0, 230, 118)), // Bright Neon Green
+                BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(16, 14, 16, 14),
+                Margin = new Thickness(4, 4, 4, 4)
             };
 
-            var mainStack = new StackPanel { Spacing = 3 };
+            var mainStack = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
 
-            // Header line: LIVE ALERT badge + Query label + Age
-            var topHeader = new Grid();
-            topHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            topHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            // 1. TOP CENTERED LIVE ALERT BADGE
+            var badgeBorder = new Border
+            {
+                Background = DesignPalette.Brush(Color.FromArgb(255, 2, 38, 22)),
+                BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 0, 230, 118)),
+                BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(16),
+                Padding = new Thickness(28, 4, 28, 4),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 4)
+            };
 
-            var tagStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, VerticalAlignment = VerticalAlignment.Center };
-            tagStack.Children.Add(UiComponentFactory.CreateBadge("LIVE ALERT", Color.FromArgb(255, 22, 101, 52), Color.FromArgb(255, 74, 222, 128), 8));
+            var badgeText = new TextBlock
+            {
+                Text = "LIVE ALERT",
+                FontSize = 22,
+                FontWeight = FontWeights.ExtraBold,
+                Foreground = DesignPalette.Brush(Color.FromArgb(255, 0, 255, 136)),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            badgeBorder.Child = badgeText;
+            mainStack.Children.Add(badgeBorder);
 
-            string qTitle = query != null && !string.IsNullOrEmpty(query.Label) ? query.Label : "Live Search Match";
+            // 2. CENTER ITEM NAME & BASE TYPE
+            string qTitle = query != null && !string.IsNullOrEmpty(query.Label) ? query.Label : "Live Search Item";
             string itemName = !string.IsNullOrEmpty(l.ItemName) ? l.ItemName : (!string.IsNullOrEmpty(l.ItemBaseType) ? l.ItemBaseType : qTitle);
             string baseType = l.ItemBaseType;
 
-            string displayTitle = (!string.IsNullOrEmpty(baseType) && !string.Equals(itemName, baseType, StringComparison.OrdinalIgnoreCase))
-                ? $"{itemName} — {baseType}"
-                : itemName;
-
-            tagStack.Children.Add(new TextBlock
+            var titleStack = new StackPanel
             {
-                Text = displayTitle,
-                FontSize = 9.5,
-                FontWeight = FontWeights.Bold,
-                Foreground = DesignPalette.Brush(DesignPalette.TextPrimary),
-                VerticalAlignment = VerticalAlignment.Center
-            });
-
-            Grid.SetColumn(tagStack, 0);
-            topHeader.Children.Add(tagStack);
-
-            var timeText = new TextBlock
-            {
-                Text = l.AgeText ?? "Just now",
-                FontSize = 8.5,
-                Foreground = DesignPalette.Brush(DesignPalette.TextMuted),
-                VerticalAlignment = VerticalAlignment.Center
+                Spacing = 2,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 6, 0, 6)
             };
-            Grid.SetColumn(timeText, 1);
-            topHeader.Children.Add(timeText);
 
-            mainStack.Children.Add(topHeader);
+            var nameTextBlock = new TextBlock
+            {
+                Text = itemName,
+                FontSize = 24,
+                FontWeight = FontWeights.ExtraBold,
+                Foreground = DesignPalette.Brush(Color.FromArgb(255, 254, 240, 138)), // Cream off-white
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            titleStack.Children.Add(nameTextBlock);
 
-            // Listing details row using TradeRowBuilder
-            var tradeRow = TradeRowBuilder.BuildTradeListingRow(l, copyWhisper, dismissAction);
-            mainStack.Children.Add(tradeRow);
+            if (!string.IsNullOrEmpty(baseType) && !string.Equals(itemName, baseType, StringComparison.OrdinalIgnoreCase))
+            {
+                var baseTextBlock = new TextBlock
+                {
+                    Text = baseType,
+                    FontSize = 22,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = DesignPalette.Brush(Color.FromArgb(255, 254, 240, 138)),
+                    TextWrapping = TextWrapping.Wrap,
+                    TextAlignment = TextAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                titleStack.Children.Add(baseTextBlock);
+            }
+
+            mainStack.Children.Add(titleStack);
+
+            // 3. MASSIVE CENTERED PRICE DISPLAY
+            string currencyUpper = (l.PriceCurrency ?? "chaos").ToUpperInvariant();
+            string priceString = $"{l.PriceAmount:0.##} {currencyUpper} (≈{l.PriceInChaos:0.##}c)";
+
+            var priceTextBlock = new TextBlock
+            {
+                Text = priceString,
+                FontSize = 28,
+                FontWeight = FontWeights.ExtraBold,
+                Foreground = DesignPalette.Brush(Color.FromArgb(255, 245, 158, 11)), // Golden Amber Yellow
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 4, 0, 4)
+            };
+            mainStack.Children.Add(priceTextBlock);
+
+            // 4. SELLER ACCOUNT TAG
+            string sellerTag = !string.IsNullOrEmpty(l.AccountName) ? $"@{l.AccountName}" : "@Exile";
+            var sellerTextBlock = new TextBlock
+            {
+                Text = sellerTag,
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                Foreground = DesignPalette.Brush(Color.FromArgb(255, 148, 163, 184)), // Muted Slate Light Blue
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            mainStack.Children.Add(sellerTextBlock);
+
+            // 5. BOTTOM ACTION BUTTON GRID (TO HIDEOUT / WHISPER & DISMISS)
+            var actionGrid = new Grid { Margin = new Thickness(0, 6, 0, 0) };
+            actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // Spacing
+            actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            // Button 1: TO HIDEOUT or WHISPER
+            string primaryLabel = (l.IsFaustusInstantTrade || !string.IsNullOrEmpty(l.HideoutToken))
+                ? (l.GoldFee > 0 ? $"TO HIDEOUT ({l.GoldFee}g)" : "TO HIDEOUT")
+                : "WHISPER";
+
+            var primaryBtn = new Button
+            {
+                Content = primaryLabel,
+                FontSize = 14,
+                FontWeight = FontWeights.ExtraBold,
+                Height = 42,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = DesignPalette.Brush(Color.FromArgb(255, 4, 47, 26)),
+                Foreground = DesignPalette.Brush(Color.FromArgb(255, 0, 230, 118)),
+                BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 0, 230, 118)),
+                BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(6)
+            };
+
+            primaryBtn.Click += async (s, e) =>
+            {
+                try
+                {
+                    bool apiSent = false;
+                    string token = !string.IsNullOrEmpty(l.HideoutToken) ? l.HideoutToken : l.WhisperToken;
+
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        var hideoutRes = await PoeOfficialTradeClient.Instance.SendDirectHideoutTokenAsync(token, PoeSettingsManager.Instance.PoeSessionId);
+                        if (hideoutRes.success)
+                        {
+                            apiSent = true;
+                            primaryBtn.Content = "TELEPORTED!";
+                        }
+                        else
+                        {
+                            var whisperRes = await PoeOfficialTradeClient.Instance.SendDirectWhisperTokenAsync(token, PoeSettingsManager.Instance.PoeSessionId);
+                            if (whisperRes.success)
+                            {
+                                apiSent = true;
+                                primaryBtn.Content = "SENT!";
+                            }
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(l.WhisperString) && copyWhisper != null)
+                    {
+                        copyWhisper(l.WhisperString);
+                    }
+
+                    if (!apiSent)
+                    {
+                        primaryBtn.Content = "COPIED!";
+                    }
+                }
+                catch
+                {
+                    if (!string.IsNullOrEmpty(l.WhisperString) && copyWhisper != null)
+                    {
+                        copyWhisper(l.WhisperString);
+                    }
+                    primaryBtn.Content = "COPIED!";
+                }
+            };
+
+            Grid.SetColumn(primaryBtn, 0);
+            actionGrid.Children.Add(primaryBtn);
+
+            // Button 2: DISMISS
+            var dismissBtn = new Button
+            {
+                Content = "DISMISS",
+                FontSize = 14,
+                FontWeight = FontWeights.ExtraBold,
+                Height = 42,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = DesignPalette.Brush(Color.FromArgb(255, 63, 15, 23)),
+                Foreground = DesignPalette.Brush(Color.FromArgb(255, 248, 113, 113)),
+                BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 239, 68, 68)),
+                BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(6)
+            };
+
+            dismissBtn.Click += (s, e) =>
+            {
+                dismissAction?.Invoke();
+            };
+
+            Grid.SetColumn(dismissBtn, 2);
+            actionGrid.Children.Add(dismissBtn);
+
+            mainStack.Children.Add(actionGrid);
 
             card.Child = mainStack;
             return card;
