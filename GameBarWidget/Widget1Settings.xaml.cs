@@ -23,11 +23,12 @@ namespace GameBarWidget
             UiComponentFactory.SuppressContextMenu(AccountNameBox);
             UiComponentFactory.SuppressContextMenu(PoeSessIdBox);
 
-            this.PointerPressed += (s, e) =>
+            this.PointerPressed += async (s, e) =>
             {
                 try
                 {
                     Window.Current.Activate();
+                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                 }
                 catch { }
             };
@@ -36,11 +37,21 @@ namespace GameBarWidget
             {
                 AccountNameBox.AllowFocusOnInteraction = true;
                 AccountNameBox.IsTabStop = true;
-                AccountNameBox.PointerPressed += (s, e) =>
+                AccountNameBox.GotFocus += async (s, e) =>
                 {
                     try
                     {
                         Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
+                    }
+                    catch { }
+                };
+                AccountNameBox.PointerPressed += async (s, e) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                         AccountNameBox.Focus(FocusState.Pointer);
                     }
                     catch { }
@@ -51,11 +62,21 @@ namespace GameBarWidget
             {
                 PoeSessIdBox.AllowFocusOnInteraction = true;
                 PoeSessIdBox.IsTabStop = true;
-                PoeSessIdBox.PointerPressed += (s, e) =>
+                PoeSessIdBox.GotFocus += async (s, e) =>
                 {
                     try
                     {
                         Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
+                    }
+                    catch { }
+                };
+                PoeSessIdBox.PointerPressed += async (s, e) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                         PoeSessIdBox.Focus(FocusState.Pointer);
                     }
                     catch { }

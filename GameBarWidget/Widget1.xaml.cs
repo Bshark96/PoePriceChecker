@@ -55,12 +55,13 @@ namespace GameBarWidget
             // Pause countdown on mouse hover or click interaction
             this.PointerEntered += (s, e) => _isTimerPaused = true;
             this.PointerMoved += (s, e) => _isTimerPaused = true;
-            this.PointerPressed += (s, e) =>
+            this.PointerPressed += async (s, e) =>
             {
                 _isTimerPaused = true;
                 try
                 {
                     Window.Current.Activate();
+                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                 }
                 catch { }
             };
@@ -152,6 +153,56 @@ namespace GameBarWidget
             if (!loaded)
             {
                 ShowAwaitingItemState();
+            }
+
+            if (LiveSearchUrlBox != null)
+            {
+                LiveSearchUrlBox.AllowFocusOnInteraction = true;
+                LiveSearchUrlBox.IsTabStop = true;
+                LiveSearchUrlBox.GotFocus += async (s, ev) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                    }
+                    catch { }
+                };
+                LiveSearchUrlBox.PointerPressed += async (s, ev) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                        LiveSearchUrlBox.Focus(FocusState.Pointer);
+                    }
+                    catch { }
+                };
+            }
+
+            if (LiveSearchMaxPriceBox != null)
+            {
+                LiveSearchMaxPriceBox.AllowFocusOnInteraction = true;
+                LiveSearchMaxPriceBox.IsTabStop = true;
+                LiveSearchMaxPriceBox.GotFocus += async (s, ev) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                    }
+                    catch { }
+                };
+                LiveSearchMaxPriceBox.PointerPressed += async (s, ev) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                        LiveSearchMaxPriceBox.Focus(FocusState.Pointer);
+                    }
+                    catch { }
+                };
             }
 
             StartAutoMinimizeCountdown();
@@ -1033,11 +1084,12 @@ namespace GameBarWidget
                 () => _currentItem,
                 QueryMarketAsync,
                 isPaused => _isTimerPaused = isPaused,
-                () =>
+                async () =>
                 {
                     try
                     {
                         Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                     }
                     catch { }
                 });
@@ -1076,11 +1128,12 @@ namespace GameBarWidget
                 () => _currentItem,
                 QueryMarketAsync,
                 isPaused => _isTimerPaused = isPaused,
-                () =>
+                async () =>
                 {
                     try
                     {
                         Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                     }
                     catch { }
                 },
