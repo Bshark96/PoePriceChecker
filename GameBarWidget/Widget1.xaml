@@ -386,6 +386,8 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
+            </Border>
+
             <!-- 3RD VIEW: LIVE NOTIFICATION OVERLAY VIEW -->
             <Border x:Name="LiveNotificationView" 
                     Background="#182333" 
