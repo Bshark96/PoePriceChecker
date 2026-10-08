@@ -1494,7 +1494,8 @@ namespace GameBarWidget.Services
             if (string.IsNullOrWhiteSpace(base64State)) return null;
             try
             {
-                string clean = base64State.Trim().Replace('-', '+').Replace('_', '/');
+                string unescaped = Uri.UnescapeDataString(base64State.Trim());
+                string clean = unescaped.Replace('-', '+').Replace('_', '/');
                 switch (clean.Length % 4)
                 {
                     case 2: clean += "=="; break;
@@ -1542,7 +1543,10 @@ namespace GameBarWidget.Services
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LiveSearchLogger.Log($"Decompress Exception: {ex.Message}");
+            }
 
             return null;
         }
@@ -1564,8 +1568,15 @@ namespace GameBarWidget.Services
                 string sessionId = PoeSettingsManager.Instance.PoeSessionId;
                 LiveSearchLogger.Log($"Resolving query for league '{league}'. POESESSID Status: {(string.IsNullOrWhiteSpace(sessionId) ? "MISSING (Set in Settings)" : "LOADED (" + sessionId.Substring(0, Math.Min(6, sessionId.Length)) + "...)")}");
 
-                string payloadJson = TryDecompressSearchState(rawSearchId);
-                bool isCompressed = !string.IsNullOrEmpty(payloadJson);
+                bool isCompressed = rawSearchId.Length > 20 || rawSearchId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase);
+                string payloadJson = isCompressed ? TryDecompressSearchState(rawSearchId) : null;
+
+                if (isCompressed && string.IsNullOrEmpty(payloadJson))
+                {
+                    LiveSearchLogger.Log($"Error: Base64 GZip decompression failed for long search ID '{rawSearchId.Substring(0, Math.Min(20, rawSearchId.Length))}...'. Invalid URL or payload format.");
+                    return (rawSearchId, hashes);
+                }
+
                 if (isCompressed)
                 {
                     LiveSearchLogger.Log($"Decompressed GZip state -> {payloadJson}");

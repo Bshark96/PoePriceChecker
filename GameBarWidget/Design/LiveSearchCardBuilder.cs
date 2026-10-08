@@ -115,12 +115,14 @@ namespace GameBarWidget.Design
             tagStack.Children.Add(UiComponentFactory.CreateBadge("LIVE ALERT", Color.FromArgb(255, 22, 101, 52), Color.FromArgb(255, 74, 222, 128), 8));
 
             string qTitle = query != null && !string.IsNullOrEmpty(query.Label) ? query.Label : "Live Search Match";
+            string itemName = !string.IsNullOrEmpty(l.ItemName) ? l.ItemName : (!string.IsNullOrEmpty(l.ItemBaseType) ? l.ItemBaseType : qTitle);
+
             tagStack.Children.Add(new TextBlock
             {
-                Text = qTitle,
-                FontSize = 9,
+                Text = $"{itemName}",
+                FontSize = 9.5,
                 FontWeight = FontWeights.Bold,
-                Foreground = DesignPalette.Brush(DesignPalette.TextSecondary),
+                Foreground = DesignPalette.Brush(DesignPalette.TextPrimary),
                 VerticalAlignment = VerticalAlignment.Center
             });
 
