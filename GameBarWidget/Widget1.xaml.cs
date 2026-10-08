@@ -1432,6 +1432,9 @@ namespace GameBarWidget
                 UpdateMasterToggleButton();
             };
 
+            AttachQuickPropertyFlyout(minBox, true, cb, onMinChanged, onFilterChanged, initialMin);
+            AttachQuickPropertyFlyout(maxBox, false, cb, onMaxChanged, onFilterChanged, initialMax);
+
             inputStack.Children.Add(minBox);
             inputStack.Children.Add(new TextBlock
             {
@@ -1451,34 +1454,15 @@ namespace GameBarWidget
 
         private void AttachQuickRollFlyout(TextBox targetBox, ItemModifier mod, bool isMin, CheckBox parentCb)
         {
-            var flyout = new Flyout();
-            var sp = new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Width = 140, Padding = new Thickness(4) };
+            var menuFlyout = new MenuFlyout();
 
-            var title = new TextBlock
+            // Direct quick steps at top level
+            double[] topSteps = { 1, -1, 5, -5, 10, -10 };
+            foreach (double step in topSteps)
             {
-                Text = isMin ? "Adjust Min Roll" : "Adjust Max Roll",
-                FontSize = 9,
-                FontWeight = Windows.UI.Text.FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184))
-            };
-            sp.Children.Add(title);
-
-            // Stepper row: [-5] [-1] [+1] [+5]
-            var stepRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3 };
-            double[] steps = { -5, -1, 1, 5 };
-            foreach (double step in steps)
-            {
-                var btn = new Button
-                {
-                    Content = (step > 0 ? $"+{step}" : $"{step}"),
-                    FontSize = 8.5,
-                    Padding = new Thickness(4, 1, 4, 1),
-                    Height = 20,
-                    MinWidth = 28,
-                    Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 41, 59)),
-                    Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 226, 232, 240))
-                };
-                btn.Click += (s, e) =>
+                string label = step > 0 ? $"+{step}" : $"{step}";
+                var stepItem = new MenuFlyoutItem { Text = label };
+                stepItem.Click += (s, e) =>
                 {
                     double cur = Math.Abs((isMin ? mod.MinRoll : mod.MaxRoll) ?? mod.NumberValue ?? 0);
                     cur = Math.Max(0, cur + step);
@@ -1486,17 +1470,20 @@ namespace GameBarWidget
                     if (isMin) mod.MinRoll = cur; else mod.MaxRoll = cur;
                     mod.IsActive = true;
                     parentCb.IsChecked = true;
+                    _ = QueryMarketAsync(_currentItem);
                 };
-                stepRow.Children.Add(btn);
+                menuFlyout.Items.Add(stepItem);
             }
-            sp.Children.Add(stepRow);
 
-            // Preset options
+            menuFlyout.Items.Add(new MenuFlyoutSeparator());
+
+            // Roll Presets SubMenu
+            var presetsSubMenu = new MenuFlyoutSubItem { Text = "Roll Presets" };
             var presets = new List<(string Label, double Val)>();
             if (mod.NumberValue.HasValue)
             {
                 double exact = Math.Abs(mod.NumberValue.Value);
-                presets.Add(("Exact", exact));
+                presets.Add(("Exact Roll", exact));
                 presets.Add(("-10%", Math.Floor(exact * 0.9)));
                 presets.Add(("-20%", Math.Floor(exact * 0.8)));
             }
@@ -1509,44 +1496,154 @@ namespace GameBarWidget
                 presets.Add(("Max Tier", Math.Abs(mod.MaxRoll.Value)));
             }
 
+            foreach (var p in presets)
+            {
+                var pItem = new MenuFlyoutItem { Text = $"{p.Label} ({p.Val})" };
+                pItem.Click += (s, e) =>
+                {
+                    targetBox.Text = p.Val.ToString(CultureInfo.InvariantCulture);
+                    if (isMin) mod.MinRoll = p.Val; else mod.MaxRoll = p.Val;
+                    mod.IsActive = true;
+                    parentCb.IsChecked = true;
+                    _ = QueryMarketAsync(_currentItem);
+                };
+                presetsSubMenu.Items.Add(pItem);
+            }
             if (presets.Count > 0)
             {
-                var presetStack = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
-                foreach (var p in presets)
-                {
-                    var pBtn = new Button
-                    {
-                        Content = $"{p.Label} ({p.Val})",
-                        FontSize = 8.5,
-                        HorizontalAlignment = HorizontalAlignment.Stretch,
-                        Padding = new Thickness(4, 2, 4, 2),
-                        Height = 22,
-                        Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42)),
-                        Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 56, 189, 248))
-                    };
-                    pBtn.Click += (s, e) =>
-                    {
-                        targetBox.Text = p.Val.ToString(CultureInfo.InvariantCulture);
-                        if (isMin) mod.MinRoll = p.Val; else mod.MaxRoll = p.Val;
-                        mod.IsActive = true;
-                        parentCb.IsChecked = true;
-                        flyout.Hide();
-                        _ = QueryMarketAsync(_currentItem);
-                    };
-                    presetStack.Children.Add(pBtn);
-                }
-                sp.Children.Add(presetStack);
+                menuFlyout.Items.Add(presetsSubMenu);
+                menuFlyout.Items.Add(new MenuFlyoutSeparator());
             }
 
-            flyout.Content = sp;
-            FlyoutBase.SetAttachedFlyout(targetBox, flyout);
+            // Clear & Search Market
+            var clearItem = new MenuFlyoutItem { Text = "Clear Roll" };
+            clearItem.Click += (s, e) =>
+            {
+                targetBox.Text = string.Empty;
+                if (isMin) mod.MinRoll = null; else mod.MaxRoll = null;
+                _ = QueryMarketAsync(_currentItem);
+            };
+            menuFlyout.Items.Add(clearItem);
+
+            var searchItem = new MenuFlyoutItem { Text = "Search Market Now" };
+            searchItem.Click += (s, e) =>
+            {
+                _ = QueryMarketAsync(_currentItem);
+            };
+            menuFlyout.Items.Add(searchItem);
+
+            menuFlyout.Items.Add(new MenuFlyoutSeparator());
+
+            // Standard Text / Clipboard Commands
+            var cutItem = new MenuFlyoutItem { Text = "Cut" };
+            cutItem.Click += (s, e) => { targetBox.CutSelectionToClipboard(); };
+            menuFlyout.Items.Add(cutItem);
+
+            var copyItem = new MenuFlyoutItem { Text = "Copy" };
+            copyItem.Click += (s, e) => { targetBox.CopySelectionToClipboard(); };
+            menuFlyout.Items.Add(copyItem);
+
+            var pasteItem = new MenuFlyoutItem { Text = "Paste" };
+            pasteItem.Click += (s, e) => { targetBox.PasteFromClipboard(); };
+            menuFlyout.Items.Add(pasteItem);
+
+            var selectAllItem = new MenuFlyoutItem { Text = "Select All" };
+            selectAllItem.Click += (s, e) => { targetBox.SelectAll(); };
+            menuFlyout.Items.Add(selectAllItem);
+
+            // Assign ContextFlyout to targetBox so right clicking brings up this custom context menu!
+            targetBox.ContextFlyout = menuFlyout;
+
             targetBox.DoubleTapped += (s, e) =>
             {
-                flyout.ShowAt(targetBox);
+                menuFlyout.ShowAt(targetBox);
             };
-            targetBox.RightTapped += (s, e) =>
+        }
+
+        private void AttachQuickPropertyFlyout(TextBox targetBox, bool isMin, CheckBox parentCb, Action<int?> onValChanged, Action onFilterChanged, int? initialVal)
+        {
+            var menuFlyout = new MenuFlyout();
+
+            double[] topSteps = { 1, -1, 5, -5, 10, -10 };
+            foreach (double step in topSteps)
             {
-                flyout.ShowAt(targetBox);
+                string label = step > 0 ? $"+{step}" : $"{step}";
+                var stepItem = new MenuFlyoutItem { Text = label };
+                stepItem.Click += (s, e) =>
+                {
+                    int cur = 0;
+                    if (int.TryParse(targetBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int parsed)) cur = parsed;
+                    else if (initialVal.HasValue) cur = initialVal.Value;
+
+                    cur = Math.Max(0, cur + (int)step);
+                    targetBox.Text = cur.ToString(CultureInfo.InvariantCulture);
+                    onValChanged(cur);
+                    parentCb.IsChecked = true;
+                    onFilterChanged();
+                    UpdateMasterToggleButton();
+                    _ = QueryMarketAsync(_currentItem);
+                };
+                menuFlyout.Items.Add(stepItem);
+            }
+
+            menuFlyout.Items.Add(new MenuFlyoutSeparator());
+
+            if (initialVal.HasValue)
+            {
+                var exactItem = new MenuFlyoutItem { Text = $"Exact Value ({initialVal.Value})" };
+                exactItem.Click += (s, e) =>
+                {
+                    targetBox.Text = initialVal.Value.ToString(CultureInfo.InvariantCulture);
+                    onValChanged(initialVal.Value);
+                    parentCb.IsChecked = true;
+                    onFilterChanged();
+                    UpdateMasterToggleButton();
+                    _ = QueryMarketAsync(_currentItem);
+                };
+                menuFlyout.Items.Add(exactItem);
+            }
+
+            var clearItem = new MenuFlyoutItem { Text = "Clear Value" };
+            clearItem.Click += (s, e) =>
+            {
+                targetBox.Text = string.Empty;
+                onValChanged(null);
+                onFilterChanged();
+                UpdateMasterToggleButton();
+                _ = QueryMarketAsync(_currentItem);
+            };
+            menuFlyout.Items.Add(clearItem);
+
+            var searchItem = new MenuFlyoutItem { Text = "Search Market Now" };
+            searchItem.Click += (s, e) =>
+            {
+                _ = QueryMarketAsync(_currentItem);
+            };
+            menuFlyout.Items.Add(searchItem);
+
+            menuFlyout.Items.Add(new MenuFlyoutSeparator());
+
+            var cutItem = new MenuFlyoutItem { Text = "Cut" };
+            cutItem.Click += (s, e) => { targetBox.CutSelectionToClipboard(); };
+            menuFlyout.Items.Add(cutItem);
+
+            var copyItem = new MenuFlyoutItem { Text = "Copy" };
+            copyItem.Click += (s, e) => { targetBox.CopySelectionToClipboard(); };
+            menuFlyout.Items.Add(copyItem);
+
+            var pasteItem = new MenuFlyoutItem { Text = "Paste" };
+            pasteItem.Click += (s, e) => { targetBox.PasteFromClipboard(); };
+            menuFlyout.Items.Add(pasteItem);
+
+            var selectAllItem = new MenuFlyoutItem { Text = "Select All" };
+            selectAllItem.Click += (s, e) => { targetBox.SelectAll(); };
+            menuFlyout.Items.Add(selectAllItem);
+
+            targetBox.ContextFlyout = menuFlyout;
+
+            targetBox.DoubleTapped += (s, e) =>
+            {
+                menuFlyout.ShowAt(targetBox);
             };
         }
 
