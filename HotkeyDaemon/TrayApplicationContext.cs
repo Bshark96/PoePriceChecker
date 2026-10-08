@@ -142,13 +142,6 @@ namespace HotkeyDaemon
         {
             if (spec == null) return;
 
-            if (spec.IsDismiss || spec.Name == "ESC")
-            {
-                await _appServiceClient.SendRestoreCommandAsync("ESC");
-                GameInputSimulator.RestoreFocusToGameWindow();
-                return;
-            }
-
             if (spec.IsLiveSearch)
             {
                 bool success = await _appServiceClient.SendLiveSearchCommandAsync(spec.Name);

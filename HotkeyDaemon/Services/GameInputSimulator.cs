@@ -44,10 +44,8 @@ namespace HotkeyDaemon.Services
         }
 
         private const uint INPUT_KEYBOARD = 1;
-        private const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
         private const uint KEYEVENTF_KEYUP = 0x0002;
         private const uint KEYEVENTF_UNICODE = 0x0004;
-        private const uint KEYEVENTF_SCANCODE = 0x0008;
 
         private const byte VK_RETURN = 0x0D;
         private const byte VK_CONTROL = 0x11;
@@ -62,23 +60,11 @@ namespace HotkeyDaemon.Services
         private const byte SCAN_D = 0x20;
         private const byte SCAN_RETURN = 0x1C;
 
-        private const byte VK_SHIFT = 0x10;
-        private const byte SCAN_LSHIFT = 0x2A;
-
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-        [DllImport("user32.dll")]
-        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
 
         private static IntPtr _lastGameHwnd = IntPtr.Zero;
 
@@ -95,70 +81,17 @@ namespace HotkeyDaemon.Services
             catch { }
         }
 
-        public static IntPtr FindPoeGameWindow()
-        {
-            if (_lastGameHwnd != IntPtr.Zero) return _lastGameHwnd;
-
-            try
-            {
-                string[] poeProcessNames = new[] { "PathOfExile", "PathOfExile_x64", "PathOfExileSteam", "PathOfExile_x64Steam", "PathOfExileEGS" };
-                foreach (var name in poeProcessNames)
-                {
-                    var procs = Process.GetProcessesByName(name);
-                    if (procs.Length > 0 && procs[0].MainWindowHandle != IntPtr.Zero)
-                    {
-                        _lastGameHwnd = procs[0].MainWindowHandle;
-                        return _lastGameHwnd;
-                    }
-                }
-            }
-            catch { }
-
-            return IntPtr.Zero;
-        }
-
-        public static void ReleaseStuckModifierKeys()
-        {
-            try
-            {
-                SendKey(VK_CONTROL, SCAN_LCTRL, true);
-                SendKey(VK_MENU, SCAN_LALT, true);
-                SendKey(VK_SHIFT, SCAN_LSHIFT, true);
-            }
-            catch { }
-        }
-
         public static void RestoreFocusToGameWindow()
         {
             try
             {
-                ReleaseStuckModifierKeys();
-                IntPtr targetHwnd = FindPoeGameWindow();
-                if (targetHwnd != IntPtr.Zero)
+                if (_lastGameHwnd != IntPtr.Zero)
                 {
-                    IntPtr currentForeground = GetForegroundWindow();
-                    if (currentForeground != targetHwnd)
-                    {
-                        uint currentThreadId = GetCurrentThreadId();
-                        uint gameThreadId = GetWindowThreadProcessId(targetHwnd, out _);
-
-                        if (currentThreadId > 0 && gameThreadId > 0 && currentThreadId != gameThreadId)
-                        {
-                            AttachThreadInput(currentThreadId, gameThreadId, true);
-                            SetForegroundWindow(targetHwnd);
-                            AttachThreadInput(currentThreadId, gameThreadId, false);
-                        }
-                        else
-                        {
-                            SetForegroundWindow(targetHwnd);
-                        }
-                    }
+                    SetForegroundWindow(_lastGameHwnd);
                 }
-                ReleaseStuckModifierKeys();
             }
             catch { }
         }
-        public const string TestModeItemText = @"Item Class: Belts
 Rarity: Unique
 Mageblood
 Heavy Belt
@@ -261,8 +194,6 @@ Corrupted
             Thread.Sleep(15);
             SendKey(VK_MENU, SCAN_LALT, true);
             SendKey(VK_CONTROL, SCAN_LCTRL, true);
-            Thread.Sleep(10);
-            ReleaseStuckModifierKeys();
         }
     }
 }
