@@ -1,73 +1,94 @@
-# Implementation Plan - Path of Exile 1 Live Search Feature & Multi-View Architecture
+# Live Search Feature Architecture (C# GameBarWidget)
 
-Architectural plan for implementing hotkey-driven multi-view switching in the widget overlay, featuring a dedicated `LiveSearchView` containing trade URL entry controls, active search listing management, maximum price notification thresholds, real-time WebSocket Live Search streaming, and direct hideout travel within the C# Xbox Game Bar overlay widget architecture.
+This document outlines the software architecture, data flows, and design patterns for integrating official Path of Exile Live Search monitoring into the C# Xbox GameBarWidget overlay without touching example projects or web components.
 
----
-
-## 1. Core Objectives
-
-- **Hotkey-Driven Multi-View Architecture**:
-  - `CTRL+D` (or price check hotkey): Automatically opens widget and activates `PriceCheckView`.
-  - `ALT+A` / `ALT+D` / `ALT+F` (or live search hotkey): Automatically opens widget and activates `LiveSearchView`.
-  - Header tab buttons ("PRICE CHECK" / "LIVE SEARCH") allow manual view toggling anytime.
-- **Dedicated `LiveSearchView` Layout**:
-  - Trade URL entry bar directly inside `LiveSearchView` to paste trade links (e.g. `https://www.pathofexile.com/trade/search/Standard/xyz123`).
-  - Max price notification threshold input (max Chaos / Divine value).
-  - Active search queries manager showing list of currently monitored live searches with toggle/delete controls.
-  - Live search stream panel rendering incoming notifications with silent border flash animation.
-- **Automatic Link Parsing**: Extract league name and search query ID directly from trade links via `PoeUrlParser.cs`.
-- **Official PoE Live Search WebSocket Streaming**: Connect directly to `wss://www.pathofexile.com/api/trade/live/<league>/<searchId>` endpoints.
-- **Automatic Reconnect & Ping Heartbeat**: Implement automatic WebSocket heartbeat ping handling (30s intervals) and background auto-reconnect with exponential backoff on network disconnects.
-- **Direct Hideout & Whisper Action**: Instant "To Hideout" direct travel token execution (`SendDirectHideoutTokenAsync`) and "Whisper" clipboard buttons for incoming live listings matching price thresholds.
+> [!IMPORTANT]
+> The implementation strictly maintains C# native UWP/WinUI architecture, isolating live search connection handlers into dedicated C# service modules while preserving clean human-readable code layout.
 
 ---
 
-## 2. Architecture & File Structure
+## User Review & Critical Decisions
+
+- **Hotkey Activation**: Configured default binding `ALT+A` (with `ALT+D`, `ALT+F` layout options) to trigger the live search overlay layer.
+- **Data Source Engine**: Direct WebSocket connection to official Path of Exile trade live endpoints (`/api/trade/live/...`), managed via a clean C# background service.
+- **Example Isolation**: Code under `/example` is strictly treated as read-only showcase reference and will not be linked to main app code.
+- **Zero Web Stack**: Pure C# and XAML UWP architecture; no JavaScript, HTML, or web runtime bridges.
+
+---
+
+## 1. Overview & Core Concept
+
+- **What It Does**: Establishes a persistent, lightweight WebSocket client to listen for instant item listing notifications from Path of Exile trade search URLs. When a matching item is posted, it instantly formats trade listings into native C# UI rows.
+- **Target Audience / Persona**: Path of Exile traders who need instant in-game notifications for live trade queries without leaving their active game screen.
+- **Key Value**: Minimum latency from listing to whisper copy, direct overlay UI integration, and modular C# class separation.
+
+---
+
+## 2. User Experience & Visual Design
+
+- **Overlay Windows & Views**:
+  - Compact Live Search layout window toggleable via assigned hotkeys (`ALT+A`, `ALT+D`, `ALT+F`).
+  - Active search subscription card displaying live connection status, search query name, and listing counter.
+  - Live listing cards showing item name, explicit modifiers, price in Chaos/Divine Orbs, seller online status, and direct copy whisper button.
+- **Aesthetic Direction**: Deep dark ambient slate theme (`#0b1118` / `#131b26`), crisp typography, emerald/blue status badges, muted borders.
+- **Interactive Micro-Feedback**:
+  - Connection status badge transitions: Connecting (yellow/amber), Active (emerald), Reconnecting (soft crimson).
+  - One-click whisper copying with immediate visual confirmation feedback.
+
+---
+
+## 3. Key Product Decisions & Trade-Offs
+
+- **Decision 1: WebSocket Management via Dedicated C# Service Class**
+  - *Chosen Approach*: `PoeLiveSearchService` class encapsulating `ClientWebSocket` lifecycle, automatic ping/heartbeat, reconnection retry backoff, and JSON deserialization.
+  - *Why*: Prevents WebSocket state management from bloating UI controllers (`Widget1.xaml.cs`). Maintains easy, human-readable single-responsibility architecture.
+  - *Alternatives Considered*: Polling HTTP endpoint (high latency, rate-limit risk) or embedding socket logic directly into UI code (violates single responsibility).
+
+- **Decision 2: UI Delegation to Dedicated Row Builders**
+  - *Chosen Approach*: Delegate card and row rendering to static builder factory methods in `GameBarWidget/Design/`.
+  - *Why*: Keeps XAML code-behind minimal and easily auditable.
+
+---
+
+## 4. Technical Architecture & Data Strategy
 
 ```
-GameBarWidget/
-├── Services/
-│   ├── PoeLiveSearchClient.cs         # WebSocket manager supporting multiple active search streams
-│   ├── PoeLiveSearchQuery.cs          # Model holding query URL, search ID, league, label, and max price threshold
-│   ├── PoeUrlParser.cs                # URL helper parsing league and search ID from trade links
-│   └── PoeSettingsManager.cs          # Persistent storage for active live search queries & view state
-├── Design/
-│   ├── LiveSearchCardBuilder.cs       # Active search list item & live notification card builder
-│   └── DesignPalette.cs              # View tab brushes & pulse/flash animation colors
-├── Widget1.xaml                       # Main overlay with header view switcher tabs (PriceCheckView & LiveSearchView)
-└── Widget1.xaml.cs                    # Multi-view switching logic, hotkey handlers & WebSocket stream events
++-------------------------------------------------------------------+
+|                        GameBarWidget UI                           |
+|  +-----------------------+     +-------------------------------+  |
+|  |   Widget1.xaml.cs     |     |  LiveSearchCardBuilder.cs     |  |
+|  |  (Layout & Dispatch)  | <-> |  (XAML Control Generation)    |  |
+|  +-----------------------+     +-------------------------------+  |
++-------------------------------------------------------------------+
+                                   ^
+                                   | Event Callback (OnListingReceived)
++-------------------------------------------------------------------+
+|                     Core Service Architecture                     |
+|  +-------------------------------------------------------------+  |
+|  |                   PoeLiveSearchService.cs                   |  |
+|  |  - ClientWebSocket Manager                                  |  |
+|  |  - PoeSession Authenticator & Cookie Container              |  |
+|  |  - Connection Lifecycle & Reconnect Backoff Loop            |  |
+|  +-------------------------------------------------------------+  |
++-------------------------------------------------------------------+
+                                   |
+                                   v
++-------------------------------------------------------------------+
+|                   Official PoE Trade Live API                     |
+|            wss://www.pathofexile.com/api/trade/live/...            |
++-------------------------------------------------------------------+
 ```
 
----
+### Component Breakdown
 
-## 3. Detailed Component Plan
+1. **`PoeLiveSearchService.cs`**:
+   - Manages connection lifecycle to `wss://www.pathofexile.com/api/trade/live/{league}/{searchId}`.
+   - Handles headers (`POESESSID` cookie, `User-Agent`).
+   - Dispatches parsed `TradeListing` DTO objects to the UI thread via `CoreDispatcher`.
 
-### A. Hotkey-Driven Multi-View Switching (`Widget1.xaml` & `Widget1.xaml.cs`)
-- Adds header tab navigation bar: `PriceCheckTabBtn` and `LiveSearchTabBtn`.
-- Listens for daemon hotkey commands:
-  - `"ShowPriceCheck"` or `CTRL+D` -> Activates `PriceCheckView` and restores widget visibility.
-  - `"ShowLiveSearch"` or `ALT+A`/`ALT+D`/`ALT+F` -> Activates `LiveSearchView` and restores widget visibility.
+2. **`LiveSearchCardBuilder.cs`**:
+   - Constructs structured `Grid` and `StackPanel` rows for newly received live search results.
+   - Suppresses right-click context menus (`SuppressContextMenu`) to match application design guidelines.
 
-### B. Dedicated `LiveSearchView` Layout (`Widget1.xaml`)
-- **Trade URL Entry Bar**:
-  - `TextBox` (`LiveSearchUrlBox`) with "Paste Link" clipboard button.
-  - `MaxPriceBox` (`TextBox`) and `MaxPriceCurrencyCombo` (`ComboBox`) for notification price limits.
-  - "Start Search" button to parse and activate query.
-  - All input boxes configured with `ContextFlyout="{x:Null}"` and context menu suppression.
-- **Active Search List Panel**:
-  - List of active queries showing search token/label, active CheckBox, max price threshold badge, and remove button.
-- **Live Notifications Stream Container**:
-  - Stream of incoming item listing cards with price highlights, "To Hideout" direct teleport, and "Whisper" buttons.
-
-### C. `PoeLiveSearchQuery.cs`, `PoeUrlParser.cs` & `PoeLiveSearchClient.cs`
-- `PoeUrlParser`: Parses search/live trade links into `(league, searchId)`.
-- `PoeLiveSearchQuery`: Represents an active live query with ID, league, label, max price limit, and toggle state.
-- `PoeLiveSearchClient`: Handles WebSocket connections (`wss://www.pathofexile.com/api/trade/live/<league>/<searchId>`), 30s ping heartbeats, exponential backoff auto-reconnects, and price threshold filtering.
-
----
-
-## 4. Verification & Constraints
-
-- Strict C# WinRT / UWP architecture without web dependencies.
-- Zero emojis in all UI code, messages, and comments.
-- Context menu suppression preserved across all new live search UI components.
+3. **`PoeSettingsManager.cs`**:
+   - Stores user preferences (`LiveSearchHotkey`, saved search URLs, `POESESSID`).

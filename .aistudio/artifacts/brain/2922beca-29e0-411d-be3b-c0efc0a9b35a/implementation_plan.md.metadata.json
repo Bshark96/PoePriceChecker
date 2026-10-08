@@ -1,6 +1,6 @@
 {
-  "summary":  "Revised implementation plan for Path of Exile 1 Live Search with hotkey-driven automatic view switching between PriceCheckView and LiveSearchView.",
-  "updatedAt":  "2026-10-08T15:16:18.065680942Z",
+  "summary":  "Implementation plan for Path of Exile Live Search feature architecture in C# GameBarWidget",
+  "updatedAt":  "2026-10-08T15:39:03.701240448Z",
   "requestFeedback":  true,
   "userFacing":  true
 }
