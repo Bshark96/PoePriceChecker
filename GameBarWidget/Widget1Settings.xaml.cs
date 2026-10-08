@@ -7,6 +7,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 using Microsoft.Gaming.XboxGameBar;
 using GameBarWidget.Services;
+using GameBarWidget.Design;
 
 namespace GameBarWidget
 {
@@ -17,6 +18,9 @@ namespace GameBarWidget
         public Widget1Settings()
         {
             this.InitializeComponent();
+            UiComponentFactory.SuppressContextMenu(this);
+            UiComponentFactory.SuppressContextMenu(AccountNameBox);
+            UiComponentFactory.SuppressContextMenu(PoeSessIdBox);
             this.Loaded += Widget1Settings_Loaded;
             this.Unloaded += Widget1Settings_Unloaded;
             AppServiceManager.Instance.MessageReceived += OnAppServiceMessageReceived;
@@ -172,9 +176,19 @@ namespace GameBarWidget
             string currentHotkey = settings.Hotkey.ToUpperInvariant();
             if (currentHotkey.Contains("CTRL+E")) HotkeyCombo.SelectedIndex = 1;
             else if (currentHotkey.Contains("CTRL+F")) HotkeyCombo.SelectedIndex = 2;
-            else if (currentHotkey.Contains("ALT+D")) HotkeyCombo.SelectedIndex = 3;
-            else if (currentHotkey.Contains("ALT+E")) HotkeyCombo.SelectedIndex = 4;
+            else if (currentHotkey.Contains("ALT+A")) HotkeyCombo.SelectedIndex = 3;
+            else if (currentHotkey.Contains("ALT+D")) HotkeyCombo.SelectedIndex = 4;
+            else if (currentHotkey.Contains("ALT+E")) HotkeyCombo.SelectedIndex = 5;
+            else if (currentHotkey.Contains("ALT+F")) HotkeyCombo.SelectedIndex = 6;
             else HotkeyCombo.SelectedIndex = 0; // Default CTRL+D
+
+            // Load Live Search Hotkey Combo selection
+            string currentLiveHotkey = settings.LiveSearchHotkey.ToUpperInvariant();
+            if (currentLiveHotkey.Contains("ALT+D")) LiveSearchHotkeyCombo.SelectedIndex = 1;
+            else if (currentLiveHotkey.Contains("ALT+F")) LiveSearchHotkeyCombo.SelectedIndex = 2;
+            else if (currentLiveHotkey.Contains("ALT+E")) LiveSearchHotkeyCombo.SelectedIndex = 3;
+            else if (currentLiveHotkey.Contains("CTRL+L")) LiveSearchHotkeyCombo.SelectedIndex = 4;
+            else LiveSearchHotkeyCombo.SelectedIndex = 0; // Default ALT+A
 
             UpdateAuthUi();
         }
@@ -317,14 +331,25 @@ namespace GameBarWidget
             settings.ModRollTolerancePercent = (int)ToleranceSlider.Value;
             settings.AutoDismissDurationSeconds = (int)DurationSlider.Value;
 
-            // Save selected hotkey
+            // Save selected hotkeys
             switch (HotkeyCombo.SelectedIndex)
             {
                 case 1: settings.Hotkey = "CTRL+E"; break;
                 case 2: settings.Hotkey = "CTRL+F"; break;
-                case 3: settings.Hotkey = "ALT+D"; break;
-                case 4: settings.Hotkey = "ALT+E"; break;
+                case 3: settings.Hotkey = "ALT+A"; break;
+                case 4: settings.Hotkey = "ALT+D"; break;
+                case 5: settings.Hotkey = "ALT+E"; break;
+                case 6: settings.Hotkey = "ALT+F"; break;
                 default: settings.Hotkey = "CTRL+D"; break;
+            }
+
+            switch (LiveSearchHotkeyCombo.SelectedIndex)
+            {
+                case 1: settings.LiveSearchHotkey = "ALT+D"; break;
+                case 2: settings.LiveSearchHotkey = "ALT+F"; break;
+                case 3: settings.LiveSearchHotkey = "ALT+E"; break;
+                case 4: settings.LiveSearchHotkey = "CTRL+L"; break;
+                default: settings.LiveSearchHotkey = "ALT+A"; break;
             }
 
             settings.Save();
@@ -334,7 +359,8 @@ namespace GameBarWidget
             {
                 { "Command", "UpdateSettings" },
                 { "DurationSeconds", settings.AutoDismissDurationSeconds },
-                { "Hotkey", settings.Hotkey }
+                { "Hotkey", settings.Hotkey },
+                { "LiveSearchHotkey", settings.LiveSearchHotkey }
             };
 
             await AppServiceManager.Instance.SendToDaemonAsync(syncMsg);

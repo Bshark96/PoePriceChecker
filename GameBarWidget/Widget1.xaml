@@ -6,6 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="#131b26"
+    ContextFlyout="{x:Null}"
     MinWidth="380"
     MinHeight="320">
 
@@ -63,6 +64,24 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                <Button x:Name="PriceCheckTabBtn" 
+                        Content="PRICE CHECK" 
+                        Click="PriceCheckTabBtn_Click" 
+                        Background="#22c55e" 
+                        Foreground="#ffffff" 
+                        FontWeight="Bold" 
+                        FontSize="9" 
+                        Padding="6,2" 
+                        CornerRadius="3"/>
+                <Button x:Name="LiveSearchTabBtn" 
+                        Content="LIVE SEARCH" 
+                        Click="LiveSearchTabBtn_Click" 
+                        Background="#1f3044" 
+                        Foreground="#94a3b8" 
+                        FontWeight="Bold" 
+                        FontSize="9" 
+                        Padding="6,2" 
+                        CornerRadius="3"/>
                 <Button x:Name="DismissHeaderBtn" 
                         Content="Dismiss [ESC]" 
                         Click="DismissBtn_Click" 
@@ -246,6 +265,94 @@
                                 <StackPanel x:Name="ListingsContainer" Spacing="2"/>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- LIVE SEARCH OVERLAY VIEW -->
+            <Border x:Name="LiveSearchView" 
+                    Background="#182333" 
+                    BorderBrush="#22384e" 
+                    BorderThickness="1" 
+                    CornerRadius="5" 
+                    Padding="6"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="6">
+                        <!-- Live Search Header & URL Entry Box -->
+                        <Border Background="#111924" BorderBrush="#22384e" BorderThickness="1" CornerRadius="4" Padding="6">
+                            <StackPanel Spacing="5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <Border Width="6" Height="6" CornerRadius="3" Background="#22c55e" VerticalAlignment="Center"/>
+                                        <TextBlock Text="OFFICIAL TRADE LIVE SEARCH" FontSize="10.5" FontWeight="Bold" Foreground="#4ade80"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" x:Name="LiveSearchConnectionStatus" Text="Ready" FontSize="9.5" FontWeight="Bold" Foreground="#94a3b8"/>
+                                </Grid>
+
+                                <!-- Trade Link Input Bar -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="LiveSearchUrlBox" 
+                                             ContextFlyout="{x:Null}" 
+                                             PlaceholderText="Paste trade link: pathofexile.com/trade/search/Standard/xyz123" 
+                                             Background="#0b1118" 
+                                             Foreground="#f8fafc" 
+                                             BorderBrush="#22384e" 
+                                             FontSize="10" 
+                                             Padding="6,3"/>
+                                    <Button Grid.Column="1" x:Name="PasteLiveUrlBtn" Content="Paste" Click="PasteLiveUrlBtn_Click" Background="#1e2c3d" Foreground="#38bdf8" FontSize="10" Padding="8,3" Margin="4,0,0,0" CornerRadius="3"/>
+                                </Grid>
+
+                                <!-- Max Price Threshold Bar -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Text="Max Price Limit:" FontSize="9.5" Foreground="#cbd5e1" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBox Grid.Column="1" x:Name="LiveSearchMaxPriceBox" ContextFlyout="{x:Null}" PlaceholderText="No limit" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="10" Padding="6,3"/>
+                                    <ComboBox Grid.Column="2" x:Name="LiveSearchCurrencyCombo" SelectedIndex="0" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="10" Margin="4,0,0,0" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="Divine"/>
+                                        <ComboBoxItem Content="Chaos"/>
+                                    </ComboBox>
+                                    <Button Grid.Column="3" x:Name="AddLiveSearchBtn" Content="+ Add Search" Click="AddLiveSearchBtn_Click" Background="#16a34a" Foreground="#ffffff" FontSize="10" FontWeight="Bold" Padding="8,3" Margin="6,0,0,0" CornerRadius="3"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Active Monitored Searches -->
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="ACTIVE MONITORED SEARCHES" FontSize="9.5" FontWeight="Bold" Foreground="#4ade80"/>
+                            <StackPanel x:Name="ActiveQueriesContainer" Spacing="2">
+                                <TextBlock Text="No active live searches. Paste a trade link above to monitor listings." FontSize="9" Foreground="#94a3b8" Margin="2,2,0,2"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Incoming Live Stream Listings -->
+                        <StackPanel Spacing="3">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="LIVE LISTINGS STREAM" FontSize="9.5" FontWeight="Bold" Foreground="#4ade80" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" x:Name="ClearLiveListingsBtn" Content="Clear" Click="ClearLiveListingsBtn_Click" Background="#1e2c3d" Foreground="#94a3b8" FontSize="8.5" Padding="5,1" CornerRadius="2"/>
+                            </Grid>
+                            <StackPanel x:Name="LiveListingsContainer" Spacing="3">
+                                <TextBlock Text="Incoming live search items will appear here in real time." FontSize="9" Foreground="#94a3b8" Margin="2,2,0,2"/>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Border>

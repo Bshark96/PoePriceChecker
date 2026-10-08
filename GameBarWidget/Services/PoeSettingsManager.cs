@@ -54,6 +54,12 @@ namespace GameBarWidget.Services
             set => SetValue("Hotkey", value);
         }
 
+        public string LiveSearchHotkey
+        {
+            get => GetValue("LiveSearchHotkey", "ALT+A");
+            set => SetValue("LiveSearchHotkey", value);
+        }
+
         // Official Trade API Settings: defaults to active league
         public string SelectedLeague
         {

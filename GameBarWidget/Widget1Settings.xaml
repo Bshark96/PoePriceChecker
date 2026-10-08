@@ -6,6 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="#131b26"
+    ContextFlyout="{x:Null}"
     MinWidth="340"
     MinHeight="400">
 
@@ -119,7 +120,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <PasswordBox x:Name="PoeSessIdBox" PlaceholderText="Paste POESESSID manually" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
+                                    <PasswordBox x:Name="PoeSessIdBox" ContextFlyout="{x:Null}" PlaceholderText="Paste POESESSID manually" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
                                     <Button Grid.Column="1" x:Name="PasteSessionBtn" Content="Paste from Clipboard" Click="PasteSessionBtn_Click" Background="#1e2c3d" Foreground="#38bdf8" FontSize="10" Padding="8,4" Margin="6,0,0,0" CornerRadius="3"/>
                                 </Grid>
                             </StackPanel>
@@ -151,7 +152,7 @@
                 <!-- Account Name -->
                 <StackPanel Spacing="3">
                     <TextBlock Text="Account Name (Optional):" FontSize="11" Foreground="#cbd5e1"/>
-                    <TextBox x:Name="AccountNameBox" Background="#111924" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
+                    <TextBox x:Name="AccountNameBox" ContextFlyout="{x:Null}" Background="#111924" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
                     <TextBlock Text="Used to identify and highlight your own listings." FontSize="9" Foreground="#94a3b8"/>
                 </StackPanel>
 
@@ -198,10 +199,25 @@
                         <ComboBoxItem Content="CTRL+D (Default)"/>
                         <ComboBoxItem Content="CTRL+E"/>
                         <ComboBoxItem Content="CTRL+F"/>
+                        <ComboBoxItem Content="ALT+A"/>
                         <ComboBoxItem Content="ALT+D"/>
                         <ComboBoxItem Content="ALT+E"/>
+                        <ComboBoxItem Content="ALT+F"/>
                     </ComboBox>
                     <TextBlock Text="In-game hotkey: automatically copies highlighted item (CTRL+ALT+C) &amp; queries price." FontSize="9" Foreground="#94a3b8"/>
+                </StackPanel>
+
+                <!-- Live Search Hotkey Selection -->
+                <StackPanel Spacing="3">
+                    <TextBlock Text="LIVE SEARCH Hotkey (Future Feature):" FontSize="11" Foreground="#cbd5e1"/>
+                    <ComboBox x:Name="LiveSearchHotkeyCombo" SelectedIndex="0" Background="#111924" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" HorizontalAlignment="Stretch">
+                        <ComboBoxItem Content="ALT+A (Default)"/>
+                        <ComboBoxItem Content="ALT+D"/>
+                        <ComboBoxItem Content="ALT+F"/>
+                        <ComboBoxItem Content="ALT+E"/>
+                        <ComboBoxItem Content="CTRL+L"/>
+                    </ComboBox>
+                    <TextBlock Text="In-game hotkey for LIVE SEARCH: opens dedicated Live Search widget layout window." FontSize="9" Foreground="#94a3b8" TextWrapping="Wrap"/>
                 </StackPanel>
 
                 <!-- Display Duration -->

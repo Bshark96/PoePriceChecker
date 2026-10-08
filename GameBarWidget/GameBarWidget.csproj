@@ -107,11 +107,28 @@
     <Compile Include="Services\AppServiceManager.cs" />
     <Compile Include="Services\FullTrustLauncherHelper.cs" />
     <Compile Include="Services\PoeItemParser.cs" />
+    <Compile Include="Services\Parsing\PoeItemModels.cs" />
+    <Compile Include="Services\Parsing\PoeStatsDatabase.cs" />
+    <Compile Include="Services\Parsing\PoeCategoryResolver.cs" />
+    <Compile Include="Services\Parsing\PoeModifierParser.cs" />
+    <Compile Include="Services\Parsing\PoePseudoStatsCalculator.cs" />
+    <Compile Include="Design\DesignPalette.cs" />
+    <Compile Include="Design\ModifierRowStyle.cs" />
+    <Compile Include="Design\UiComponentFactory.cs" />
+    <Compile Include="Design\ModifierRowBuilder.cs" />
+    <Compile Include="Design\PropertyRowBuilder.cs" />
+    <Compile Include="Design\TradeCardBuilder.cs" />
+    <Compile Include="Design\TradeRowBuilder.cs" />
+    <Compile Include="Design\StatusStyleHelper.cs" />
     <Compile Include="Services\PoeNinjaClient.cs" />
     <Compile Include="Services\PoeTradeRateLimiter.cs" />
     <Compile Include="Services\PoeOfficialTradeClient.cs" />
     <Compile Include="Services\PoeOAuthService.cs" />
     <Compile Include="Services\PoeSettingsManager.cs" />
+    <Compile Include="Services\PoeUrlParser.cs" />
+    <Compile Include="Services\PoeLiveSearchQuery.cs" />
+    <Compile Include="Services\PoeLiveSearchClient.cs" />
+    <Compile Include="Design\LiveSearchCardBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
