@@ -1379,10 +1379,6 @@ namespace GameBarWidget
                 {
                     await _widgetControl.RestoreAsync("Widget1");
                 }
-                if (_widget != null)
-                {
-                    await _widget.ActivateSettingsAsync();
-                }
             }
             catch { }
         }
