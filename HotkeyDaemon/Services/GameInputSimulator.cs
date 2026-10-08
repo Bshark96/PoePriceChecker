@@ -123,6 +123,7 @@ namespace HotkeyDaemon.Services
             }
             catch { }
         }
+        private const string TestModeItemText = @"Item Class: Belts
 Rarity: Unique
 Mageblood
 Heavy Belt
