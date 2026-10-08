@@ -56,7 +56,10 @@ namespace GameBarWidget
             if (args.VirtualKey == VirtualKey.Escape)
             {
                 args.Handled = true;
-                DismissOverlay();
+                if (!PoeSettingsManager.Instance.IsSettingsOpen)
+                {
+                    DismissOverlay();
+                }
             }
         }
 
@@ -76,6 +79,7 @@ namespace GameBarWidget
 
         private async void OnWidgetSettingsClicked(XboxGameBarWidget sender, object args)
         {
+            PoeSettingsManager.Instance.IsSettingsOpen = true;
             try
             {
                 await sender.ActivateSettingsAsync();
@@ -276,6 +280,34 @@ namespace GameBarWidget
                 ItemSocketText.Text = string.Empty;
             }
 
+            // Initialize Sockets filter state (default inactive/ignored)
+            if (item.SocketCount > 0 && !item.FilterSocketsActive && !item.FilterSocketsMin.HasValue && !item.FilterSocketsMax.HasValue)
+            {
+                item.FilterSocketsMin = item.SocketCount;
+                item.FilterSocketsActive = false;
+            }
+
+            // Initialize Links filter state (default active only if 5 or 6 link non-unique, matching Awakened standard)
+            if (item.LinkCount > 0 && !item.FilterLinksActive && !item.FilterLinksMin.HasValue && !item.FilterLinksMax.HasValue)
+            {
+                item.FilterLinksMin = item.LinkCount;
+                if (item.LinkCount >= 5 && item.Namespace != ItemNamespace.Unique)
+                {
+                    item.FilterLinksActive = true;
+                }
+                else
+                {
+                    item.FilterLinksActive = false;
+                }
+            }
+
+            // Initialize Quality filter state (default inactive/ignored)
+            if (item.Quality > 0 && !item.FilterQualityActive && !item.FilterQualityMin.HasValue && !item.FilterQualityMax.HasValue)
+            {
+                item.FilterQualityMin = item.Quality;
+                item.FilterQualityActive = false;
+            }
+
             ItemRarityText.Text = item.IsCorrupted ? $"{item.Rarity.ToString().ToUpperInvariant()} (CORRUPTED)" : item.Rarity.ToString().ToUpperInvariant();
 
             // Initialize Corrupted Filter selection
@@ -357,9 +389,26 @@ namespace GameBarWidget
 
             int renderedGroups = 0;
 
+            // Sockets Group (Count & Links)
+            if (item.SocketCount > 0)
+            {
+                ModContainer.Children.Add(CreateSocketsGroupSection(item));
+                renderedGroups++;
+            }
+
+            // Quality Group
+            bool canHaveQuality = item.Quality > 0 || item.Rarity == PoeRarity.Gem || item.Category == "weapon" || item.Category == "armour" || item.Category == "flask" || item.SocketCount > 0 || (!string.IsNullOrEmpty(item.ItemClass) && (item.ItemClass.IndexOf("Weapon", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Armour", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Flask", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Gem", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Map", StringComparison.OrdinalIgnoreCase) >= 0));
+            if (canHaveQuality)
+            {
+                if (renderedGroups > 0) AddDivider(ModContainer);
+                ModContainer.Children.Add(CreateQualityGroupSection(item));
+                renderedGroups++;
+            }
+
             // 1. Pseudo Modifiers Group
             if (pseudoMods.Count > 0)
             {
+                if (renderedGroups > 0) AddDivider(ModContainer);
                 ModContainer.Children.Add(CreateStatGroupSection("PSEUDO STATS", Windows.UI.Color.FromArgb(255, 56, 189, 248), pseudoMods));
                 renderedGroups++;
             }
@@ -441,29 +490,24 @@ namespace GameBarWidget
                 if (child is StackPanel sectionPanel && sectionPanel.Children.Count > 1 && sectionPanel.Children[1] is StackPanel itemsPanel)
                 {
                     itemsPanel.Visibility = shouldCollapse ? Visibility.Collapsed : Visibility.Visible;
-                    if (sectionPanel.Children[0] is Grid headerGrid && headerGrid.Children.Count > 1 && headerGrid.Children[1] is StackPanel rightStack && rightStack.Children.Count > 1 && rightStack.Children[1] is Button toggleBtn)
+                    string title = string.Empty;
+                    if (sectionPanel.Children[0] is Grid headerGrid && headerGrid.Children.Count > 0 && headerGrid.Children[0] is StackPanel titleStack && titleStack.Children.Count > 1 && titleStack.Children[1] is TextBlock titleText)
                     {
-                        string title = string.Empty;
-                        if (headerGrid.Children[0] is StackPanel titleStack && titleStack.Children.Count > 1 && titleStack.Children[1] is TextBlock titleText)
-                        {
-                            title = titleText.Text;
-                        }
+                        title = titleText.Text;
+                    }
 
-                        toggleBtn.Content = shouldCollapse ? "Expand" : "Collapse";
-                        toggleBtn.Foreground = shouldCollapse 
-                            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 56, 189, 248)) 
-                            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
-                        toggleBtn.BorderBrush = shouldCollapse 
-                            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 14, 116, 144)) 
-                            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 51, 65, 85));
-                        toggleBtn.Background = shouldCollapse 
-                            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42)) 
-                            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 41, 59));
+                    if (shouldCollapse && !string.IsNullOrEmpty(title))
+                    {
+                        _collapsedGroups.Add(title);
+                    }
+                    else if (!shouldCollapse && !string.IsNullOrEmpty(title))
+                    {
+                        _collapsedGroups.Remove(title);
+                    }
 
-                        if (shouldCollapse && !string.IsNullOrEmpty(title))
-                        {
-                            _collapsedGroups.Add(title);
-                        }
+                    if (sectionPanel.Tag is Action updateVisuals)
+                    {
+                        updateVisuals();
                     }
                 }
             }
@@ -509,14 +553,14 @@ namespace GameBarWidget
             }
         }
 
-        private UIElement CreateStatGroupSection(string title, Windows.UI.Color accentColor, List<ItemModifier> mods)
+        private UIElement CreateGenericGroupSection(string title, Windows.UI.Color accentColor, List<UIElement> rows, Func<int> getActiveCount)
         {
             var sectionPanel = new StackPanel { Spacing = 1 };
 
             var itemsPanel = new StackPanel { Spacing = 1 };
-            foreach (var mod in mods)
+            foreach (var row in rows)
             {
-                itemsPanel.Children.Add(CreateModifierFilterRow(mod));
+                itemsPanel.Children.Add(row);
             }
 
             bool isCollapsed = _collapsedGroups.Contains(title);
@@ -567,7 +611,7 @@ namespace GameBarWidget
             };
             var countText = new TextBlock
             {
-                Text = mods.Count.ToString(),
+                Text = rows.Count.ToString(),
                 FontSize = 8,
                 FontWeight = Windows.UI.Text.FontWeights.SemiBold,
                 Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184))
@@ -589,11 +633,7 @@ namespace GameBarWidget
             void UpdateButtonVisuals()
             {
                 bool collapsed = itemsPanel.Visibility == Visibility.Collapsed;
-                int activeInGroup = 0;
-                foreach (var m in mods)
-                {
-                    if (m.IsActive) activeInGroup++;
-                }
+                int activeInGroup = getActiveCount != null ? getActiveCount() : 0;
 
                 toggleBtn.Content = collapsed ? (activeInGroup > 0 ? $"Expand ({activeInGroup})" : "Expand") : "Collapse";
                 toggleBtn.Foreground = collapsed 
@@ -608,6 +648,7 @@ namespace GameBarWidget
             }
 
             UpdateButtonVisuals();
+            sectionPanel.Tag = (Action)UpdateButtonVisuals;
 
             void ToggleGroup()
             {
@@ -636,6 +677,91 @@ namespace GameBarWidget
             sectionPanel.Children.Add(itemsPanel);
 
             return sectionPanel;
+        }
+
+        private UIElement CreateStatGroupSection(string title, Windows.UI.Color accentColor, List<ItemModifier> mods)
+        {
+            var rows = new List<UIElement>();
+            foreach (var mod in mods)
+            {
+                rows.Add(CreateModifierFilterRow(mod));
+            }
+            return CreateGenericGroupSection(title, accentColor, rows, () =>
+            {
+                int count = 0;
+                foreach (var m in mods)
+                {
+                    if (m.IsActive) count++;
+                }
+                return count;
+            });
+        }
+
+        private UIElement CreateSocketsGroupSection(PoeItem item)
+        {
+            var rows = new List<UIElement>();
+
+            // 1. Sockets Count row
+            rows.Add(CreateItemPropertyFilterRow(
+                "Sockets",
+                "SOCK",
+                Windows.UI.Color.FromArgb(255, 30, 41, 59),
+                Windows.UI.Color.FromArgb(255, 148, 163, 184),
+                item.FilterSocketsMin,
+                item.FilterSocketsMax,
+                item.FilterSocketsActive,
+                isActive => item.FilterSocketsActive = isActive,
+                min => item.FilterSocketsMin = min,
+                max => item.FilterSocketsMax = max,
+                () => { },
+                6));
+
+            // 2. Links row
+            rows.Add(CreateItemPropertyFilterRow(
+                "Links",
+                "LINK",
+                Windows.UI.Color.FromArgb(255, 50, 35, 20),
+                Windows.UI.Color.FromArgb(255, 251, 191, 36),
+                item.FilterLinksMin,
+                item.FilterLinksMax,
+                item.FilterLinksActive,
+                isActive => item.FilterLinksActive = isActive,
+                min => item.FilterLinksMin = min,
+                max => item.FilterLinksMax = max,
+                () => { },
+                6));
+
+            return CreateGenericGroupSection(
+                "SOCKETS",
+                Windows.UI.Color.FromArgb(255, 251, 191, 36),
+                rows,
+                () => (item.FilterSocketsActive ? 1 : 0) + (item.FilterLinksActive ? 1 : 0));
+        }
+
+        private UIElement CreateQualityGroupSection(PoeItem item)
+        {
+            var rows = new List<UIElement>();
+
+            // Quality row
+            rows.Add(CreateItemPropertyFilterRow(
+                "Quality",
+                "QUAL",
+                Windows.UI.Color.FromArgb(255, 15, 60, 55),
+                Windows.UI.Color.FromArgb(255, 45, 212, 191),
+                item.FilterQualityMin,
+                item.FilterQualityMax,
+                item.FilterQualityActive,
+                isActive => item.FilterQualityActive = isActive,
+                min => item.FilterQualityMin = min,
+                max => item.FilterQualityMax = max,
+                () => { },
+                30));
+
+            return CreateGenericGroupSection(
+                "QUALITY",
+                Windows.UI.Color.FromArgb(255, 45, 212, 191),
+                rows,
+                () => item.FilterQualityActive ? 1 : 0);
         }
 
         private static void AddDivider(StackPanel container)
@@ -1031,6 +1157,286 @@ namespace GameBarWidget
                 VerticalAlignment = VerticalAlignment.Center
             });
 
+            inputStack.Children.Add(maxBox);
+
+            Grid.SetColumn(inputStack, 1);
+            grid.Children.Add(inputStack);
+
+            cardBorder.Child = grid;
+            return cardBorder;
+        }
+
+        private UIElement CreateItemPropertyFilterRow(
+            string label,
+            string badgeText,
+            Windows.UI.Color badgeBg,
+            Windows.UI.Color badgeFg,
+            int? initialMin,
+            int? initialMax,
+            bool isActive,
+            Action<bool> onActiveChanged,
+            Action<int?> onMinChanged,
+            Action<int?> onMaxChanged,
+            Action onFilterChanged,
+            int maxCap = 100)
+        {
+            var cardBorder = new Border
+            {
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 18, 32, 48)),
+                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 34, 56, 82)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(3),
+                Padding = new Thickness(5, 2, 5, 2),
+                Margin = new Thickness(0, 1, 0, 1)
+            };
+
+            cardBorder.PointerEntered += (s, e) =>
+            {
+                cardBorder.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 26, 44, 66));
+            };
+            cardBorder.PointerExited += (s, e) =>
+            {
+                cardBorder.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 18, 32, 48));
+            };
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var leftStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, VerticalAlignment = VerticalAlignment.Center };
+
+            var cb = new CheckBox
+            {
+                IsChecked = isActive,
+                MinWidth = 18,
+                MinHeight = 18,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var badge = new Border
+            {
+                Background = new SolidColorBrush(badgeBg),
+                CornerRadius = new CornerRadius(2),
+                Padding = new Thickness(3, 0.5, 3, 0.5),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            badge.Child = new TextBlock
+            {
+                Text = badgeText,
+                FontSize = 7.5,
+                FontWeight = Windows.UI.Text.FontWeights.Bold,
+                Foreground = new SolidColorBrush(badgeFg)
+            };
+            leftStack.Children.Add(cb);
+            leftStack.Children.Add(badge);
+
+            var labelText = new TextBlock
+            {
+                Text = label,
+                FontSize = 9.2,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 241, 245, 249)),
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            leftStack.Children.Add(labelText);
+
+            Grid.SetColumn(leftStack, 0);
+            grid.Children.Add(leftStack);
+
+            // Right: Min - Max inputs
+            var inputStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+
+            var minBox = new TextBox
+            {
+                Text = initialMin.HasValue ? initialMin.Value.ToString(CultureInfo.InvariantCulture) : string.Empty,
+                PlaceholderText = "min",
+                Width = 38,
+                Height = 20,
+                MinHeight = 0,
+                MinWidth = 0,
+                FontSize = 9,
+                Padding = new Thickness(2, 0, 2, 0),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 9, 14, 21)),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 248, 250, 252)),
+                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 38, 54, 76)),
+                CornerRadius = new CornerRadius(2),
+                IsTabStop = true,
+                IsHitTestVisible = true,
+                IsReadOnly = false,
+                IsSpellCheckEnabled = false,
+                IsTextPredictionEnabled = false,
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+
+            var maxBox = new TextBox
+            {
+                Text = initialMax.HasValue ? initialMax.Value.ToString(CultureInfo.InvariantCulture) : string.Empty,
+                PlaceholderText = "max",
+                Width = 38,
+                Height = 20,
+                MinHeight = 0,
+                MinWidth = 0,
+                FontSize = 9,
+                Padding = new Thickness(2, 0, 2, 0),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 9, 14, 21)),
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 248, 250, 252)),
+                BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 38, 54, 76)),
+                CornerRadius = new CornerRadius(2),
+                IsTabStop = true,
+                IsHitTestVisible = true,
+                IsReadOnly = false,
+                IsSpellCheckEnabled = false,
+                IsTextPredictionEnabled = false,
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+
+            minBox.GotFocus += (s, e) => _isTimerPaused = true;
+            minBox.LostFocus += (s, e) => _isTimerPaused = false;
+            minBox.PointerPressed += async (s, e) =>
+            {
+                _isTimerPaused = true;
+                try
+                {
+                    Window.Current.Activate();
+                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                    await FocusManager.TryFocusAsync(minBox, FocusState.Programmatic);
+                }
+                catch { }
+            };
+            minBox.PointerWheelChanged += (s, e) =>
+            {
+                var ptr = e.GetCurrentPoint(minBox);
+                int delta = ptr.Properties.MouseWheelDelta;
+                if (delta != 0)
+                {
+                    e.Handled = true;
+                    int cur = 0;
+                    if (int.TryParse(minBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int parsed)) cur = parsed;
+                    else if (initialMin.HasValue) cur = initialMin.Value;
+
+                    cur = (delta > 0) ? Math.Min(maxCap, cur + 1) : Math.Max(0, cur - 1);
+                    minBox.Text = cur.ToString(CultureInfo.InvariantCulture);
+                    onMinChanged(cur);
+                    onActiveChanged(true);
+                    cb.IsChecked = true;
+                    onFilterChanged();
+                    UpdateMasterToggleButton();
+                }
+            };
+
+            maxBox.GotFocus += (s, e) => _isTimerPaused = true;
+            maxBox.LostFocus += (s, e) => _isTimerPaused = false;
+            maxBox.PointerPressed += async (s, e) =>
+            {
+                _isTimerPaused = true;
+                try
+                {
+                    Window.Current.Activate();
+                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                    await FocusManager.TryFocusAsync(maxBox, FocusState.Programmatic);
+                }
+                catch { }
+            };
+            maxBox.PointerWheelChanged += (s, e) =>
+            {
+                var ptr = e.GetCurrentPoint(maxBox);
+                int delta = ptr.Properties.MouseWheelDelta;
+                if (delta != 0)
+                {
+                    e.Handled = true;
+                    int cur = 0;
+                    if (int.TryParse(maxBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int parsed)) cur = parsed;
+                    else if (initialMax.HasValue) cur = initialMax.Value;
+                    else if (initialMin.HasValue) cur = initialMin.Value;
+
+                    cur = (delta > 0) ? Math.Min(maxCap, cur + 1) : Math.Max(0, cur - 1);
+                    maxBox.Text = cur.ToString(CultureInfo.InvariantCulture);
+                    onMaxChanged(cur);
+                    onActiveChanged(true);
+                    cb.IsChecked = true;
+                    onFilterChanged();
+                    UpdateMasterToggleButton();
+                }
+            };
+
+            minBox.KeyDown += (s, e) =>
+            {
+                if (e.Key == VirtualKey.Enter)
+                {
+                    e.Handled = true;
+                    _ = QueryMarketAsync(_currentItem);
+                }
+            };
+            maxBox.KeyDown += (s, e) =>
+            {
+                if (e.Key == VirtualKey.Enter)
+                {
+                    e.Handled = true;
+                    _ = QueryMarketAsync(_currentItem);
+                }
+            };
+
+            minBox.TextChanged += (s, e) =>
+            {
+                if (int.TryParse(minBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int v))
+                {
+                    onMinChanged(v);
+                    cb.IsChecked = true;
+                    onActiveChanged(true);
+                }
+                else if (string.IsNullOrWhiteSpace(minBox.Text))
+                {
+                    onMinChanged(null);
+                }
+                onFilterChanged();
+                UpdateMasterToggleButton();
+            };
+
+            maxBox.TextChanged += (s, e) =>
+            {
+                if (int.TryParse(maxBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int v))
+                {
+                    onMaxChanged(v);
+                    cb.IsChecked = true;
+                    onActiveChanged(true);
+                }
+                else if (string.IsNullOrWhiteSpace(maxBox.Text))
+                {
+                    onMaxChanged(null);
+                }
+                onFilterChanged();
+                UpdateMasterToggleButton();
+            };
+
+            cb.Checked += (s, e) =>
+            {
+                onActiveChanged(true);
+                if (string.IsNullOrWhiteSpace(minBox.Text) && initialMin.HasValue)
+                {
+                    minBox.Text = initialMin.Value.ToString(CultureInfo.InvariantCulture);
+                    onMinChanged(initialMin.Value);
+                }
+                onFilterChanged();
+                UpdateMasterToggleButton();
+            };
+
+            cb.Unchecked += (s, e) =>
+            {
+                onActiveChanged(false);
+                onFilterChanged();
+                UpdateMasterToggleButton();
+            };
+
+            inputStack.Children.Add(minBox);
+            inputStack.Children.Add(new TextBlock
+            {
+                Text = "-",
+                FontSize = 8.5,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 100, 116, 139)),
+                VerticalAlignment = VerticalAlignment.Center
+            });
             inputStack.Children.Add(maxBox);
 
             Grid.SetColumn(inputStack, 1);
@@ -1892,6 +2298,11 @@ namespace GameBarWidget
 
         private async void DismissOverlay()
         {
+            if (PoeSettingsManager.Instance.IsSettingsOpen)
+            {
+                return;
+            }
+
             _countdownTimer.Stop();
             try
             {
@@ -1924,6 +2335,12 @@ namespace GameBarWidget
 
         private void OnCountdownTimerTick(object sender, object e)
         {
+            if (PoeSettingsManager.Instance.IsSettingsOpen)
+            {
+                CountdownText.Text = "Paused (Settings Open)";
+                return;
+            }
+
             if (_isTimerPaused)
             {
                 CountdownText.Text = $"Paused at {_remainingSeconds:F1}s (Hovering)";

@@ -18,6 +18,9 @@ namespace GameBarWidget.Services
             _settings = ApplicationData.Current.LocalSettings;
         }
 
+        // Runtime UI State
+        public bool IsSettingsOpen { get; set; } = false;
+
         // Overlay Behavior
         public int AutoDismissDurationSeconds
         {

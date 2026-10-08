@@ -967,9 +967,12 @@ namespace GameBarWidget.Services
             {
                 miscFilters.Add("\"corrupted\":{\"option\":\"true\",\"disabled\":true}");
             }
-            if (item.Quality > 0)
+            if (item.FilterQualityActive && (item.FilterQualityMin.HasValue || item.FilterQualityMax.HasValue))
             {
-                miscFilters.Add($"\"quality\":{{\"min\":{item.Quality},\"disabled\":true}}");
+                var qParts = new List<string>();
+                if (item.FilterQualityMin.HasValue) qParts.Add($"\"min\":{item.FilterQualityMin.Value}");
+                if (item.FilterQualityMax.HasValue) qParts.Add($"\"max\":{item.FilterQualityMax.Value}");
+                miscFilters.Add($"\"quality\":{{{string.Join(",", qParts)}}}");
             }
             if (item.ItemLevel > 0 && item.Namespace != ItemNamespace.Unique)
             {
@@ -982,10 +985,6 @@ namespace GameBarWidget.Services
                 {
                     miscFilters.Add($"\"gem_level\":{{\"min\":{item.GemLevel}}}");
                 }
-                if (item.Quality > 0)
-                {
-                    miscFilters.Add($"\"quality\":{{\"min\":{item.Quality}}}");
-                }
             }
             if (miscFilters.Count > 0)
             {
@@ -993,10 +992,19 @@ namespace GameBarWidget.Services
             }
 
             var socketFilters = new List<string>();
-            if (item.LinkCount >= 5)
+            if (item.FilterSocketsActive && (item.FilterSocketsMin.HasValue || item.FilterSocketsMax.HasValue))
             {
-                bool linkActive = (item.Namespace != ItemNamespace.Unique);
-                socketFilters.Add($"\"links\":{{\"min\":{item.LinkCount},\"disabled\":{(linkActive ? "false" : "true")}}}");
+                var sParts = new List<string>();
+                if (item.FilterSocketsMin.HasValue) sParts.Add($"\"min\":{item.FilterSocketsMin.Value}");
+                if (item.FilterSocketsMax.HasValue) sParts.Add($"\"max\":{item.FilterSocketsMax.Value}");
+                socketFilters.Add($"\"sockets\":{{{string.Join(",", sParts)}}}");
+            }
+            if (item.FilterLinksActive && (item.FilterLinksMin.HasValue || item.FilterLinksMax.HasValue))
+            {
+                var lParts = new List<string>();
+                if (item.FilterLinksMin.HasValue) lParts.Add($"\"min\":{item.FilterLinksMin.Value}");
+                if (item.FilterLinksMax.HasValue) lParts.Add($"\"max\":{item.FilterLinksMax.Value}");
+                socketFilters.Add($"\"links\":{{{string.Join(",", lParts)}}}");
             }
             if (socketFilters.Count > 0)
             {

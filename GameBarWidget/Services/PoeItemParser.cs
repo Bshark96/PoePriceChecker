@@ -103,6 +103,18 @@ namespace GameBarWidget.Services
         public int SocketCount { get; set; }
         public int LinkCount { get; set; }
 
+        public int? FilterSocketsMin { get; set; }
+        public int? FilterSocketsMax { get; set; }
+        public bool FilterSocketsActive { get; set; } = false;
+
+        public int? FilterLinksMin { get; set; }
+        public int? FilterLinksMax { get; set; }
+        public bool FilterLinksActive { get; set; } = false;
+
+        public int? FilterQualityMin { get; set; }
+        public int? FilterQualityMax { get; set; }
+        public bool FilterQualityActive { get; set; } = false;
+
         public double AttacksPerSecond { get; set; }
         public double CritChance { get; set; }
         public double PhysDamageMin { get; set; }

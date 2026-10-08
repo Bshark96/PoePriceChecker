@@ -24,6 +24,11 @@ namespace GameBarWidget
 
         private void Widget1Settings_Unloaded(object sender, RoutedEventArgs e)
         {
+            PoeSettingsManager.Instance.IsSettingsOpen = false;
+            if (_widget != null)
+            {
+                _widget.VisibleChanged -= OnWidgetVisibleChanged;
+            }
             AppServiceManager.Instance.MessageReceived -= OnAppServiceMessageReceived;
         }
 
@@ -64,10 +69,28 @@ namespace GameBarWidget
         {
             base.OnNavigatedTo(e);
             _widget = e.Parameter as XboxGameBarWidget;
+            if (_widget != null)
+            {
+                PoeSettingsManager.Instance.IsSettingsOpen = _widget.Visible;
+                _widget.VisibleChanged += OnWidgetVisibleChanged;
+            }
+            else
+            {
+                PoeSettingsManager.Instance.IsSettingsOpen = true;
+            }
+        }
+
+        private void OnWidgetVisibleChanged(XboxGameBarWidget sender, object args)
+        {
+            if (sender != null)
+            {
+                PoeSettingsManager.Instance.IsSettingsOpen = sender.Visible;
+            }
         }
 
         private async void Widget1Settings_Loaded(object sender, RoutedEventArgs e)
         {
+            PoeSettingsManager.Instance.IsSettingsOpen = true;
             LoadSettingsIntoUi();
             await PopulateLeaguesAsync();
         }
