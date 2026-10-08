@@ -95,41 +95,21 @@ namespace GameBarWidget.Design
         {
             if (l == null) return new Grid();
 
-            // Outer Card Container (Neon Green Border, Dark Background)
-            var card = new Border
+            // Root Grid allowing badge to overlap top border line at exact midpoint
+            var rootGrid = new Grid();
+
+            // 1. OUTER CARD CONTAINER (Top margin offset at y=18 so badge intersects top border line)
+            var cardBorder = new Border
             {
                 Background = DesignPalette.Brush(Color.FromArgb(255, 3, 14, 22)),
                 BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 0, 230, 118)), // Bright Neon Green
                 BorderThickness = new Thickness(2),
                 CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(16, 14, 16, 14),
-                Margin = new Thickness(4, 4, 4, 4)
+                Padding = new Thickness(16, 22, 16, 14),
+                Margin = new Thickness(4, 18, 4, 4)
             };
 
             var mainStack = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Stretch };
-
-            // 1. TOP CENTERED LIVE ALERT BADGE
-            var badgeBorder = new Border
-            {
-                Background = DesignPalette.Brush(Color.FromArgb(255, 2, 38, 22)),
-                BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 0, 230, 118)),
-                BorderThickness = new Thickness(2),
-                CornerRadius = new CornerRadius(16),
-                Padding = new Thickness(28, 4, 28, 4),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 4)
-            };
-
-            var badgeText = new TextBlock
-            {
-                Text = "LIVE ALERT",
-                FontSize = 22,
-                FontWeight = FontWeights.ExtraBold,
-                Foreground = DesignPalette.Brush(Color.FromArgb(255, 0, 255, 136)),
-                HorizontalAlignment = HorizontalAlignment.Center
-            };
-            badgeBorder.Child = badgeText;
-            mainStack.Children.Add(badgeBorder);
 
             // 2. CENTER ITEM NAME & BASE TYPE
             string qTitle = query != null && !string.IsNullOrEmpty(query.Label) ? query.Label : "Live Search Item";
@@ -140,7 +120,7 @@ namespace GameBarWidget.Design
             {
                 Spacing = 2,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 6, 0, 6)
+                Margin = new Thickness(0, 4, 0, 4)
             };
 
             var nameTextBlock = new TextBlock
@@ -299,8 +279,35 @@ namespace GameBarWidget.Design
 
             mainStack.Children.Add(actionGrid);
 
-            card.Child = mainStack;
-            return card;
+            cardBorder.Child = mainStack;
+            rootGrid.Children.Add(cardBorder);
+
+            // 6. TOP CENTERED LIVE ALERT BADGE (Positioned directly over top border line)
+            var badgeBorder = new Border
+            {
+                Background = DesignPalette.Brush(Color.FromArgb(255, 3, 14, 22)), // Matches card inner background to cut through top border
+                BorderBrush = DesignPalette.Brush(Color.FromArgb(255, 0, 230, 118)),
+                BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(16),
+                Padding = new Thickness(28, 4, 28, 4),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+
+            var badgeText = new TextBlock
+            {
+                Text = "LIVE ALERT",
+                FontSize = 22,
+                FontWeight = FontWeights.ExtraBold,
+                Foreground = DesignPalette.Brush(Color.FromArgb(255, 0, 255, 136)),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            badgeBorder.Child = badgeText;
+
+            rootGrid.Children.Add(badgeBorder);
+
+            return rootGrid;
         }
     }
 }
