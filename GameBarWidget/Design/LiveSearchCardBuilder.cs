@@ -119,7 +119,7 @@ namespace GameBarWidget.Design
             {
                 Spacing = 8,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.SpaceAround
+                VerticalAlignment = VerticalAlignment.Stretch
             };
 
             // 2. CENTER ITEM NAME & BASE TYPE
