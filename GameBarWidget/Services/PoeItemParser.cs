@@ -180,6 +180,14 @@ namespace GameBarWidget.Services
             }
 
             PoePseudoStatsCalculator.CalculatePseudoStats(item);
+
+            // Gems do not have explicit stat filters; ignore gem description text lines
+            if (item.Rarity == PoeRarity.Gem || item.Namespace == ItemNamespace.Gem)
+            {
+                item.Modifiers.Clear();
+                item.PseudoModifiers.Clear();
+            }
+
             return item;
         }
 
