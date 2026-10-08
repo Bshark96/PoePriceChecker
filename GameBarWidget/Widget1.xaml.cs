@@ -1039,6 +1039,7 @@ namespace GameBarWidget
                     try
                     {
                         Window.Current.Activate();
+                        if (_widget != null) await _widget.ActivateAsync();
                         if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                     }
                     catch { }
@@ -1083,6 +1084,7 @@ namespace GameBarWidget
                     try
                     {
                         Window.Current.Activate();
+                        if (_widget != null) await _widget.ActivateAsync();
                         if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                     }
                     catch { }

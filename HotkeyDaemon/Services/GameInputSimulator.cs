@@ -66,6 +66,9 @@ namespace HotkeyDaemon.Services
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
         private static IntPtr _lastGameHwnd = IntPtr.Zero;
 
         public static void RememberGameWindow()
@@ -75,7 +78,13 @@ namespace HotkeyDaemon.Services
                 IntPtr hwnd = GetForegroundWindow();
                 if (hwnd != IntPtr.Zero)
                 {
-                    _lastGameHwnd = hwnd;
+                    uint procId = 0;
+                    GetWindowThreadProcessId(hwnd, out procId);
+                    uint currentProcId = (uint)Process.GetCurrentProcess().Id;
+                    if (procId != currentProcId && procId != 0)
+                    {
+                        _lastGameHwnd = hwnd;
+                    }
                 }
             }
             catch { }
@@ -87,7 +96,13 @@ namespace HotkeyDaemon.Services
             {
                 if (_lastGameHwnd != IntPtr.Zero)
                 {
-                    SetForegroundWindow(_lastGameHwnd);
+                    uint procId = 0;
+                    GetWindowThreadProcessId(_lastGameHwnd, out procId);
+                    uint currentProcId = (uint)Process.GetCurrentProcess().Id;
+                    if (procId != currentProcId && procId != 0)
+                    {
+                        SetForegroundWindow(_lastGameHwnd);
+                    }
                 }
             }
             catch { }
