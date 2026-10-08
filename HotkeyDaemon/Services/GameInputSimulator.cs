@@ -44,8 +44,10 @@ namespace HotkeyDaemon.Services
         }
 
         private const uint INPUT_KEYBOARD = 1;
+        private const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
         private const uint KEYEVENTF_KEYUP = 0x0002;
         private const uint KEYEVENTF_UNICODE = 0x0004;
+        private const uint KEYEVENTF_SCANCODE = 0x0008;
 
         private const byte VK_RETURN = 0x0D;
         private const byte VK_CONTROL = 0x11;
@@ -123,7 +125,7 @@ namespace HotkeyDaemon.Services
             }
             catch { }
         }
-        private const string TestModeItemText = @"Item Class: Belts
+        public const string TestModeItemText = @"Item Class: Belts
 Rarity: Unique
 Mageblood
 Heavy Belt
@@ -207,7 +209,8 @@ Corrupted
 
         private static void SendKey(byte vkCode, byte scanCode, bool keyUp)
         {
-            uint flags = keyUp ? KEYEVENTF_KEYUP : 0;
+            uint flags = KEYEVENTF_SCANCODE;
+            if (keyUp) flags |= KEYEVENTF_KEYUP;
             keybd_event(vkCode, scanCode, flags, UIntPtr.Zero);
         }
 

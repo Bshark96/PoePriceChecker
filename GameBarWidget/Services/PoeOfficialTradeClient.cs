@@ -1005,7 +1005,14 @@ namespace GameBarWidget.Services
 
                 case ItemNamespace.Gem:
                     string gemName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : item.BaseType;
-                    sb.Append($",\"type\":\"{EscapeJson(gemName)}\"");
+                    if (item.IsTransfiguredGem || gemName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase) > 0)
+                    {
+                        sb.Append($",\"type\":{{\"option\":\"{EscapeJson(gemName)}\",\"discriminator\":\"alt_x\"}}");
+                    }
+                    else
+                    {
+                        sb.Append($",\"type\":\"{EscapeJson(gemName)}\"");
+                    }
                     break;
 
                 case ItemNamespace.DivinationCard:
