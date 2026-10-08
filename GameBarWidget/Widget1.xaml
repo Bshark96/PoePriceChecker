@@ -302,6 +302,8 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="LiveSearchUrlBox" 
                                              ContextFlyout="{x:Null}" 
+                                             AllowFocusOnInteraction="True"
+                                             IsTabStop="True"
                                              PlaceholderText="Paste trade link: pathofexile.com/trade/search/Standard/xyz123" 
                                              Background="#0b1118" 
                                              Foreground="#f8fafc" 
@@ -321,7 +323,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Text="Max Price Limit:" FontSize="9.5" Foreground="#cbd5e1" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBox Grid.Column="1" x:Name="LiveSearchMaxPriceBox" ContextFlyout="{x:Null}" PlaceholderText="No limit" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="10" Padding="6,3"/>
+                                    <TextBox Grid.Column="1" x:Name="LiveSearchMaxPriceBox" ContextFlyout="{x:Null}" AllowFocusOnInteraction="True" IsTabStop="True" PlaceholderText="No limit" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="10" Padding="6,3"/>
                                     <ComboBox Grid.Column="2" x:Name="LiveSearchCurrencyCombo" SelectedIndex="0" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="10" Margin="4,0,0,0" HorizontalAlignment="Stretch">
                                         <ComboBoxItem Content="Divine"/>
                                         <ComboBoxItem Content="Chaos"/>

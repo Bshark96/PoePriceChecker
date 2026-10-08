@@ -71,12 +71,17 @@ namespace GameBarWidget.Design
             var inputStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
 
             var minBox = UiComponentFactory.CreateNumericInputBox(initialMin.HasValue ? initialMin.Value.ToString(CultureInfo.InvariantCulture) : string.Empty, "min");
-            minBox.GotFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(true); };
+            minBox.GotFocus += (s, e) =>
+            {
+                if (setTimerPaused != null) setTimerPaused(true);
+                if (requestWidgetFocus != null) requestWidgetFocus();
+            };
             minBox.LostFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(false); };
             minBox.PointerPressed += (s, e) =>
             {
                 if (setTimerPaused != null) setTimerPaused(true);
                 if (requestWidgetFocus != null) requestWidgetFocus();
+                minBox.Focus(FocusState.Pointer);
             };
             minBox.PointerWheelChanged += (s, e) =>
             {
@@ -118,12 +123,17 @@ namespace GameBarWidget.Design
             };
 
             var maxBox = UiComponentFactory.CreateNumericInputBox(initialMax.HasValue ? initialMax.Value.ToString(CultureInfo.InvariantCulture) : string.Empty, "max");
-            maxBox.GotFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(true); };
+            maxBox.GotFocus += (s, e) =>
+            {
+                if (setTimerPaused != null) setTimerPaused(true);
+                if (requestWidgetFocus != null) requestWidgetFocus();
+            };
             maxBox.LostFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(false); };
             maxBox.PointerPressed += (s, e) =>
             {
                 if (setTimerPaused != null) setTimerPaused(true);
                 if (requestWidgetFocus != null) requestWidgetFocus();
+                maxBox.Focus(FocusState.Pointer);
             };
             maxBox.PointerWheelChanged += (s, e) =>
             {

@@ -14,6 +14,7 @@ namespace GameBarWidget
     public sealed partial class Widget1Settings : Page
     {
         private XboxGameBarWidget _widget;
+        private XboxGameBarWidgetControl _widgetControl;
 
         public Widget1Settings()
         {
@@ -21,6 +22,47 @@ namespace GameBarWidget
             UiComponentFactory.SuppressContextMenu(this);
             UiComponentFactory.SuppressContextMenu(AccountNameBox);
             UiComponentFactory.SuppressContextMenu(PoeSessIdBox);
+
+            this.PointerPressed += async (s, e) =>
+            {
+                try
+                {
+                    Window.Current.Activate();
+                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
+                }
+                catch { }
+            };
+
+            if (AccountNameBox != null)
+            {
+                AccountNameBox.AllowFocusOnInteraction = true;
+                AccountNameBox.PointerPressed += async (s, e) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
+                        AccountNameBox.Focus(FocusState.Pointer);
+                    }
+                    catch { }
+                };
+            }
+
+            if (PoeSessIdBox != null)
+            {
+                PoeSessIdBox.AllowFocusOnInteraction = true;
+                PoeSessIdBox.PointerPressed += async (s, e) =>
+                {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
+                        PoeSessIdBox.Focus(FocusState.Pointer);
+                    }
+                    catch { }
+                };
+            }
+
             this.Loaded += Widget1Settings_Loaded;
             this.Unloaded += Widget1Settings_Unloaded;
             AppServiceManager.Instance.MessageReceived += OnAppServiceMessageReceived;
@@ -75,6 +117,7 @@ namespace GameBarWidget
             _widget = e.Parameter as XboxGameBarWidget;
             if (_widget != null)
             {
+                _widgetControl = new XboxGameBarWidgetControl(_widget);
                 PoeSettingsManager.Instance.IsSettingsOpen = _widget.Visible;
                 _widget.VisibleChanged += OnWidgetVisibleChanged;
             }
@@ -103,6 +146,13 @@ namespace GameBarWidget
             PoeSettingsManager.Instance.IsSettingsOpen = true;
             LoadSettingsIntoUi();
             await PopulateLeaguesAsync();
+
+            try
+            {
+                Window.Current.Activate();
+                if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
+            }
+            catch { }
         }
 
         private async Task PopulateLeaguesAsync()

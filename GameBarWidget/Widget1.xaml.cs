@@ -55,7 +55,16 @@ namespace GameBarWidget
             // Pause countdown on mouse hover or click interaction
             this.PointerEntered += (s, e) => _isTimerPaused = true;
             this.PointerMoved += (s, e) => _isTimerPaused = true;
-            this.PointerPressed += (s, e) => _isTimerPaused = true;
+            this.PointerPressed += async (s, e) =>
+            {
+                _isTimerPaused = true;
+                try
+                {
+                    Window.Current.Activate();
+                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                }
+                catch { }
+            };
             this.PointerReleased += (s, e) => _isTimerPaused = true;
             this.PointerExited += (s, e) => _isTimerPaused = false;
 
@@ -147,6 +156,13 @@ namespace GameBarWidget
             }
 
             StartAutoMinimizeCountdown();
+
+            try
+            {
+                Window.Current.Activate();
+                if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+            }
+            catch { }
         }
 
         private void Widget1_Unloaded(object sender, RoutedEventArgs e)
@@ -1432,7 +1448,9 @@ namespace GameBarWidget
                 if (_widgetControl != null)
                 {
                     await _widgetControl.RestoreAsync("Widget1");
+                    await _widgetControl.ActivateAsync("Widget1");
                 }
+                Window.Current.Activate();
             }
             catch { }
         }

@@ -120,7 +120,7 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <PasswordBox x:Name="PoeSessIdBox" ContextFlyout="{x:Null}" PlaceholderText="Paste POESESSID manually" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
+                                    <PasswordBox x:Name="PoeSessIdBox" ContextFlyout="{x:Null}" AllowFocusOnInteraction="True" IsTabStop="True" PlaceholderText="Paste POESESSID manually" Background="#0b1118" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
                                     <Button Grid.Column="1" x:Name="PasteSessionBtn" Content="Paste from Clipboard" Click="PasteSessionBtn_Click" Background="#1e2c3d" Foreground="#38bdf8" FontSize="10" Padding="8,4" Margin="6,0,0,0" CornerRadius="3"/>
                                 </Grid>
                             </StackPanel>
@@ -152,7 +152,7 @@
                 <!-- Account Name -->
                 <StackPanel Spacing="3">
                     <TextBlock Text="Account Name (Optional):" FontSize="11" Foreground="#cbd5e1"/>
-                    <TextBox x:Name="AccountNameBox" ContextFlyout="{x:Null}" Background="#111924" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
+                    <TextBox x:Name="AccountNameBox" ContextFlyout="{x:Null}" AllowFocusOnInteraction="True" IsTabStop="True" Background="#111924" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
                     <TextBlock Text="Used to identify and highlight your own listings." FontSize="9" Foreground="#94a3b8"/>
                 </StackPanel>
 

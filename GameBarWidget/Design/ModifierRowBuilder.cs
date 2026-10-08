@@ -89,12 +89,17 @@ namespace GameBarWidget.Design
             string initialMinText = mod.MinRoll.HasValue ? Math.Abs(mod.MinRoll.Value).ToString(CultureInfo.InvariantCulture) : (mod.NumberValue.HasValue ? Math.Abs(mod.NumberValue.Value).ToString(CultureInfo.InvariantCulture) : "");
             var minBox = UiComponentFactory.CreateNumericInputBox(initialMinText, "min");
 
-            minBox.GotFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(true); };
+            minBox.GotFocus += (s, e) =>
+            {
+                if (setTimerPaused != null) setTimerPaused(true);
+                if (requestWidgetFocus != null) requestWidgetFocus();
+            };
             minBox.LostFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(false); };
             minBox.PointerPressed += (s, e) =>
             {
                 if (setTimerPaused != null) setTimerPaused(true);
                 if (requestWidgetFocus != null) requestWidgetFocus();
+                minBox.Focus(FocusState.Pointer);
             };
             minBox.PointerWheelChanged += (s, e) =>
             {
@@ -139,12 +144,17 @@ namespace GameBarWidget.Design
             string initialMaxText = mod.MaxRoll.HasValue ? Math.Abs(mod.MaxRoll.Value).ToString(CultureInfo.InvariantCulture) : "";
             var maxBox = UiComponentFactory.CreateNumericInputBox(initialMaxText, "max");
 
-            maxBox.GotFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(true); };
+            maxBox.GotFocus += (s, e) =>
+            {
+                if (setTimerPaused != null) setTimerPaused(true);
+                if (requestWidgetFocus != null) requestWidgetFocus();
+            };
             maxBox.LostFocus += (s, e) => { if (setTimerPaused != null) setTimerPaused(false); };
             maxBox.PointerPressed += (s, e) =>
             {
                 if (setTimerPaused != null) setTimerPaused(true);
                 if (requestWidgetFocus != null) requestWidgetFocus();
+                maxBox.Focus(FocusState.Pointer);
             };
             maxBox.PointerWheelChanged += (s, e) =>
             {

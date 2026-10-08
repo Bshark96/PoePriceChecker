@@ -64,15 +64,20 @@ namespace GameBarWidget.Design
             {
                 tb.ContextFlyout = null;
                 tb.ContextMenuOpening += (s, e) => e.Handled = true;
+                tb.AllowFocusOnInteraction = true;
+                tb.IsTabStop = true;
             }
             else if (element is PasswordBox pb)
             {
                 pb.ContextFlyout = null;
                 pb.ContextMenuOpening += (s, e) => e.Handled = true;
+                pb.AllowFocusOnInteraction = true;
+                pb.IsTabStop = true;
             }
             else if (element is Control ctrl)
             {
                 ctrl.ContextFlyout = null;
+                ctrl.AllowFocusOnInteraction = true;
             }
         }
 
@@ -93,6 +98,7 @@ namespace GameBarWidget.Design
                 BorderBrush = DesignPalette.Brush(DesignPalette.BorderInput),
                 CornerRadius = new CornerRadius(2),
                 IsTabStop = true,
+                AllowFocusOnInteraction = true,
                 IsHitTestVisible = true,
                 IsReadOnly = false,
                 IsSpellCheckEnabled = false,
