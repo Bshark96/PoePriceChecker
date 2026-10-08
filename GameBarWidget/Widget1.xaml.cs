@@ -136,6 +136,9 @@ namespace GameBarWidget
             }
             catch { }
 
+            // Wire pointer focus handlers on all text boxes
+            RegisterTextBoxFocusHandlers(this);
+
             // Ensure background hotkey daemon is running
             await EnsureDaemonStartedAsync();
 
@@ -1519,6 +1522,31 @@ namespace GameBarWidget
                     }
                     catch { }
                 }
+            }
+        }
+
+        private void RegisterTextBoxFocusHandlers(FrameworkElement root)
+        {
+            if (root == null) return;
+            if (root is TextBox tb)
+            {
+                tb.PointerPressed += (s, e) => tb.Focus(FocusState.Pointer);
+                tb.GotFocus += (s, e) => tb.SelectAll();
+            }
+            else if (root is Panel panel)
+            {
+                foreach (UIElement child in panel.Children)
+                {
+                    if (child is FrameworkElement fe) RegisterTextBoxFocusHandlers(fe);
+                }
+            }
+            else if (root is Border border && border.Child is FrameworkElement childFe)
+            {
+                RegisterTextBoxFocusHandlers(childFe);
+            }
+            else if (root is ContentControl cc && cc.Content is FrameworkElement contentFe)
+            {
+                RegisterTextBoxFocusHandlers(contentFe);
             }
         }
 
