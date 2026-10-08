@@ -30,6 +30,7 @@ namespace GameBarWidget.Design
         public static readonly Color AccentTeal = Color.FromArgb(255, 45, 212, 191);
         public static readonly Color AccentPurple = Color.FromArgb(255, 192, 132, 252);
         public static readonly Color AccentIndigo = Color.FromArgb(255, 167, 139, 250);
+        public static readonly Color AccentRed = Color.FromArgb(255, 248, 113, 113);
 
         // Brushes
         public static SolidColorBrush Brush(Color color) => new SolidColorBrush(color);

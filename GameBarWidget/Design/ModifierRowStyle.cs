@@ -14,60 +14,87 @@ namespace GameBarWidget.Design
         public Color TierBadgeBg { get; set; }
         public Color TierBadgeFg { get; set; }
 
+        public static ModifierRowStyle Resolve(FlyoutModifier mod)
+        {
+            if (mod == null) return DefaultStyle();
+
+            return Resolve(
+                mod.Type,
+                mod.IsPrefix,
+                mod.IsSuffix,
+                mod.IsLocal,
+                false,
+                mod.TierInfo);
+        }
+
         public static ModifierRowStyle Resolve(ItemModifier mod)
         {
-            if (mod == null)
-            {
-                return DefaultStyle();
-            }
+            if (mod == null) return DefaultStyle();
 
-            if (mod.IsPrefix || (mod.TierInfo != null && mod.TierInfo.StartsWith("P", StringComparison.OrdinalIgnoreCase)))
+            return Resolve(
+                mod.Type,
+                mod.IsPrefix,
+                mod.IsSuffix,
+                mod.IsLocal,
+                mod.IsPseudo,
+                mod.TierInfo);
+        }
+
+        public static ModifierRowStyle Resolve(
+            ModifierType type,
+            bool isPrefix,
+            bool isSuffix,
+            bool isLocal,
+            bool isPseudo,
+            string tierInfo)
+        {
+            if (isPrefix || (tierInfo != null && tierInfo.StartsWith("P", StringComparison.OrdinalIgnoreCase)))
             {
                 return new ModifierRowStyle
                 {
-                    RowBgColor = Color.FromArgb(255, 22, 35, 52),      // Navy/Azure tint
+                    RowBgColor = Color.FromArgb(255, 22, 35, 52),
                     RowBorderColor = Color.FromArgb(255, 38, 64, 94),
                     RowHoverColor = Color.FromArgb(255, 30, 48, 70),
                     TextColor = Color.FromArgb(255, 241, 245, 249),
-                    TierBadgeText = !string.IsNullOrEmpty(mod.TierInfo) ? mod.TierInfo : "P",
+                    TierBadgeText = !string.IsNullOrEmpty(tierInfo) ? tierInfo : "P",
                     TierBadgeBg = Color.FromArgb(255, 25, 55, 88),
                     TierBadgeFg = Color.FromArgb(255, 56, 189, 248)
                 };
             }
 
-            if (mod.IsSuffix || (mod.TierInfo != null && mod.TierInfo.StartsWith("S", StringComparison.OrdinalIgnoreCase)))
+            if (isSuffix || (tierInfo != null && tierInfo.StartsWith("S", StringComparison.OrdinalIgnoreCase)))
             {
                 return new ModifierRowStyle
                 {
-                    RowBgColor = Color.FromArgb(255, 36, 28, 54),      // Purple/Violet tint
+                    RowBgColor = Color.FromArgb(255, 36, 28, 54),
                     RowBorderColor = Color.FromArgb(255, 62, 48, 92),
                     RowHoverColor = Color.FromArgb(255, 48, 38, 72),
                     TextColor = Color.FromArgb(255, 241, 245, 249),
-                    TierBadgeText = !string.IsNullOrEmpty(mod.TierInfo) ? mod.TierInfo : "S",
+                    TierBadgeText = !string.IsNullOrEmpty(tierInfo) ? tierInfo : "S",
                     TierBadgeBg = Color.FromArgb(255, 52, 38, 86),
                     TierBadgeFg = Color.FromArgb(255, 192, 132, 252)
                 };
             }
 
-            if (mod.Type == ModifierType.Implicit || mod.Type == ModifierType.Enchant)
+            if (type == ModifierType.Implicit || type == ModifierType.Enchant)
             {
                 return new ModifierRowStyle
                 {
-                    RowBgColor = Color.FromArgb(255, 26, 32, 52),      // Indigo/Slate tint
+                    RowBgColor = Color.FromArgb(255, 26, 32, 52),
                     RowBorderColor = Color.FromArgb(255, 48, 58, 92),
                     RowHoverColor = Color.FromArgb(255, 36, 44, 70),
                     TextColor = Color.FromArgb(255, 196, 181, 253),
-                    TierBadgeText = mod.Type == ModifierType.Enchant ? "ENC" : "IMP",
+                    TierBadgeText = type == ModifierType.Enchant ? "ENC" : "IMP",
                     TierBadgeBg = Color.FromArgb(255, 42, 38, 74),
                     TierBadgeFg = Color.FromArgb(255, 167, 139, 250)
                 };
             }
 
-            if (mod.Type == ModifierType.Fractured)
+            if (type == ModifierType.Fractured)
             {
                 return new ModifierRowStyle
                 {
-                    RowBgColor = Color.FromArgb(255, 44, 34, 20),      // Amber tint
+                    RowBgColor = Color.FromArgb(255, 44, 34, 20),
                     RowBorderColor = Color.FromArgb(255, 80, 62, 32),
                     RowHoverColor = Color.FromArgb(255, 58, 46, 26),
                     TextColor = Color.FromArgb(255, 254, 240, 138),
@@ -77,11 +104,11 @@ namespace GameBarWidget.Design
                 };
             }
 
-            if (mod.Type == ModifierType.Crafted)
+            if (type == ModifierType.Crafted)
             {
                 return new ModifierRowStyle
                 {
-                    RowBgColor = Color.FromArgb(255, 19, 42, 39),      // Teal tint
+                    RowBgColor = Color.FromArgb(255, 19, 42, 39),
                     RowBorderColor = Color.FromArgb(255, 34, 78, 72),
                     RowHoverColor = Color.FromArgb(255, 26, 56, 52),
                     TextColor = Color.FromArgb(255, 153, 246, 228),
@@ -91,11 +118,11 @@ namespace GameBarWidget.Design
                 };
             }
 
-            if (mod.IsPseudo)
+            if (isPseudo)
             {
                 return new ModifierRowStyle
                 {
-                    RowBgColor = Color.FromArgb(255, 20, 36, 50),      // Cyan tint
+                    RowBgColor = Color.FromArgb(255, 20, 36, 50),
                     RowBorderColor = Color.FromArgb(255, 34, 64, 88),
                     RowHoverColor = Color.FromArgb(255, 28, 50, 68),
                     TextColor = Color.FromArgb(255, 125, 211, 252),
@@ -105,11 +132,11 @@ namespace GameBarWidget.Design
                 };
             }
 
-            if (mod.TierInfo != null && mod.TierInfo.Equals("UNI", StringComparison.OrdinalIgnoreCase))
+            if (tierInfo != null && tierInfo.Equals("UNI", StringComparison.OrdinalIgnoreCase))
             {
                 return new ModifierRowStyle
                 {
-                    RowBgColor = Color.FromArgb(255, 36, 26, 16),      // Unique Gold/Amber tint
+                    RowBgColor = Color.FromArgb(255, 36, 26, 16),
                     RowBorderColor = Color.FromArgb(255, 76, 52, 24),
                     RowHoverColor = Color.FromArgb(255, 48, 36, 20),
                     TextColor = Color.FromArgb(255, 254, 240, 138),
@@ -119,18 +146,18 @@ namespace GameBarWidget.Design
                 };
             }
 
-            return DefaultStyle(mod);
+            return DefaultStyle(tierInfo);
         }
 
-        private static ModifierRowStyle DefaultStyle(ItemModifier mod = null)
+        private static ModifierRowStyle DefaultStyle(string tierInfo = null)
         {
             return new ModifierRowStyle
             {
-                RowBgColor = Color.FromArgb(255, 28, 38, 52),      // Default Explicit tinted slate
+                RowBgColor = Color.FromArgb(255, 28, 38, 52),
                 RowBorderColor = Color.FromArgb(255, 44, 60, 82),
                 RowHoverColor = Color.FromArgb(255, 36, 48, 66),
                 TextColor = Color.FromArgb(255, 226, 232, 240),
-                TierBadgeText = (mod != null && !string.IsNullOrEmpty(mod.TierInfo)) ? mod.TierInfo : "EXP",
+                TierBadgeText = !string.IsNullOrEmpty(tierInfo) ? tierInfo : "EXP",
                 TierBadgeBg = Color.FromArgb(255, 15, 23, 42),
                 TierBadgeFg = Color.FromArgb(255, 148, 163, 184)
             };
