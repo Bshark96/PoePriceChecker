@@ -1434,6 +1434,8 @@ namespace GameBarWidget
                     await _widgetControl.RestoreAsync("Widget1");
                 }
                 Window.Current?.Activate();
+                this.Focus(FocusState.Programmatic);
+                PriceCheckTabBtn?.Focus(FocusState.Programmatic);
             }
             catch { }
         }

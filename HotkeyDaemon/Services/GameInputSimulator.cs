@@ -95,6 +95,28 @@ namespace HotkeyDaemon.Services
             catch { }
         }
 
+        public static IntPtr FindPoeGameWindow()
+        {
+            if (_lastGameHwnd != IntPtr.Zero) return _lastGameHwnd;
+
+            try
+            {
+                string[] poeProcessNames = new[] { "PathOfExile", "PathOfExile_x64", "PathOfExileSteam", "PathOfExile_x64Steam", "PathOfExileEGS" };
+                foreach (var name in poeProcessNames)
+                {
+                    var procs = Process.GetProcessesByName(name);
+                    if (procs.Length > 0 && procs[0].MainWindowHandle != IntPtr.Zero)
+                    {
+                        _lastGameHwnd = procs[0].MainWindowHandle;
+                        return _lastGameHwnd;
+                    }
+                }
+            }
+            catch { }
+
+            return IntPtr.Zero;
+        }
+
         public static void ReleaseStuckModifierKeys()
         {
             try
@@ -111,23 +133,24 @@ namespace HotkeyDaemon.Services
             try
             {
                 ReleaseStuckModifierKeys();
-                if (_lastGameHwnd != IntPtr.Zero)
+                IntPtr targetHwnd = FindPoeGameWindow();
+                if (targetHwnd != IntPtr.Zero)
                 {
                     IntPtr currentForeground = GetForegroundWindow();
-                    if (currentForeground != _lastGameHwnd)
+                    if (currentForeground != targetHwnd)
                     {
                         uint currentThreadId = GetCurrentThreadId();
-                        uint gameThreadId = GetWindowThreadProcessId(_lastGameHwnd, out _);
+                        uint gameThreadId = GetWindowThreadProcessId(targetHwnd, out _);
 
                         if (currentThreadId > 0 && gameThreadId > 0 && currentThreadId != gameThreadId)
                         {
                             AttachThreadInput(currentThreadId, gameThreadId, true);
-                            SetForegroundWindow(_lastGameHwnd);
+                            SetForegroundWindow(targetHwnd);
                             AttachThreadInput(currentThreadId, gameThreadId, false);
                         }
                         else
                         {
-                            SetForegroundWindow(_lastGameHwnd);
+                            SetForegroundWindow(targetHwnd);
                         }
                     }
                 }

@@ -68,6 +68,7 @@
 							<GameBarWidget Type="Standard">
 								<HomeMenuVisible>true</HomeMenuVisible>
 								<PinningSupported>true</PinningSupported>
+								<AllowFocusOnActivate>true</AllowFocusOnActivate>
 								<SettingsSupported AppExtensionId="Widget1Settings" />
 								<Window>
 									<Size>
