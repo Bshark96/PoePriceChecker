@@ -1435,6 +1435,7 @@ namespace GameBarWidget
                 }
                 Window.Current?.Activate();
                 this.Focus(FocusState.Programmatic);
+                PriceCheckTabBtn?.Focus(FocusState.Programmatic);
             }
             catch { }
         }
