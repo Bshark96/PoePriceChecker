@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using Windows.Media.Core;
 using Windows.Media.Playback;
-using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml;
 
 namespace GameBarWidget.Services
 {
@@ -49,8 +49,8 @@ namespace GameBarWidget.Services
         {
             try
             {
-                ElementSoundPlayer.State = ElementSoundPlayerState.On;
-                ElementSoundPlayer.Play(ElementSoundKind.Invoke);
+                Windows.UI.Xaml.ElementSoundPlayer.State = Windows.UI.Xaml.ElementSoundPlayerState.On;
+                Windows.UI.Xaml.ElementSoundPlayer.Play(Windows.UI.Xaml.ElementSoundKind.Invoke);
             }
             catch { }
         }
