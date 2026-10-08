@@ -175,7 +175,7 @@
                                                    Foreground="#94a3b8" 
                                                    VerticalAlignment="Center"/>
                                         <Button x:Name="ToggleCompactModsBtn" 
-                                                Content="Collapse" 
+                                                Content="Collapse All" 
                                                 Click="ToggleCompactModsBtn_Click" 
                                                 Background="#1e293b" 
                                                 Foreground="#94a3b8" 

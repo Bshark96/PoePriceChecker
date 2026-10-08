@@ -28,6 +28,7 @@ namespace GameBarWidget
         private bool _isTimerPaused = false;
         private PoeItem _currentItem;
         private string _activeSearchUrl = string.Empty;
+        private readonly HashSet<string> _collapsedGroups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public Widget1()
         {
@@ -91,7 +92,7 @@ namespace GameBarWidget
 
             // Load saved settings into UI
             LoadSettingsIntoUi();
-            ApplyModifierCompactState(PoeSettingsManager.Instance.CompactModifiers);
+            UpdateMasterToggleButton();
 
             // Validate and sync live league
             try
@@ -359,11 +360,7 @@ namespace GameBarWidget
             // 1. Pseudo Modifiers Group
             if (pseudoMods.Count > 0)
             {
-                ModContainer.Children.Add(CreateStatGroupHeader("PSEUDO STATS", Windows.UI.Color.FromArgb(255, 56, 189, 248), pseudoMods.Count));
-                foreach (var pseudo in pseudoMods)
-                {
-                    ModContainer.Children.Add(CreateModifierFilterRow(pseudo));
-                }
+                ModContainer.Children.Add(CreateStatGroupSection("PSEUDO STATS", Windows.UI.Color.FromArgb(255, 56, 189, 248), pseudoMods));
                 renderedGroups++;
             }
 
@@ -371,11 +368,7 @@ namespace GameBarWidget
             if (implicitMods.Count > 0)
             {
                 if (renderedGroups > 0) AddDivider(ModContainer);
-                ModContainer.Children.Add(CreateStatGroupHeader("IMPLICIT & ENCHANT", Windows.UI.Color.FromArgb(255, 167, 139, 250), implicitMods.Count));
-                foreach (var mod in implicitMods)
-                {
-                    ModContainer.Children.Add(CreateModifierFilterRow(mod));
-                }
+                ModContainer.Children.Add(CreateStatGroupSection("IMPLICIT & ENCHANT", Windows.UI.Color.FromArgb(255, 167, 139, 250), implicitMods));
                 renderedGroups++;
             }
 
@@ -383,11 +376,7 @@ namespace GameBarWidget
             if (prefixMods.Count > 0)
             {
                 if (renderedGroups > 0) AddDivider(ModContainer);
-                ModContainer.Children.Add(CreateStatGroupHeader("PREFIXES", Windows.UI.Color.FromArgb(255, 56, 189, 248), prefixMods.Count));
-                foreach (var mod in prefixMods)
-                {
-                    ModContainer.Children.Add(CreateModifierFilterRow(mod));
-                }
+                ModContainer.Children.Add(CreateStatGroupSection("PREFIXES", Windows.UI.Color.FromArgb(255, 56, 189, 248), prefixMods));
                 renderedGroups++;
             }
 
@@ -395,11 +384,7 @@ namespace GameBarWidget
             if (suffixMods.Count > 0)
             {
                 if (renderedGroups > 0) AddDivider(ModContainer);
-                ModContainer.Children.Add(CreateStatGroupHeader("SUFFIXES", Windows.UI.Color.FromArgb(255, 192, 132, 252), suffixMods.Count));
-                foreach (var mod in suffixMods)
-                {
-                    ModContainer.Children.Add(CreateModifierFilterRow(mod));
-                }
+                ModContainer.Children.Add(CreateStatGroupSection("SUFFIXES", Windows.UI.Color.FromArgb(255, 192, 132, 252), suffixMods));
                 renderedGroups++;
             }
 
@@ -409,11 +394,7 @@ namespace GameBarWidget
                 if (renderedGroups > 0) AddDivider(ModContainer);
                 string groupTitle = item.Rarity == PoeRarity.Gem ? "GEM PROPERTIES" : "EXPLICIT MODIFIERS";
                 Windows.UI.Color groupColor = item.Rarity == PoeRarity.Gem ? Windows.UI.Color.FromArgb(255, 45, 212, 191) : Windows.UI.Color.FromArgb(255, 250, 204, 21);
-                ModContainer.Children.Add(CreateStatGroupHeader(groupTitle, groupColor, generalExplicitMods.Count));
-                foreach (var mod in generalExplicitMods)
-                {
-                    ModContainer.Children.Add(CreateModifierFilterRow(mod));
-                }
+                ModContainer.Children.Add(CreateStatGroupSection(groupTitle, groupColor, generalExplicitMods));
                 renderedGroups++;
             }
 
@@ -421,11 +402,7 @@ namespace GameBarWidget
             if (specialMods.Count > 0)
             {
                 if (renderedGroups > 0) AddDivider(ModContainer);
-                ModContainer.Children.Add(CreateStatGroupHeader("FRACTURED & CRAFTED", Windows.UI.Color.FromArgb(255, 45, 212, 191), specialMods.Count));
-                foreach (var mod in specialMods)
-                {
-                    ModContainer.Children.Add(CreateModifierFilterRow(mod));
-                }
+                ModContainer.Children.Add(CreateStatGroupSection("FRACTURED & CRAFTED", Windows.UI.Color.FromArgb(255, 45, 212, 191), specialMods));
                 renderedGroups++;
             }
 
@@ -439,73 +416,123 @@ namespace GameBarWidget
                 });
             }
 
-            ApplyModifierCompactState(PoeSettingsManager.Instance.CompactModifiers);
+            UpdateMasterToggleButton();
         }
 
         private void ToggleCompactModsBtn_Click(object sender, RoutedEventArgs e)
         {
-            var settings = PoeSettingsManager.Instance;
-            settings.CompactModifiers = !settings.CompactModifiers;
-            settings.Save();
-            ApplyModifierCompactState(settings.CompactModifiers);
-        }
-
-        private void ApplyModifierCompactState(bool compact)
-        {
-            if (ModContainer != null)
+            bool anyExpanded = false;
+            foreach (var child in ModContainer.Children)
             {
-                ModContainer.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (ToggleCompactModsBtn != null)
-            {
-                int activeCount = 0;
-                if (_currentItem != null)
+                if (child is StackPanel sectionPanel && sectionPanel.Children.Count > 1 && sectionPanel.Children[1] is StackPanel itemsPanel)
                 {
-                    if (_currentItem.Modifiers != null)
+                    if (itemsPanel.Visibility == Visibility.Visible)
                     {
-                        foreach (var m in _currentItem.Modifiers)
-                        {
-                            if (m.IsActive) activeCount++;
-                        }
-                    }
-                    if (_currentItem.PseudoModifiers != null)
-                    {
-                        foreach (var p in _currentItem.PseudoModifiers)
-                        {
-                            if (p.IsActive) activeCount++;
-                        }
+                        anyExpanded = true;
+                        break;
                     }
                 }
+            }
 
-                if (compact)
+            bool shouldCollapse = anyExpanded;
+
+            foreach (var child in ModContainer.Children)
+            {
+                if (child is StackPanel sectionPanel && sectionPanel.Children.Count > 1 && sectionPanel.Children[1] is StackPanel itemsPanel)
                 {
-                    ToggleCompactModsBtn.Content = activeCount > 0 ? $"Expand ({activeCount})" : "Expand";
-                    ToggleCompactModsBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 56, 189, 248));
-                    ToggleCompactModsBtn.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 14, 116, 144));
-                    ToggleCompactModsBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42));
+                    itemsPanel.Visibility = shouldCollapse ? Visibility.Collapsed : Visibility.Visible;
+                    if (sectionPanel.Children[0] is Grid headerGrid && headerGrid.Children.Count > 1 && headerGrid.Children[1] is StackPanel rightStack && rightStack.Children.Count > 1 && rightStack.Children[1] is Button toggleBtn)
+                    {
+                        string title = string.Empty;
+                        if (headerGrid.Children[0] is StackPanel titleStack && titleStack.Children.Count > 1 && titleStack.Children[1] is TextBlock titleText)
+                        {
+                            title = titleText.Text;
+                        }
+
+                        toggleBtn.Content = shouldCollapse ? "Expand" : "Collapse";
+                        toggleBtn.Foreground = shouldCollapse 
+                            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 56, 189, 248)) 
+                            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+                        toggleBtn.BorderBrush = shouldCollapse 
+                            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 14, 116, 144)) 
+                            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 51, 65, 85));
+                        toggleBtn.Background = shouldCollapse 
+                            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42)) 
+                            : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 41, 59));
+
+                        if (shouldCollapse && !string.IsNullOrEmpty(title))
+                        {
+                            _collapsedGroups.Add(title);
+                        }
+                    }
                 }
-                else
+            }
+
+            if (!shouldCollapse)
+            {
+                _collapsedGroups.Clear();
+            }
+
+            UpdateMasterToggleButton();
+        }
+
+        private void UpdateMasterToggleButton()
+        {
+            if (ToggleCompactModsBtn == null) return;
+
+            bool anyExpanded = false;
+            foreach (var child in ModContainer.Children)
+            {
+                if (child is StackPanel sectionPanel && sectionPanel.Children.Count > 1 && sectionPanel.Children[1] is StackPanel itemsPanel)
                 {
-                    ToggleCompactModsBtn.Content = "Collapse";
-                    ToggleCompactModsBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
-                    ToggleCompactModsBtn.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 51, 65, 85));
-                    ToggleCompactModsBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 41, 59));
+                    if (itemsPanel.Visibility == Visibility.Visible)
+                    {
+                        anyExpanded = true;
+                        break;
+                    }
                 }
+            }
+
+            if (anyExpanded)
+            {
+                ToggleCompactModsBtn.Content = "Collapse All";
+                ToggleCompactModsBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+                ToggleCompactModsBtn.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 51, 65, 85));
+                ToggleCompactModsBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 41, 59));
+            }
+            else
+            {
+                ToggleCompactModsBtn.Content = "Expand All";
+                ToggleCompactModsBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 56, 189, 248));
+                ToggleCompactModsBtn.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 14, 116, 144));
+                ToggleCompactModsBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42));
             }
         }
 
-        private static UIElement CreateStatGroupHeader(string title, Windows.UI.Color accentColor, int count)
+        private UIElement CreateStatGroupSection(string title, Windows.UI.Color accentColor, List<ItemModifier> mods)
         {
+            var sectionPanel = new StackPanel { Spacing = 1 };
+
+            var itemsPanel = new StackPanel { Spacing = 1 };
+            foreach (var mod in mods)
+            {
+                itemsPanel.Children.Add(CreateModifierFilterRow(mod));
+            }
+
+            bool isCollapsed = _collapsedGroups.Contains(title);
+            itemsPanel.Visibility = isCollapsed ? Visibility.Collapsed : Visibility.Visible;
+
+            // Header Grid
             var headerGrid = new Grid
             {
-                Margin = new Thickness(0, 4, 0, 2)
+                Margin = new Thickness(0, 3, 0, 2),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0))
             };
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var titleStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
-
+            // Left: accent bar + title
+            var titleStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, VerticalAlignment = VerticalAlignment.Center };
             var indicator = new Border
             {
                 Width = 3,
@@ -525,9 +552,11 @@ namespace GameBarWidget
                 VerticalAlignment = VerticalAlignment.Center
             };
             titleStack.Children.Add(titleText);
-
             Grid.SetColumn(titleStack, 0);
             headerGrid.Children.Add(titleStack);
+
+            // Right: Count badge + Collapse/Expand Button
+            var rightStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
 
             var countBadge = new Border
             {
@@ -536,17 +565,77 @@ namespace GameBarWidget
                 Padding = new Thickness(4, 1, 4, 1),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            countBadge.Child = new TextBlock
+            var countText = new TextBlock
             {
-                Text = count.ToString(),
+                Text = mods.Count.ToString(),
                 FontSize = 8,
                 FontWeight = Windows.UI.Text.FontWeights.SemiBold,
                 Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184))
             };
-            Grid.SetColumn(countBadge, 1);
-            headerGrid.Children.Add(countBadge);
+            countBadge.Child = countText;
+            rightStack.Children.Add(countBadge);
 
-            return headerGrid;
+            var toggleBtn = new Button
+            {
+                FontSize = 7.5,
+                FontWeight = Windows.UI.Text.FontWeights.SemiBold,
+                Padding = new Thickness(4, 0.5, 4, 0.5),
+                Height = 18,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(2),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            void UpdateButtonVisuals()
+            {
+                bool collapsed = itemsPanel.Visibility == Visibility.Collapsed;
+                int activeInGroup = 0;
+                foreach (var m in mods)
+                {
+                    if (m.IsActive) activeInGroup++;
+                }
+
+                toggleBtn.Content = collapsed ? (activeInGroup > 0 ? $"Expand ({activeInGroup})" : "Expand") : "Collapse";
+                toggleBtn.Foreground = collapsed 
+                    ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 56, 189, 248)) 
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+                toggleBtn.BorderBrush = collapsed 
+                    ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 14, 116, 144)) 
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 51, 65, 85));
+                toggleBtn.Background = collapsed 
+                    ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 15, 23, 42)) 
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 41, 59));
+            }
+
+            UpdateButtonVisuals();
+
+            void ToggleGroup()
+            {
+                if (itemsPanel.Visibility == Visibility.Visible)
+                {
+                    itemsPanel.Visibility = Visibility.Collapsed;
+                    _collapsedGroups.Add(title);
+                }
+                else
+                {
+                    itemsPanel.Visibility = Visibility.Visible;
+                    _collapsedGroups.Remove(title);
+                }
+                UpdateButtonVisuals();
+                UpdateMasterToggleButton();
+            }
+
+            toggleBtn.Click += (s, e) => ToggleGroup();
+            titleStack.PointerPressed += (s, e) => ToggleGroup();
+
+            rightStack.Children.Add(toggleBtn);
+            Grid.SetColumn(rightStack, 1);
+            headerGrid.Children.Add(rightStack);
+
+            sectionPanel.Children.Add(headerGrid);
+            sectionPanel.Children.Add(itemsPanel);
+
+            return sectionPanel;
         }
 
         private static void AddDivider(StackPanel container)
@@ -742,12 +831,12 @@ namespace GameBarWidget
                 cb.Checked += (s, e) =>
                 {
                     mod.IsActive = true;
-                    if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
+                    UpdateMasterToggleButton();
                 };
                 cb.Unchecked += (s, e) =>
                 {
                     mod.IsActive = false;
-                    if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
+                    UpdateMasterToggleButton();
                 };
                 leftStack.Children.Insert(0, cb);
                 cardBorder.Child = grid;
@@ -919,12 +1008,12 @@ namespace GameBarWidget
                 {
                     mod.MaxRoll = Math.Abs(maxV);
                 }
-                if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
+                UpdateMasterToggleButton();
             };
             cb.Unchecked += (s, e) =>
             {
                 mod.IsActive = false;
-                if (PoeSettingsManager.Instance.CompactModifiers) ApplyModifierCompactState(true);
+                UpdateMasterToggleButton();
             };
             leftStack.Children.Insert(0, cb);
 

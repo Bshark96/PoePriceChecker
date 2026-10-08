@@ -50,3 +50,27 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Frontend & Web Artifacts
+node_modules/
+.next/
+next-env.d.ts
+next.config.ts
+package.json
+package-lock.json
+bun.lock
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
+tsconfig.json
+postcss.config.mjs
+app/
+components/
+lib/
+public/
+out/
+dist/
+build/
+.vercel/
+*.tsbuildinfo
+
