@@ -1532,6 +1532,9 @@ namespace GameBarWidget.Services
             }
             catch { }
 
+            return rawSearchId;
+        }
+
         public async Task<List<TradeListing>> GetInitialSearchListingsAsync(string league, string searchId)
         {
             var listings = new List<TradeListing>();
