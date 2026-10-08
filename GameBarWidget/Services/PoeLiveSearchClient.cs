@@ -151,17 +151,17 @@ namespace GameBarWidget.Services
                             _onStatus(_query.Id, "Resolving search ID...", false);
                             LiveSearchLogger.Log("Resolving compressed/long search ID with GGG Trade API...");
                             var (resolved, initialHashes) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
-                            if (!string.IsNullOrWhiteSpace(resolved) && resolved.Length <= 20 && !resolved.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
+                            if (!string.IsNullOrWhiteSpace(resolved))
                             {
-                                LiveSearchLogger.Log($"Successfully resolved Search ID: '{effectiveId}' -> '{resolved}'");
+                                LiveSearchLogger.Log($"Successfully resolved Search ID from GGG: '{resolved.Substring(0, Math.Min(25, resolved.Length))}...'");
                                 _query.SearchId = resolved;
                                 effectiveId = resolved;
                             }
                             else
                             {
-                                LiveSearchLogger.Log($"WARNING: Search ID resolution did not return a valid short GGG Search ID (Returned: '{resolved}'). Cannot open WebSocket stream with unresolved ID.");
-                                _onStatus(_query.Id, "Resolution failed (Rate limited or check POESESSID)", false);
-                                await Task.Delay(TimeSpan.FromSeconds(15), ct);
+                                LiveSearchLogger.Log($"WARNING: Search ID resolution returned empty string. Retrying in 10s...");
+                                _onStatus(_query.Id, "Resolution empty (Rate limited or check POESESSID)", false);
+                                await Task.Delay(TimeSpan.FromSeconds(10), ct);
                                 continue;
                             }
                         }
@@ -183,13 +183,15 @@ namespace GameBarWidget.Services
                             LiveSearchLogger.Log("WARNING: No POESESSID found in settings. WebSockets may be rejected by GGG server.");
                         }
 
-                        string wsUrl = $"wss://www.pathofexile.com/api/trade/live/{Uri.EscapeDataString(_query.League)}/{Uri.EscapeDataString(effectiveId)}";
+                        // Convert Base64 search ID to URL-safe format for GGG WebSocket server
+                        string safeWsSearchId = effectiveId.Replace('+', '-').Replace('/', '_').TrimEnd('=');
+                        string wsUrl = $"wss://www.pathofexile.com/api/trade/live/{Uri.EscapeDataString(_query.League)}/{safeWsSearchId}";
                         LiveSearchLogger.Log($"Connecting WebSocket: {wsUrl}");
                         await _ws.ConnectAsync(new Uri(wsUrl), ct);
 
                         IsConnected = true;
                         _onStatus(_query.Id, "Connected", true);
-                        LiveSearchLogger.Log($"WebSocket Stream CONNECTED successfully for search '{effectiveId}'. Listening for new listings...");
+                        LiveSearchLogger.Log($"WebSocket Stream CONNECTED successfully for search '{safeWsSearchId.Substring(0, Math.Min(25, safeWsSearchId.Length))}...'. Listening for new listings...");
                         attempt = 0;
 
                         // Start 30s heartbeat ping task

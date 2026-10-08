@@ -1628,20 +1628,7 @@ namespace GameBarWidget.Services
                                 id = rawSearchId;
                             }
 
-                            if (obj.ContainsKey("result") && obj.GetNamedValue("result").ValueType == JsonValueType.Array)
-                            {
-                                var arr = obj.GetNamedArray("result");
-                                foreach (var elem in arr)
-                                {
-                                    if (elem.ValueType == JsonValueType.String)
-                                    {
-                                        hashes.Add(elem.GetString());
-                                        if (hashes.Count >= 10) break;
-                                    }
-                                }
-                            }
-
-                            LiveSearchLogger.Log($"Resolved Search ID: '{id}' | Total active result hashes in query: {hashes.Count}");
+                            LiveSearchLogger.Log($"Resolved Search ID: '{id}'");
                             return (id, hashes);
                         }
                     }

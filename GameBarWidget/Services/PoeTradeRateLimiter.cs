@@ -111,39 +111,50 @@ namespace GameBarWidget.Services
         {
             if (response == null) return;
 
-            if ((int)response.StatusCode == 429)
-            {
-                _globalLockoutUntil = DateTime.UtcNow.AddSeconds(15);
-                CurrentStatusText = "RATE LIMITED (429)";
-                return;
-            }
-
+            int lockoutSec = 60;
             if (response.Headers != null)
             {
-                IEnumerable<string> values = null;
-                if (response.Headers.TryGetValues("X-Rate-Limit-Account-State", out values) ||
-                    response.Headers.TryGetValues("X-Rate-Limit-Ip-State", out values))
+                if (response.Headers.RetryAfter?.Delta.HasValue == true)
                 {
-                    foreach (var val in values)
+                    lockoutSec = Math.Max(lockoutSec, (int)response.Headers.RetryAfter.Delta.Value.TotalSeconds);
+                }
+
+                if (response.Headers.TryGetValues("Retry-After", out var retryVals))
+                {
+                    foreach (var rv in retryVals)
+                    {
+                        if (int.TryParse(rv.Trim(), out int parsedSec) && parsedSec > 0)
+                        {
+                            lockoutSec = Math.Max(lockoutSec, parsedSec);
+                        }
+                    }
+                }
+
+                if (response.Headers.TryGetValues("X-Rate-Limit-Account-State", out var accountStates) ||
+                    response.Headers.TryGetValues("X-Rate-Limit-Ip-State", out accountStates))
+                {
+                    foreach (var val in accountStates)
                     {
                         var parts = val.Split(',');
                         foreach (var part in parts)
                         {
                             var sub = part.Trim().Split(':');
                             if (sub.Length >= 3 &&
-                                int.TryParse(sub[0], out int hits) &&
-                                int.TryParse(sub[1], out int window) &&
-                                int.TryParse(sub[2], out int lockout))
+                                int.TryParse(sub[2], out int ruleLockout) && ruleLockout > 0)
                             {
-                                if (lockout > 0)
-                                {
-                                    _globalLockoutUntil = DateTime.UtcNow.AddSeconds(lockout);
-                                    CurrentStatusText = $"LOCKED OUT ({lockout}s)";
-                                }
+                                lockoutSec = Math.Max(lockoutSec, ruleLockout);
                             }
                         }
                     }
                 }
+            }
+
+            if ((int)response.StatusCode == 429)
+            {
+                _globalLockoutUntil = DateTime.UtcNow.AddSeconds(lockoutSec);
+                CurrentStatusText = $"RATE LIMITED (429 - Wait {lockoutSec}s)";
+                LiveSearchLogger.Log($"RATE LIMIT 429 LOCKOUT TRIGGERED: GGG requires a {lockoutSec}s cooldown period before sending new requests.");
+                return;
             }
 
             foreach (var rule in _ipRules)

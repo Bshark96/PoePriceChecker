@@ -321,18 +321,17 @@ namespace GameBarWidget
                 currency = "chaos";
             }
 
-            LiveSearchConnectionStatus.Text = "Resolving search ID...";
+            LiveSearchConnectionStatus.Text = "Connecting live search...";
             LiveSearchConnectionStatus.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 251, 191, 36));
 
-            string resolvedId = await PoeOfficialTradeClient.Instance.ResolveSearchIdAsync(urlInfo.League, urlInfo.SearchId);
-            string shortId = resolvedId.Length > 12 ? (resolvedId.Substring(0, 10) + "...") : resolvedId;
+            string shortLabel = urlInfo.SearchId.Length > 12 ? (urlInfo.SearchId.Substring(0, 10) + "...") : urlInfo.SearchId;
 
             var query = new PoeLiveSearchQuery
             {
                 League = urlInfo.League,
-                SearchId = resolvedId,
+                SearchId = urlInfo.SearchId,
                 RawUrl = urlInfo.RawUrl,
-                Label = $"{urlInfo.League}/{shortId}",
+                Label = $"{urlInfo.League}/{shortLabel}",
                 MaxPriceAmount = maxPrice,
                 MaxPriceCurrency = currency,
                 IsActive = true
