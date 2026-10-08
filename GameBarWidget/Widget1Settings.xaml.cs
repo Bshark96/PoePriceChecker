@@ -28,7 +28,6 @@ namespace GameBarWidget
                 try
                 {
                     Window.Current.Activate();
-                    if (_widget != null) await _widget.ActivateAsync();
                     if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                 }
                 catch { }
@@ -42,7 +41,6 @@ namespace GameBarWidget
                     try
                     {
                         Window.Current.Activate();
-                        if (_widget != null) await _widget.ActivateAsync();
                         if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                         AccountNameBox.Focus(FocusState.Pointer);
                     }
@@ -58,7 +56,6 @@ namespace GameBarWidget
                     try
                     {
                         Window.Current.Activate();
-                        if (_widget != null) await _widget.ActivateAsync();
                         if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                         PoeSessIdBox.Focus(FocusState.Pointer);
                     }
