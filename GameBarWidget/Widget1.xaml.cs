@@ -408,6 +408,9 @@ namespace GameBarWidget
             {
                 if (e.Query != null && e.Listing != null)
                 {
+                    // Play instant live search alert audio notification
+                    PoeAudioService.PlayLiveAlertSound();
+
                     // 1. Update View 2 Live Listings Stream (Normal compact trade log row, max 10 items)
                     if (LiveListingsContainer.Children.Count == 1 && LiveListingsContainer.Children[0] is TextBlock)
                     {

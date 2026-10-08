@@ -128,6 +128,7 @@
     <Compile Include="Services\PoeUrlParser.cs" />
     <Compile Include="Services\PoeLiveSearchQuery.cs" />
     <Compile Include="Services\PoeLiveSearchClient.cs" />
+    <Compile Include="Services\PoeAudioService.cs" />
     <Compile Include="Services\LiveSearchLogger.cs" />
     <Compile Include="Design\LiveSearchCardBuilder.cs" />
   </ItemGroup>
