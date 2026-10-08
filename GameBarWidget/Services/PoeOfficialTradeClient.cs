@@ -701,7 +701,7 @@ namespace GameBarWidget.Services
                         PriceCurrency = "chaos",
                         PriceInChaos = benchmark.ChaosEquivalent,
                         PriceInDivine = benchmark.DivineEquivalent,
-                        WhisperString = $"Exchange Rate: 1 {!string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType} = {benchmark.ChaosEquivalent:0.##} Chaos",
+                        WhisperString = $"Exchange Rate: 1 {(!string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType)} = {benchmark.ChaosEquivalent:0.##} Chaos",
                         AgeText = "Live rate"
                     }
                 };
@@ -851,7 +851,7 @@ namespace GameBarWidget.Services
                                     PriceCurrency = "chaos",
                                     PriceInChaos = benchmark.ChaosEquivalent,
                                     PriceInDivine = benchmark.DivineEquivalent,
-                                    WhisperString = $"Exchange Rate: 1 {!string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType} = {benchmark.ChaosEquivalent:0.##} Chaos",
+                                    WhisperString = $"Exchange Rate: 1 {(!string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType)} = {benchmark.ChaosEquivalent:0.##} Chaos",
                                     AgeText = "Live rate"
                                 }
                             };
