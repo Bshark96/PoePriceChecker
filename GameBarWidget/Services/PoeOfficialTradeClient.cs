@@ -1007,7 +1007,18 @@ namespace GameBarWidget.Services
                     string gemName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : item.BaseType;
                     if (item.IsTransfiguredGem || gemName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase) > 0)
                     {
-                        sb.Append($",\"type\":{{\"option\":\"{EscapeJson(gemName)}\"}}");
+                        string baseGem = !string.IsNullOrWhiteSpace(item.NormalGemVariant) ? item.NormalGemVariant : gemName;
+                        int idxOf = gemName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase);
+                        if (idxOf > 0)
+                        {
+                            baseGem = gemName.Substring(0, idxOf).Trim();
+                        }
+
+                        sb.Append($",\"name\":\"{EscapeJson(gemName)}\"");
+                        if (!string.IsNullOrWhiteSpace(baseGem) && !string.Equals(baseGem, gemName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            sb.Append($",\"type\":\"{EscapeJson(baseGem)}\"");
+                        }
                     }
                     else
                     {
