@@ -136,9 +136,6 @@ namespace GameBarWidget
             }
             catch { }
 
-            // Wire pointer focus handlers on all text boxes
-            RegisterTextBoxFocusHandlers(this);
-
             // Ensure background hotkey daemon is running
             await EnsureDaemonStartedAsync();
 
@@ -1432,11 +1429,9 @@ namespace GameBarWidget
         {
             try
             {
-                Window.Current.Activate();
                 if (_widgetControl != null)
                 {
                     await _widgetControl.RestoreAsync("Widget1");
-                    await _widgetControl.ActivateAsync("Widget1");
                 }
             }
             catch { }
@@ -1478,88 +1473,25 @@ namespace GameBarWidget
             CountdownText.Text = $"Auto-minimizing in {_remainingSeconds:F1}s (Hover to pause)";
         }
 
-        private async void OnWidgetWindowStateChanged(XboxGameBarWidget sender, object args)
+        private void OnWidgetWindowStateChanged(XboxGameBarWidget sender, object args)
         {
-            if (sender != null)
+            if (sender != null && sender.Visible)
             {
-                if (sender.Visible)
+                if (!_countdownTimer.IsEnabled)
                 {
-                    try
-                    {
-                        Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-                    }
-                    catch { }
-
-                    if (!_countdownTimer.IsEnabled)
-                    {
-                        StartAutoMinimizeCountdown();
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        var msg = new ValueSet { { "Command", "RestoreFocus" } };
-                        await AppServiceManager.Instance.SendToDaemonAsync(msg);
-                    }
-                    catch { }
+                    StartAutoMinimizeCountdown();
                 }
             }
         }
 
-        private async void OnWidgetVisibleChanged(XboxGameBarWidget sender, object args)
+        private void OnWidgetVisibleChanged(XboxGameBarWidget sender, object args)
         {
-            if (sender != null)
+            if (sender != null && sender.Visible)
             {
-                if (sender.Visible)
+                if (!_countdownTimer.IsEnabled)
                 {
-                    try
-                    {
-                        Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-                    }
-                    catch { }
-
-                    if (!_countdownTimer.IsEnabled)
-                    {
-                        StartAutoMinimizeCountdown();
-                    }
+                    StartAutoMinimizeCountdown();
                 }
-                else
-                {
-                    try
-                    {
-                        var msg = new ValueSet { { "Command", "RestoreFocus" } };
-                        await AppServiceManager.Instance.SendToDaemonAsync(msg);
-                    }
-                    catch { }
-                }
-            }
-        }
-
-        private void RegisterTextBoxFocusHandlers(FrameworkElement root)
-        {
-            if (root == null) return;
-            if (root is TextBox tb)
-            {
-                tb.PointerPressed += (s, e) => tb.Focus(FocusState.Pointer);
-                tb.GotFocus += (s, e) => tb.SelectAll();
-            }
-            else if (root is Panel panel)
-            {
-                foreach (UIElement child in panel.Children)
-                {
-                    if (child is FrameworkElement fe) RegisterTextBoxFocusHandlers(fe);
-                }
-            }
-            else if (root is Border border && border.Child is FrameworkElement childFe)
-            {
-                RegisterTextBoxFocusHandlers(childFe);
-            }
-            else if (root is ContentControl cc && cc.Content is FrameworkElement contentFe)
-            {
-                RegisterTextBoxFocusHandlers(contentFe);
             }
         }
 

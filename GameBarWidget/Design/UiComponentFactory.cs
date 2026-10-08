@@ -99,17 +99,6 @@ namespace GameBarWidget.Design
                 IsTextPredictionEnabled = false,
                 VerticalContentAlignment = VerticalAlignment.Center
             };
-
-            box.PointerPressed += (s, e) =>
-            {
-                box.Focus(FocusState.Pointer);
-            };
-
-            box.GotFocus += (s, e) =>
-            {
-                box.SelectAll();
-            };
-
             SuppressContextMenu(box);
             return box;
         }
