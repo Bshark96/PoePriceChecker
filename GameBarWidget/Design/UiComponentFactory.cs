@@ -18,8 +18,8 @@ namespace GameBarWidget.Design
                 BorderBrush = DesignPalette.Brush(border),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(3),
-                Padding = new Thickness(5, 2, 5, 2),
-                Margin = new Thickness(0, 1, 0, 1)
+                Padding = new Thickness(4, 0.5, 4, 0.5),
+                Margin = new Thickness(0, 0.5, 0, 0.5)
             };
 
             cardBorder.PointerEntered += (s, e) =>
@@ -82,11 +82,11 @@ namespace GameBarWidget.Design
             {
                 Text = initialText ?? string.Empty,
                 PlaceholderText = placeholder,
-                Width = 38,
-                Height = 20,
+                Width = 36,
+                Height = 16,
                 MinHeight = 0,
                 MinWidth = 0,
-                FontSize = 9,
+                FontSize = 8.5,
                 Padding = new Thickness(2, 0, 2, 0),
                 Background = DesignPalette.Brush(DesignPalette.SurfaceDark),
                 Foreground = DesignPalette.Brush(DesignPalette.TextPrimary),

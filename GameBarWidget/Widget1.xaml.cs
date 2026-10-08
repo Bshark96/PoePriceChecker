@@ -30,7 +30,13 @@ namespace GameBarWidget
         private DateTime _settingsOpenedTime = DateTime.MinValue;
         private PoeItem _currentItem;
         private string _activeSearchUrl = string.Empty;
-        private readonly HashSet<string> _collapsedGroups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _collapsedGroups = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "SOCKETS",
+            "QUALITY",
+            "PSEUDO STATS",
+            "PSEUDO"
+        };
 
         public Widget1()
         {
