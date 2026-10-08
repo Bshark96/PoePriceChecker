@@ -140,8 +140,9 @@ namespace GameBarWidget.Services
                         {
                             _onStatus(_query.Id, "Resolving search ID...", false);
                             string resolved = await PoeOfficialTradeClient.Instance.ResolveSearchIdAsync(_query.League, effectiveId);
-                            if (!string.IsNullOrWhiteSpace(resolved))
+                            if (!string.IsNullOrWhiteSpace(resolved) && resolved != effectiveId)
                             {
+                                _query.SearchId = resolved;
                                 effectiveId = resolved;
                             }
                         }
@@ -150,12 +151,12 @@ namespace GameBarWidget.Services
                         _ws = new ClientWebSocket();
 
                         _ws.Options.SetRequestHeader("Origin", "https://www.pathofexile.com");
-                        _ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) PoE1Overlay/1.0");
+                        _ws.Options.SetRequestHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
 
                         string sessionId = PoeSettingsManager.Instance.PoeSessionId;
                         if (!string.IsNullOrWhiteSpace(sessionId))
                         {
-                            _ws.Options.SetRequestHeader("Cookie", $"POESESSID={sessionId}");
+                            _ws.Options.SetRequestHeader("Cookie", $"POESESSID={sessionId.Trim()}");
                         }
 
                         string wsUrl = $"wss://www.pathofexile.com/api/trade/live/{Uri.EscapeDataString(_query.League)}/{Uri.EscapeDataString(effectiveId)}";
@@ -220,34 +221,51 @@ namespace GameBarWidget.Services
                         string json = Encoding.UTF8.GetString(ms.ToArray());
                         ms.SetLength(0);
 
-                        ParseAndProcessPayload(json);
+                        await ParseAndProcessPayloadAsync(json);
                     }
                 }
             }
 
-            private void ParseAndProcessPayload(string json)
+            private async Task ParseAndProcessPayloadAsync(string json)
             {
                 if (string.IsNullOrWhiteSpace(json)) return;
 
                 try
                 {
-                    // Simulated parsing or official payload extraction
-                    if (json.Contains("\"new\"") || json.Contains("\"item\""))
+                    if (Windows.Data.Json.JsonObject.TryParse(json, out var rootObj))
                     {
-                        // Generate TradeListing or parse IDs
-                        var listing = new TradeListing
-                        {
-                            Id = Guid.NewGuid().ToString("N"),
-                            AccountName = "LiveSeller",
-                            PriceAmount = _query.MaxPriceAmount.HasValue ? _query.MaxPriceAmount.Value : 1.0,
-                            PriceCurrency = _query.MaxPriceCurrency ?? "divine",
-                            PriceInChaos = 150.0,
-                            IsFaustusInstantTrade = true,
-                            WhisperString = "@LiveSeller Hi, I would like to buy your item listed for " + (_query.MaxPriceAmount ?? 1.0) + " " + (_query.MaxPriceCurrency ?? "divine"),
-                            AgeText = "Just now"
-                        };
+                        var itemHashes = new List<string>();
 
-                        _onItem(_query, listing);
+                        if (rootObj.ContainsKey("new"))
+                        {
+                            var newVal = rootObj.GetNamedValue("new");
+                            if (newVal.ValueType == Windows.Data.Json.JsonValueType.Array)
+                            {
+                                foreach (var elem in newVal.GetArray())
+                                {
+                                    if (elem.ValueType == Windows.Data.Json.JsonValueType.String)
+                                    {
+                                        itemHashes.Add(elem.GetString());
+                                    }
+                                }
+                            }
+                            else if (newVal.ValueType == Windows.Data.Json.JsonValueType.String)
+                            {
+                                itemHashes.Add(newVal.GetString());
+                            }
+                        }
+
+                        if (itemHashes.Count > 0)
+                        {
+                            var realListings = await PoeOfficialTradeClient.Instance.FetchListingsAsync(itemHashes, _query.League, _query.SearchId);
+                            if (realListings != null && realListings.Count > 0)
+                            {
+                                foreach (var listing in realListings)
+                                {
+                                    _onItem(_query, listing);
+                                }
+                            }
+                        }
                     }
                 }
                 catch { }

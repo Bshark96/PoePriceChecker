@@ -1455,16 +1455,55 @@ namespace GameBarWidget.Services
             }
         }
 
-        public async Task<string> ResolveSearchIdAsync(string league, string rawSearchId)
+        public async Task<List<TradeListing>> FetchListingsAsync(List<string> itemHashes, string league, string queryId)
         {
-            if (string.IsNullOrWhiteSpace(rawSearchId)) return rawSearchId;
-            if (rawSearchId.Length <= 20) return rawSearchId;
+            var listings = new List<TradeListing>();
+            if (itemHashes == null || itemHashes.Count == 0) return listings;
 
             try
             {
-                string url = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{Uri.EscapeDataString(rawSearchId)}";
+                double divineRate = 150.0;
+                string fetchUrl = $"{TradeBaseUrl}/fetch/{string.Join(",", itemHashes)}?query={Uri.EscapeDataString(queryId ?? "")}";
+                using (var fetchRequest = new HttpRequestMessage(HttpMethod.Get, fetchUrl))
+                {
+                    fetchRequest.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+                    fetchRequest.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
+                    fetchRequest.Headers.Referrer = new Uri($"https://www.pathofexile.com/trade/search/{Uri.EscapeDataString(league)}");
+
+                    string sessionId = PoeSettingsManager.Instance.PoeSessionId;
+                    if (!string.IsNullOrWhiteSpace(sessionId))
+                    {
+                        fetchRequest.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={sessionId.Trim()}");
+                    }
+
+                    var response = await PoeTradeRateLimiter.Instance.SendThrottledAsync(_httpClient, fetchRequest);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string fetchJson = await response.Content.ReadAsStringAsync();
+                        listings = ParseFetchListings(fetchJson, league, divineRate);
+                    }
+                }
+            }
+            catch { }
+
+            return listings;
+        }
+
+        public async Task<string> ResolveSearchIdAsync(string league, string rawSearchId)
+        {
+            if (string.IsNullOrWhiteSpace(rawSearchId)) return rawSearchId;
+
+            if (rawSearchId.Length <= 20 && !rawSearchId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
+            {
+                return rawSearchId;
+            }
+
+            try
+            {
+                string url = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{rawSearchId}";
                 using (var request = new HttpRequestMessage(HttpMethod.Get, url))
                 {
+                    request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
                     request.Headers.TryAddWithoutValidation("Accept", "application/json");
                     request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
                     request.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
