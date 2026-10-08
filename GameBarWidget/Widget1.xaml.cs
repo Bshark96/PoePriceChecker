@@ -258,6 +258,7 @@ namespace GameBarWidget
 
         private void SwitchToPriceCheckView()
         {
+            TopHeaderGrid.Visibility = Visibility.Visible;
             PriceCheckView.Visibility = Visibility.Visible;
             LiveSearchView.Visibility = Visibility.Collapsed;
             LiveNotificationView.Visibility = Visibility.Collapsed;
@@ -271,6 +272,7 @@ namespace GameBarWidget
 
         private void SwitchToLiveSearchView()
         {
+            TopHeaderGrid.Visibility = Visibility.Visible;
             PriceCheckView.Visibility = Visibility.Collapsed;
             LiveSearchView.Visibility = Visibility.Visible;
             LiveNotificationView.Visibility = Visibility.Collapsed;
@@ -284,6 +286,7 @@ namespace GameBarWidget
 
         private void SwitchToLiveNotificationView()
         {
+            TopHeaderGrid.Visibility = Visibility.Collapsed;
             PriceCheckView.Visibility = Visibility.Collapsed;
             LiveSearchView.Visibility = Visibility.Collapsed;
             LiveNotificationView.Visibility = Visibility.Visible;
@@ -405,14 +408,14 @@ namespace GameBarWidget
             {
                 if (e.Query != null && e.Listing != null)
                 {
-                    // 1. Update View 2 Live Listings Stream (Keep only 10 latest items)
+                    // 1. Update View 2 Live Listings Stream (Normal compact trade log row, max 10 items)
                     if (LiveListingsContainer.Children.Count == 1 && LiveListingsContainer.Children[0] is TextBlock)
                     {
                         LiveListingsContainer.Children.Clear();
                     }
 
-                    var card = LiveSearchCardBuilder.BuildLiveListingNotificationCard(e.Query, e.Listing, CopyWhisperToClipboard);
-                    LiveListingsContainer.Children.Insert(0, card);
+                    var logRow = TradeRowBuilder.BuildTradeListingRow(e.Listing, CopyWhisperToClipboard);
+                    LiveListingsContainer.Children.Insert(0, logRow);
 
                     while (LiveListingsContainer.Children.Count > 10)
                     {
@@ -430,6 +433,7 @@ namespace GameBarWidget
                         {
                             DismissOverlay();
                             ClearNotificationBtn_Click(null, null);
+                            SwitchToPriceCheckView();
                         });
 
                     NotificationCardsContainer.Children.Add(notificationCard);
