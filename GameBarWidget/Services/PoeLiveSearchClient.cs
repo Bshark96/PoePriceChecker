@@ -165,6 +165,19 @@ namespace GameBarWidget.Services
                         _onStatus(_query.Id, "Connected", true);
                         attempt = 0;
 
+                        // Fetch initial current listings from trade query so user sees current active results immediately
+                        _ = Task.Run(async () =>
+                        {
+                            var initialListings = await PoeOfficialTradeClient.Instance.GetInitialSearchListingsAsync(_query.League, effectiveId);
+                            if (initialListings != null)
+                            {
+                                foreach (var item in initialListings)
+                                {
+                                    _onItem(_query, item);
+                                }
+                            }
+                        });
+
                         // Start 30s heartbeat ping task
                         var heartbeatTask = Task.Run(() => HeartbeatLoopAsync(ct), ct);
                         await ReceiveLoopAsync(ct);
@@ -232,10 +245,10 @@ namespace GameBarWidget.Services
 
                 try
                 {
+                    var itemHashes = new List<string>();
+
                     if (Windows.Data.Json.JsonObject.TryParse(json, out var rootObj))
                     {
-                        var itemHashes = new List<string>();
-
                         if (rootObj.ContainsKey("new"))
                         {
                             var newVal = rootObj.GetNamedValue("new");
@@ -254,16 +267,44 @@ namespace GameBarWidget.Services
                                 itemHashes.Add(newVal.GetString());
                             }
                         }
-
-                        if (itemHashes.Count > 0)
+                        else if (rootObj.ContainsKey("item"))
                         {
-                            var realListings = await PoeOfficialTradeClient.Instance.FetchListingsAsync(itemHashes, _query.League, _query.SearchId);
-                            if (realListings != null && realListings.Count > 0)
+                            var itemVal = rootObj.GetNamedValue("item");
+                            if (itemVal.ValueType == Windows.Data.Json.JsonValueType.String)
                             {
-                                foreach (var listing in realListings)
+                                itemHashes.Add(itemVal.GetString());
+                            }
+                        }
+                        else if (rootObj.ContainsKey("data") && rootObj.GetNamedValue("data").ValueType == Windows.Data.Json.JsonValueType.Array)
+                        {
+                            foreach (var elem in rootObj.GetNamedArray("data"))
+                            {
+                                if (elem.ValueType == Windows.Data.Json.JsonValueType.String)
                                 {
-                                    _onItem(_query, listing);
+                                    itemHashes.Add(elem.GetString());
                                 }
+                            }
+                        }
+                    }
+                    else if (Windows.Data.Json.JsonArray.TryParse(json, out var rootArr))
+                    {
+                        foreach (var elem in rootArr)
+                        {
+                            if (elem.ValueType == Windows.Data.Json.JsonValueType.String)
+                            {
+                                itemHashes.Add(elem.GetString());
+                            }
+                        }
+                    }
+
+                    if (itemHashes.Count > 0)
+                    {
+                        var realListings = await PoeOfficialTradeClient.Instance.FetchListingsAsync(itemHashes, _query.League, _query.SearchId);
+                        if (realListings != null && realListings.Count > 0)
+                        {
+                            foreach (var listing in realListings)
+                            {
+                                _onItem(_query, listing);
                             }
                         }
                     }

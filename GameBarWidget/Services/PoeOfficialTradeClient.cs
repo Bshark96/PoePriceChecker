@@ -1532,7 +1532,57 @@ namespace GameBarWidget.Services
             }
             catch { }
 
-            return rawSearchId;
+        public async Task<List<TradeListing>> GetInitialSearchListingsAsync(string league, string searchId)
+        {
+            var listings = new List<TradeListing>();
+            if (string.IsNullOrWhiteSpace(league) || string.IsNullOrWhiteSpace(searchId)) return listings;
+
+            try
+            {
+                string resolvedId = await ResolveSearchIdAsync(league, searchId);
+                string url = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{resolvedId}";
+
+                using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                    request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+                    request.Headers.TryAddWithoutValidation("Accept", "application/json");
+                    request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
+                    request.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
+
+                    string sessionId = PoeSettingsManager.Instance.PoeSessionId;
+                    if (!string.IsNullOrWhiteSpace(sessionId))
+                    {
+                        request.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={sessionId.Trim()}");
+                    }
+
+                    var response = await _httpClient.SendAsync(request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string json = await response.Content.ReadAsStringAsync();
+                        if (JsonObject.TryParse(json, out var obj) && obj.ContainsKey("result") && obj.GetNamedValue("result").ValueType == JsonValueType.Array)
+                        {
+                            var arr = obj.GetNamedArray("result");
+                            var hashes = new List<string>();
+                            foreach (var elem in arr)
+                            {
+                                if (elem.ValueType == JsonValueType.String)
+                                {
+                                    hashes.Add(elem.GetString());
+                                    if (hashes.Count >= 10) break;
+                                }
+                            }
+
+                            if (hashes.Count > 0)
+                            {
+                                return await FetchListingsAsync(hashes, league, resolvedId);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return listings;
         }
     }
 }

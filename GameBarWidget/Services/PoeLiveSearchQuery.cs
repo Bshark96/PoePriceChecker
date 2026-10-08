@@ -21,20 +21,23 @@ namespace GameBarWidget.Services
                 return true;
             }
 
+            double divineRate = 150.0;
             string targetCurr = (MaxPriceCurrency ?? string.Empty).ToLowerInvariant();
             string itemCurr = (currency ?? string.Empty).ToLowerInvariant();
 
-            if (targetCurr.Contains("div") && itemCurr.Contains("div"))
+            double maxInChaos = targetCurr.Contains("div") ? MaxPriceAmount.Value * divineRate : MaxPriceAmount.Value;
+            double itemInChaos = priceAmount;
+
+            if (itemCurr.Contains("div"))
             {
-                return priceAmount <= MaxPriceAmount.Value;
+                itemInChaos = priceAmount * divineRate;
             }
-            if (targetCurr.Contains("chaos") && itemCurr.Contains("chaos"))
+            else if (itemCurr.Contains("mirror"))
             {
-                return priceAmount <= MaxPriceAmount.Value;
+                itemInChaos = priceAmount * divineRate * 600.0;
             }
 
-            // Fallback estimation
-            return priceAmount <= MaxPriceAmount.Value;
+            return itemInChaos <= (maxInChaos + 0.01);
         }
     }
 }
