@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using Windows.Media.Core;
 using Windows.Media.Playback;
+using Windows.UI.Xaml.Controls;
 
 namespace GameBarWidget.Services
 {
@@ -13,58 +14,43 @@ namespace GameBarWidget.Services
         {
             try
             {
-                // Play crisp Windows notification alert audio
-                string notifySound = @"C:\Windows\Media\Windows Notify Notification.wav";
-                string dingSound = @"C:\Windows\Media\ding.wav";
-                string tadaSound = @"C:\Windows\Media\tada.wav";
-
-                if (System.IO.File.Exists(notifySound))
-                {
-                    PlayWavFile(notifySound);
-                }
-                else if (System.IO.File.Exists(dingSound))
-                {
-                    PlayWavFile(dingSound);
-                }
-                else if (System.IO.File.Exists(tadaSound))
-                {
-                    PlayWavFile(tadaSound);
-                }
-                else
-                {
-                    PlaySystemBeep();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[PoeAudioService] Alert sound error: {ex.Message}");
-                PlaySystemBeep();
-            }
-        }
-
-        private static void PlayWavFile(string filePath)
-        {
-            try
-            {
                 if (_player == null)
                 {
                     _player = new MediaPlayer();
                 }
-                _player.Source = MediaSource.CreateFromUri(new Uri(filePath));
-                _player.Volume = 1.0;
-                _player.Play();
+
+                string notifySound = @"C:\Windows\Media\Windows Notify Notification.wav";
+                string dingSound = @"C:\Windows\Media\ding.wav";
+
+                if (System.IO.File.Exists(notifySound))
+                {
+                    _player.Source = MediaSource.CreateFromUri(new Uri(notifySound));
+                    _player.Volume = 1.0;
+                    _player.Play();
+                }
+                else if (System.IO.File.Exists(dingSound))
+                {
+                    _player.Source = MediaSource.CreateFromUri(new Uri(dingSound));
+                    _player.Volume = 1.0;
+                    _player.Play();
+                }
+                else
+                {
+                    PlayUwpSystemSound();
+                }
             }
             catch
             {
-                PlaySystemBeep();
+                PlayUwpSystemSound();
             }
         }
 
-        private static void PlaySystemBeep()
+        private static void PlayUwpSystemSound()
         {
             try
             {
-                System.Media.SystemSounds.Asterisk.Play();
+                ElementSoundPlayer.State = ElementSoundPlayerState.On;
+                ElementSoundPlayer.Play(ElementSoundKind.Invoke);
             }
             catch { }
         }
