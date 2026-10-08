@@ -157,7 +157,7 @@
                                     Padding="6,2" 
                                     VerticalAlignment="Top">
                                 <StackPanel HorizontalAlignment="Right" Spacing="0.5">
-                                    <TextBlock Text="Market Summary" FontSize="8" Foreground="#94a3b8" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="poe.ninja Prediction" FontSize="8" Foreground="#38bdf8" FontWeight="Bold" HorizontalAlignment="Right"/>
                                     <TextBlock x:Name="BenchmarkDivineText" Text="200.0 Div" FontSize="12.5" FontWeight="Bold" Foreground="#4ade80" HorizontalAlignment="Right"/>
                                     <TextBlock x:Name="BenchmarkChaosText" Text="≈ 32,000 Chaos" FontSize="9" Foreground="#cbd5e1" HorizontalAlignment="Right"/>
                                 </StackPanel>

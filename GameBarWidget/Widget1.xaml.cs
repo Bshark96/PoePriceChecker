@@ -1255,10 +1255,8 @@ namespace GameBarWidget
                 OpenBrowserBtn.Visibility = Visibility.Visible;
             }
 
-            // Update header with summary
-            BenchmarkDivineText.Text = searchResult.SummaryText;
-            BenchmarkChaosText.Text = $"{searchResult.TotalListings} listings found";
-            MarketStatusText.Text = $"{searchResult.TotalListings} listings";
+            // Update market status header without overwriting poe.ninja benchmark prediction
+            MarketStatusText.Text = $"{searchResult.SummaryText} ({searchResult.TotalListings} listings)";
             MarketStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 74, 222, 128));
 
             if (searchResult.Listings == null || searchResult.Listings.Count == 0)
