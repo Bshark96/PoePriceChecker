@@ -10,17 +10,6 @@ using Windows.Foundation.Collections;
 
 namespace GameBarWidget.Services
 {
-    public static class LiveSearchLogger
-    {
-        public static event EventHandler<string> LogMessage;
-
-        public static void Log(string message)
-        {
-            if (string.IsNullOrWhiteSpace(message)) return;
-            string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-            LogMessage?.Invoke(null, $"[{timestamp}] {message}");
-        }
-    }
 
     public sealed class LiveItemEventArgs : EventArgs
     {
