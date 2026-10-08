@@ -1602,9 +1602,20 @@ namespace GameBarWidget.Services
                     if (response.IsSuccessStatusCode)
                     {
                         string json = await response.Content.ReadAsStringAsync();
+                        LiveSearchLogger.Log($"Search API Response JSON: {json}");
+
                         if (JsonObject.TryParse(json, out var obj))
                         {
-                            string id = obj.ContainsKey("id") ? obj.GetNamedString("id") : rawSearchId;
+                            string id = null;
+                            if (obj.ContainsKey("id") && obj.GetNamedValue("id").ValueType == JsonValueType.String)
+                            {
+                                id = obj.GetNamedString("id");
+                            }
+
+                            if (string.IsNullOrWhiteSpace(id))
+                            {
+                                id = rawSearchId;
+                            }
 
                             if (obj.ContainsKey("result") && obj.GetNamedValue("result").ValueType == JsonValueType.Array)
                             {

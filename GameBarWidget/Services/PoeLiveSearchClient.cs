@@ -151,25 +151,18 @@ namespace GameBarWidget.Services
                             _onStatus(_query.Id, "Resolving search ID...", false);
                             LiveSearchLogger.Log("Resolving compressed/long search ID with GGG Trade API...");
                             var (resolved, initialHashes) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
-                            if (!string.IsNullOrWhiteSpace(resolved) && resolved != effectiveId)
+                            if (!string.IsNullOrWhiteSpace(resolved) && resolved.Length <= 20 && !resolved.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
                             {
                                 LiveSearchLogger.Log($"Successfully resolved Search ID: '{effectiveId}' -> '{resolved}'");
                                 _query.SearchId = resolved;
                                 effectiveId = resolved;
                             }
-
-                            if (initialHashes != null && initialHashes.Count > 0)
+                            else
                             {
-                                LiveSearchLogger.Log($"Fetching initial {initialHashes.Count} active query items for immediate rendering...");
-                                var initListings = await PoeOfficialTradeClient.Instance.FetchListingsAsync(initialHashes, _query.League, effectiveId);
-                                if (initListings != null && initListings.Count > 0)
-                                {
-                                    LiveSearchLogger.Log($"Successfully loaded {initListings.Count} initial search results.");
-                                    foreach (var item in initListings)
-                                    {
-                                        _onItem(_query, item);
-                                    }
-                                }
+                                LiveSearchLogger.Log($"WARNING: Search ID resolution did not return a valid short GGG Search ID (Returned: '{resolved}'). Cannot open WebSocket stream with unresolved ID.");
+                                _onStatus(_query.Id, "Resolution failed (Rate limited or check POESESSID)", false);
+                                await Task.Delay(TimeSpan.FromSeconds(15), ct);
+                                continue;
                             }
                         }
 
