@@ -116,10 +116,15 @@ namespace GameBarWidget.Design
 
             string qTitle = query != null && !string.IsNullOrEmpty(query.Label) ? query.Label : "Live Search Match";
             string itemName = !string.IsNullOrEmpty(l.ItemName) ? l.ItemName : (!string.IsNullOrEmpty(l.ItemBaseType) ? l.ItemBaseType : qTitle);
+            string baseType = l.ItemBaseType;
+
+            string displayTitle = (!string.IsNullOrEmpty(baseType) && !string.Equals(itemName, baseType, StringComparison.OrdinalIgnoreCase))
+                ? $"{itemName} — {baseType}"
+                : itemName;
 
             tagStack.Children.Add(new TextBlock
             {
-                Text = $"{itemName}",
+                Text = displayTitle,
                 FontSize = 9.5,
                 FontWeight = FontWeights.Bold,
                 Foreground = DesignPalette.Brush(DesignPalette.TextPrimary),

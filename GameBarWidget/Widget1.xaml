@@ -386,8 +386,38 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
-            </Border>
+            <!-- 3RD VIEW: LIVE NOTIFICATION OVERLAY VIEW -->
+            <Border x:Name="LiveNotificationView" 
+                    Background="#182333" 
+                    BorderBrush="#22384e" 
+                    BorderThickness="1" 
+                    CornerRadius="5" 
+                    Padding="6"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="6">
+                        <!-- Notification Header Banner -->
+                        <Border Background="#111924" BorderBrush="#22384e" BorderThickness="1" CornerRadius="4" Padding="6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                    <Border Width="6" Height="6" CornerRadius="3" Background="#22c55e" VerticalAlignment="Center"/>
+                                    <TextBlock Text="LIVE TRADE NOTIFICATION (VIEW 3)" FontSize="10.5" FontWeight="Bold" Foreground="#4ade80"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" x:Name="ClearNotificationBtn" Content="Clear" Click="ClearNotificationBtn_Click" Background="#1e2c3d" Foreground="#94a3b8" FontSize="9" Padding="6,2" CornerRadius="3"/>
+                            </Grid>
+                        </Border>
 
+                        <!-- Notification Container for Streamed Items -->
+                        <StackPanel x:Name="NotificationCardsContainer" Spacing="6">
+                            <TextBlock Text="No active live notifications. New incoming items will display here automatically." FontSize="9.5" Foreground="#94a3b8" Margin="4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
         </Grid>
 
         <!-- FOOTER: COUNTDOWN & HEALTH STATUS -->

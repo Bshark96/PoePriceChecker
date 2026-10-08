@@ -256,28 +256,57 @@ namespace GameBarWidget
             SwitchToLiveSearchView();
         }
 
+        private void LiveNotificationTabBtn_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchToLiveNotificationView();
+        }
+
         private void SwitchToPriceCheckView()
         {
             PriceCheckView.Visibility = Visibility.Visible;
             LiveSearchView.Visibility = Visibility.Collapsed;
+            LiveNotificationView.Visibility = Visibility.Collapsed;
 
             PriceCheckTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 34, 197, 94));
             PriceCheckTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
 
             LiveSearchTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
             LiveSearchTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+
+            LiveNotificationTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
+            LiveNotificationTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
         }
 
         private void SwitchToLiveSearchView()
         {
             PriceCheckView.Visibility = Visibility.Collapsed;
             LiveSearchView.Visibility = Visibility.Visible;
+            LiveNotificationView.Visibility = Visibility.Collapsed;
 
             LiveSearchTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 34, 197, 94));
             LiveSearchTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
 
             PriceCheckTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
             PriceCheckTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+
+            LiveNotificationTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
+            LiveNotificationTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+        }
+
+        private void SwitchToLiveNotificationView()
+        {
+            PriceCheckView.Visibility = Visibility.Collapsed;
+            LiveSearchView.Visibility = Visibility.Collapsed;
+            LiveNotificationView.Visibility = Visibility.Visible;
+
+            LiveNotificationTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 34, 197, 94));
+            LiveNotificationTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 255, 255));
+
+            PriceCheckTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
+            PriceCheckTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
+
+            LiveSearchTabBtn.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 31, 48, 68));
+            LiveSearchTabBtn.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184));
         }
 
         private async void PasteLiveUrlBtn_Click(object sender, RoutedEventArgs e)
@@ -386,10 +415,11 @@ namespace GameBarWidget
 
         private void OnLiveItemReceived(object sender, LiveItemEventArgs e)
         {
-            _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
             {
                 if (e.Query != null && e.Listing != null)
                 {
+                    // 1. Update View 2 Live Listings Stream
                     if (LiveListingsContainer.Children.Count == 1 && LiveListingsContainer.Children[0] is TextBlock)
                     {
                         LiveListingsContainer.Children.Clear();
@@ -398,12 +428,46 @@ namespace GameBarWidget
                     var card = LiveSearchCardBuilder.BuildLiveListingNotificationCard(e.Query, e.Listing, CopyWhisperToClipboard);
                     LiveListingsContainer.Children.Insert(0, card);
 
-                    // Maintain max 100 live listings in UI stream
                     while (LiveListingsContainer.Children.Count > 100)
                     {
                         LiveListingsContainer.Children.RemoveAt(LiveListingsContainer.Children.Count - 1);
                     }
+
+                    // 2. Update View 3 Live Notification Card Overlay
+                    if (NotificationCardsContainer.Children.Count == 1 && NotificationCardsContainer.Children[0] is TextBlock)
+                    {
+                        NotificationCardsContainer.Children.Clear();
+                    }
+
+                    var notificationCard = LiveSearchCardBuilder.BuildLiveListingNotificationCard(e.Query, e.Listing, CopyWhisperToClipboard);
+                    NotificationCardsContainer.Children.Insert(0, notificationCard);
+
+                    while (NotificationCardsContainer.Children.Count > 50)
+                    {
+                        NotificationCardsContainer.Children.RemoveAt(NotificationCardsContainer.Children.Count - 1);
+                    }
+
+                    // 3. Automatically restore window and switch to View 3 ONLY IF window was minimized/hidden
+                    bool isMinimizedOrHidden = (_widget == null || !_widget.Visible);
+                    if (isMinimizedOrHidden)
+                    {
+                        await RestoreWidgetAsync();
+                        SwitchToLiveNotificationView();
+                        StartAutoMinimizeCountdown();
+                    }
                 }
+            });
+        }
+
+        private void ClearNotificationBtn_Click(object sender, RoutedEventArgs e)
+        {
+            NotificationCardsContainer.Children.Clear();
+            NotificationCardsContainer.Children.Add(new TextBlock
+            {
+                Text = "No active live notifications. New incoming items will display here automatically.",
+                FontSize = 9.5,
+                Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184)),
+                Margin = new Thickness(4)
             });
         }
 

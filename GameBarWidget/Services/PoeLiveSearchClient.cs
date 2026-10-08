@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -148,19 +149,20 @@ namespace GameBarWidget.Services
 
                         if (effectiveId.Length > 20 || effectiveId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
                         {
-                            _onStatus(_query.Id, "Resolving search ID...", false);
-                            LiveSearchLogger.Log("Resolving compressed/long search ID with GGG Trade API...");
+                            _onStatus(_query.Id, "Registering search query with GGG...", false);
+                            LiveSearchLogger.Log("Registering search query with GGG Trade API (required to keep WebSocket active)...");
                             var (resolved, initialHashes) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
                             if (!string.IsNullOrWhiteSpace(resolved))
                             {
-                                LiveSearchLogger.Log($"Successfully resolved Search ID from GGG: '{resolved.Substring(0, Math.Min(25, resolved.Length))}...'");
+                                LiveSearchLogger.Log($"Search query registered successfully. Assigned Search ID: '{resolved.Substring(0, Math.Min(25, resolved.Length))}...'");
+                                LiveSearchLogger.Log($"Discarding {initialHashes?.Count ?? 0} existing item hashes from initial snapshot (listening exclusively for NEW items).");
                                 _query.SearchId = resolved;
                                 effectiveId = resolved;
                             }
                             else
                             {
-                                LiveSearchLogger.Log($"WARNING: Search ID resolution returned empty string. Retrying in 10s...");
-                                _onStatus(_query.Id, "Resolution empty (Rate limited or check POESESSID)", false);
+                                LiveSearchLogger.Log("WARNING: Search query registration returned empty ID. Retrying in 10s...");
+                                _onStatus(_query.Id, "Registration empty (Check POESESSID or rate limits)", false);
                                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
                                 continue;
                             }
@@ -194,8 +196,7 @@ namespace GameBarWidget.Services
                         LiveSearchLogger.Log($"WebSocket Stream CONNECTED successfully for search '{safeWsSearchId.Substring(0, Math.Min(25, safeWsSearchId.Length))}...'. Listening for new listings...");
                         attempt = 0;
 
-                        // Start 30s heartbeat ping task
-                        var heartbeatTask = Task.Run(() => HeartbeatLoopAsync(ct), ct);
+                        // WebSocket receive loop (GGG WebSocket handles keep-alive via native TCP frames; no text ping required)
                         await ReceiveLoopAsync(ct);
                     }
                     catch (Exception ex) when (!ct.IsCancellationRequested)
@@ -272,7 +273,25 @@ namespace GameBarWidget.Services
 
                     if (Windows.Data.Json.JsonObject.TryParse(json, out var rootObj))
                     {
-                        if (rootObj.ContainsKey("new"))
+                        if (rootObj.ContainsKey("result"))
+                        {
+                            var resVal = rootObj.GetNamedValue("result");
+                            if (resVal.ValueType == Windows.Data.Json.JsonValueType.Array)
+                            {
+                                foreach (var elem in resVal.GetArray())
+                                {
+                                    if (elem.ValueType == Windows.Data.Json.JsonValueType.String)
+                                    {
+                                        itemHashes.Add(elem.GetString());
+                                    }
+                                }
+                            }
+                            else if (resVal.ValueType == Windows.Data.Json.JsonValueType.String)
+                            {
+                                itemHashes.Add(resVal.GetString());
+                            }
+                        }
+                        else if (rootObj.ContainsKey("new"))
                         {
                             var newVal = rootObj.GetNamedValue("new");
                             if (newVal.ValueType == Windows.Data.Json.JsonValueType.Array)
@@ -309,27 +328,43 @@ namespace GameBarWidget.Services
                             }
                         }
                     }
-                    else if (Windows.Data.Json.JsonArray.TryParse(json, out var rootArr))
+
+                    // Fallback token extraction via regex for JWT tokens and item hashes
+                    if (itemHashes.Count == 0)
                     {
-                        foreach (var elem in rootArr)
+                        // Match JWT tokens (header.payload.signature) in GGG WebSocket result payloads
+                        var jwtMatches = System.Text.RegularExpressions.Regex.Matches(json, @"[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}");
+                        foreach (System.Text.RegularExpressions.Match match in jwtMatches)
                         {
-                            if (elem.ValueType == Windows.Data.Json.JsonValueType.String)
+                            if (!itemHashes.Contains(match.Value))
                             {
-                                itemHashes.Add(elem.GetString());
+                                itemHashes.Add(match.Value);
+                            }
+                        }
+
+                        // Match 64-char hex item hashes if no JWT matched
+                        if (itemHashes.Count == 0)
+                        {
+                            var hexMatches = System.Text.RegularExpressions.Regex.Matches(json, @"\b[a-fA-F0-9]{64}\b");
+                            foreach (System.Text.RegularExpressions.Match match in hexMatches)
+                            {
+                                if (!itemHashes.Contains(match.Value))
+                                {
+                                    itemHashes.Add(match.Value);
+                                }
                             }
                         }
                     }
 
                     if (itemHashes.Count > 0)
                     {
-                        LiveSearchLogger.Log($"Extracted {itemHashes.Count} new item hash(es): [{string.Join(", ", itemHashes)}]. Hydrating details from GGG Trade API...");
+                        LiveSearchLogger.Log($"Extracted {itemHashes.Count} new item hash(es): [{string.Join(", ", itemHashes.Select(h => h.Substring(0, Math.Min(20, h.Length)) + "..."))}]. Hydrating details from GGG Trade API...");
                         var realListings = await PoeOfficialTradeClient.Instance.FetchListingsAsync(itemHashes, _query.League, _query.SearchId);
                         if (realListings != null && realListings.Count > 0)
                         {
                             LiveSearchLogger.Log($"Successfully hydrated {realListings.Count} item listing(s). Displaying in UI live stream...");
                             foreach (var listing in realListings)
                             {
-                                // Show ALL items received from GGG live search with zero local filtering
                                 LiveSearchLogger.Log($"STREAM ITEM DISPATCH: '{listing.ItemName}' | Price: {listing.PriceAmount} {listing.PriceCurrency} | Seller: {listing.AccountName}");
                                 _onItem(_query, listing);
                             }
