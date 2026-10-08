@@ -55,16 +55,7 @@ namespace GameBarWidget
             // Pause countdown on mouse hover or click interaction
             this.PointerEntered += (s, e) => _isTimerPaused = true;
             this.PointerMoved += (s, e) => _isTimerPaused = true;
-            this.PointerPressed += async (s, e) =>
-            {
-                _isTimerPaused = true;
-                try
-                {
-                    Window.Current.Activate();
-                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-                }
-                catch { }
-            };
+            this.PointerPressed += (s, e) => _isTimerPaused = true;
             this.PointerReleased += (s, e) => _isTimerPaused = true;
             this.PointerExited += (s, e) => _isTimerPaused = false;
 
@@ -155,64 +146,7 @@ namespace GameBarWidget
                 ShowAwaitingItemState();
             }
 
-            if (LiveSearchUrlBox != null)
-            {
-                LiveSearchUrlBox.AllowFocusOnInteraction = true;
-                LiveSearchUrlBox.IsTabStop = true;
-                LiveSearchUrlBox.GotFocus += async (s, ev) =>
-                {
-                    try
-                    {
-                        Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-                    }
-                    catch { }
-                };
-                LiveSearchUrlBox.PointerPressed += async (s, ev) =>
-                {
-                    try
-                    {
-                        Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-                        LiveSearchUrlBox.Focus(FocusState.Pointer);
-                    }
-                    catch { }
-                };
-            }
-
-            if (LiveSearchMaxPriceBox != null)
-            {
-                LiveSearchMaxPriceBox.AllowFocusOnInteraction = true;
-                LiveSearchMaxPriceBox.IsTabStop = true;
-                LiveSearchMaxPriceBox.GotFocus += async (s, ev) =>
-                {
-                    try
-                    {
-                        Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-                    }
-                    catch { }
-                };
-                LiveSearchMaxPriceBox.PointerPressed += async (s, ev) =>
-                {
-                    try
-                    {
-                        Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-                        LiveSearchMaxPriceBox.Focus(FocusState.Pointer);
-                    }
-                    catch { }
-                };
-            }
-
             StartAutoMinimizeCountdown();
-
-            try
-            {
-                Window.Current.Activate();
-                if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
-            }
-            catch { }
         }
 
         private void Widget1_Unloaded(object sender, RoutedEventArgs e)
@@ -736,18 +670,6 @@ namespace GameBarWidget
             // Populate Categorized Modifiers
             ModContainer.Children.Clear();
 
-            // Gem Handling: Render Gem Level & Quality Properties only (Awakened PoE Trade standard)
-            if (item.Rarity == PoeRarity.Gem || item.Namespace == ItemNamespace.Gem)
-            {
-                item.FilterGemLevelMin = item.GemLevel > 0 ? item.GemLevel : (int?)null;
-                item.FilterGemLevelActive = item.GemLevel > 0;
-                item.FilterQualityMin = item.Quality > 0 ? item.Quality : (int?)null;
-                item.FilterQualityActive = item.Quality > 0;
-
-                ModContainer.Children.Add(CreateGemPropertiesGroupSection(item));
-                return;
-            }
-
             // Group modifiers into distinct categories
             var pseudoMods = item.PseudoModifiers;
             var implicitMods = new List<ItemModifier>();
@@ -998,51 +920,6 @@ namespace GameBarWidget
                 DesignPalette.GetSectionAccentColor("SOCKETS"),
                 rows,
                 () => (item.FilterSocketsActive ? 1 : 0) + (item.FilterLinksActive ? 1 : 0));
-        }
-
-        private UIElement CreateGemPropertiesGroupSection(PoeItem item)
-        {
-            var rows = new List<UIElement>();
-
-            if (item.GemLevel > 0)
-            {
-                rows.Add(CreateItemPropertyFilterRow(
-                    "Gem Level",
-                    "LVL",
-                    Windows.UI.Color.FromArgb(255, 22, 101, 52),
-                    DesignPalette.AccentGreen,
-                    item.FilterGemLevelMin,
-                    item.FilterGemLevelMax,
-                    item.FilterGemLevelActive,
-                    isActive => item.FilterGemLevelActive = isActive,
-                    min => item.FilterGemLevelMin = min,
-                    max => item.FilterGemLevelMax = max,
-                    () => { },
-                    30));
-            }
-
-            if (item.Quality > 0)
-            {
-                rows.Add(CreateItemPropertyFilterRow(
-                    "Quality",
-                    "QUAL",
-                    Windows.UI.Color.FromArgb(255, 15, 60, 55),
-                    DesignPalette.AccentTeal,
-                    item.FilterQualityMin,
-                    item.FilterQualityMax,
-                    item.FilterQualityActive,
-                    isActive => item.FilterQualityActive = isActive,
-                    min => item.FilterQualityMin = min,
-                    max => item.FilterQualityMax = max,
-                    () => { },
-                    30));
-            }
-
-            return CreateGenericGroupSection(
-                "GEM PROPERTIES",
-                DesignPalette.AccentGreen,
-                rows,
-                () => (item.FilterGemLevelActive ? 1 : 0) + (item.FilterQualityActive ? 1 : 0));
         }
 
         private UIElement CreateQualityGroupSection(PoeItem item)
@@ -1378,8 +1255,10 @@ namespace GameBarWidget
                 OpenBrowserBtn.Visibility = Visibility.Visible;
             }
 
-            // Update market status header without overwriting poe.ninja benchmark prediction
-            MarketStatusText.Text = $"{searchResult.SummaryText} ({searchResult.TotalListings} listings)";
+            // Update header with summary
+            BenchmarkDivineText.Text = searchResult.SummaryText;
+            BenchmarkChaosText.Text = $"{searchResult.TotalListings} listings found";
+            MarketStatusText.Text = $"{searchResult.TotalListings} listings";
             MarketStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 74, 222, 128));
 
             if (searchResult.Listings == null || searchResult.Listings.Count == 0)
@@ -1482,25 +1361,21 @@ namespace GameBarWidget
                 }
             }
             catch { }
-
-            try
-            {
-                var msg = new ValueSet { { "Command", "RestoreFocus" } };
-                await AppServiceManager.Instance.SendToDaemonAsync(msg);
-            }
-            catch { }
         }
 
         private async Task RestoreWidgetAsync()
         {
             try
             {
+                Window.Current?.Activate();
                 if (_widgetControl != null)
                 {
                     await _widgetControl.RestoreAsync("Widget1");
-                    await _widgetControl.ActivateAsync("Widget1");
                 }
-                Window.Current.Activate();
+                if (_widget != null)
+                {
+                    await _widget.ActivateSettingsAsync();
+                }
             }
             catch { }
         }
