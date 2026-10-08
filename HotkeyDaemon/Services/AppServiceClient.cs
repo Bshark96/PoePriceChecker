@@ -326,6 +326,14 @@ namespace HotkeyDaemon.Services
                         LogMessage?.Invoke(this, "[AppService] Widget requested PoE Chromium login dialog.");
                         PoeLoginRequested?.Invoke(this, EventArgs.Empty);
                     }
+                    else if (string.Equals(command, "RestoreFocus", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(command, "FocusGameWindow", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(command, "Minimize", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(command, "Dismiss", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LogMessage?.Invoke(this, "[AppService] Restoring focus back to game window...");
+                        GameInputSimulator.RestoreFocusToGameWindow();
+                    }
                 }
             }
             catch (Exception ex)

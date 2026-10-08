@@ -60,7 +60,38 @@ namespace HotkeyDaemon.Services
         private const byte SCAN_D = 0x20;
         private const byte SCAN_RETURN = 0x1C;
 
-        public const string TestModeItemText = @"Item Class: Belts
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        private static IntPtr _lastGameHwnd = IntPtr.Zero;
+
+        public static void RememberGameWindow()
+        {
+            try
+            {
+                IntPtr hwnd = GetForegroundWindow();
+                if (hwnd != IntPtr.Zero)
+                {
+                    _lastGameHwnd = hwnd;
+                }
+            }
+            catch { }
+        }
+
+        public static void RestoreFocusToGameWindow()
+        {
+            try
+            {
+                if (_lastGameHwnd != IntPtr.Zero)
+                {
+                    SetForegroundWindow(_lastGameHwnd);
+                }
+            }
+            catch { }
+        }
 Rarity: Unique
 Mageblood
 Heavy Belt
@@ -101,6 +132,7 @@ Corrupted
         /// </summary>
         public static async Task<string?> CaptureClipboardItemAsync()
         {
+            RememberGameWindow();
             string? initialText = GetClipboardTextSafe();
 
             // Synthesize Ctrl+Alt+C exclusively (captures Advanced Mod Descriptions with tiers and affix headers)

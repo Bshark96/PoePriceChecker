@@ -1416,6 +1416,13 @@ namespace GameBarWidget
                 }
             }
             catch { }
+
+            try
+            {
+                var msg = new ValueSet { { "Command", "RestoreFocus" } };
+                await AppServiceManager.Instance.SendToDaemonAsync(msg);
+            }
+            catch { }
         }
 
         private async Task RestoreWidgetAsync()
