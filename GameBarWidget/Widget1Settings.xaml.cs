@@ -23,12 +23,11 @@ namespace GameBarWidget
             UiComponentFactory.SuppressContextMenu(AccountNameBox);
             UiComponentFactory.SuppressContextMenu(PoeSessIdBox);
 
-            this.PointerPressed += async (s, e) =>
+            this.PointerPressed += (s, e) =>
             {
                 try
                 {
                     Window.Current.Activate();
-                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                 }
                 catch { }
             };
@@ -36,12 +35,12 @@ namespace GameBarWidget
             if (AccountNameBox != null)
             {
                 AccountNameBox.AllowFocusOnInteraction = true;
-                AccountNameBox.PointerPressed += async (s, e) =>
+                AccountNameBox.IsTabStop = true;
+                AccountNameBox.PointerPressed += (s, e) =>
                 {
                     try
                     {
                         Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                         AccountNameBox.Focus(FocusState.Pointer);
                     }
                     catch { }
@@ -51,12 +50,12 @@ namespace GameBarWidget
             if (PoeSessIdBox != null)
             {
                 PoeSessIdBox.AllowFocusOnInteraction = true;
-                PoeSessIdBox.PointerPressed += async (s, e) =>
+                PoeSessIdBox.IsTabStop = true;
+                PoeSessIdBox.PointerPressed += (s, e) =>
                 {
                     try
                     {
                         Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1Settings");
                         PoeSessIdBox.Focus(FocusState.Pointer);
                     }
                     catch { }

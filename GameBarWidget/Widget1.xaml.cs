@@ -55,13 +55,12 @@ namespace GameBarWidget
             // Pause countdown on mouse hover or click interaction
             this.PointerEntered += (s, e) => _isTimerPaused = true;
             this.PointerMoved += (s, e) => _isTimerPaused = true;
-            this.PointerPressed += async (s, e) =>
+            this.PointerPressed += (s, e) =>
             {
                 _isTimerPaused = true;
                 try
                 {
                     Window.Current.Activate();
-                    if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                 }
                 catch { }
             };
@@ -1034,12 +1033,11 @@ namespace GameBarWidget
                 () => _currentItem,
                 QueryMarketAsync,
                 isPaused => _isTimerPaused = isPaused,
-                async () =>
+                () =>
                 {
                     try
                     {
                         Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                     }
                     catch { }
                 });
@@ -1078,12 +1076,11 @@ namespace GameBarWidget
                 () => _currentItem,
                 QueryMarketAsync,
                 isPaused => _isTimerPaused = isPaused,
-                async () =>
+                () =>
                 {
                     try
                     {
                         Window.Current.Activate();
-                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
                     }
                     catch { }
                 },
