@@ -93,28 +93,6 @@ namespace GameBarWidget
         {
             AppServiceManager.Instance.MessageReceived += OnAppServiceMessageReceived;
 
-            this.PointerEntered += (s, ev) =>
-            {
-                if (PoeSettingsManager.Instance.IsSettingsOpen && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 2)
-                {
-                    PoeSettingsManager.Instance.IsSettingsOpen = false;
-                }
-            };
-            this.PointerPressed += (s, ev) =>
-            {
-                if (PoeSettingsManager.Instance.IsSettingsOpen)
-                {
-                    PoeSettingsManager.Instance.IsSettingsOpen = false;
-                }
-            };
-            if (CountdownText != null)
-            {
-                CountdownText.PointerPressed += (s, ev) =>
-                {
-                    PoeSettingsManager.Instance.IsSettingsOpen = false;
-                };
-            }
-
             // Load full official stat database (21k+ entries)
             await PoeItemParser.InitializeStatsDatabaseAsync();
 
@@ -1753,25 +1731,47 @@ namespace GameBarWidget
                 {
                     try
                     {
-                        string token = !string.IsNullOrEmpty(l.HideoutToken) ? l.HideoutToken : l.WhisperToken;
                         bool apiSent = false;
-                        if (!string.IsNullOrEmpty(token))
+
+                        if (!string.IsNullOrEmpty(l.HideoutToken))
                         {
-                            var res = await PoeOfficialTradeClient.Instance.SendDirectWhisperTokenAsync(token, PoeSettingsManager.Instance.PoeSessionId);
+                            var res = await PoeOfficialTradeClient.Instance.SendDirectHideoutTokenAsync(l.HideoutToken, PoeSettingsManager.Instance.PoeSessionId);
                             if (res.success)
                             {
-                                actionBtn.Content = "Sent!";
+                                apiSent = true;
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(l.WhisperToken))
+                        {
+                            var res = await PoeOfficialTradeClient.Instance.SendDirectWhisperTokenAsync(l.WhisperToken, PoeSettingsManager.Instance.PoeSessionId);
+                            if (res.success)
+                            {
                                 apiSent = true;
                             }
                         }
 
-                        CopyWhisperToClipboard(l.WhisperString);
-                        if (!apiSent)
+                        if (!string.IsNullOrEmpty(l.WhisperString))
+                        {
+                            CopyWhisperToClipboard(l.WhisperString);
+                        }
+
+                        if (apiSent)
+                        {
+                            actionBtn.Content = "Sent!";
+                        }
+                        else
                         {
                             actionBtn.Content = "Copied!";
                         }
                     }
-                    catch { }
+                    catch
+                    {
+                        if (!string.IsNullOrEmpty(l.WhisperString))
+                        {
+                            CopyWhisperToClipboard(l.WhisperString);
+                        }
+                        actionBtn.Content = "Copied!";
+                    }
                 };
                 btnStack.Children.Add(actionBtn);
 
@@ -2306,14 +2306,22 @@ namespace GameBarWidget
         {
             try
             {
+                await EnsureDaemonStartedAsync();
                 var msg = new ValueSet
                 {
                     { "Command", "ExecuteHideout" },
                     { "Macro", PoeSettingsManager.Instance.HideoutMacroCommand }
                 };
-                await AppServiceManager.Instance.SendMessageToDaemonAsync(msg);
+                bool sent = await AppServiceManager.Instance.SendMessageToDaemonAsync(msg);
+                if (!sent)
+                {
+                    CopyWhisperToClipboard(PoeSettingsManager.Instance.HideoutMacroCommand);
+                }
             }
-            catch { }
+            catch
+            {
+                CopyWhisperToClipboard(PoeSettingsManager.Instance.HideoutMacroCommand);
+            }
         }
 
         private void DismissBtn_Click(object sender, RoutedEventArgs e)
@@ -2362,15 +2370,9 @@ namespace GameBarWidget
         {
             if (PoeSettingsManager.Instance.IsSettingsOpen)
             {
-                if (_settingsOpenedTime != DateTime.MinValue && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 45)
-                {
-                    PoeSettingsManager.Instance.IsSettingsOpen = false;
-                }
-                else
-                {
-                    CountdownText.Text = "Paused (Settings Open)";
-                    return;
-                }
+                CountdownText.Text = "Paused (Settings Open)";
+                _remainingSeconds = _totalDurationSeconds;
+                return;
             }
 
             if (_isTimerPaused)
@@ -2397,9 +2399,9 @@ namespace GameBarWidget
         {
             if (sender != null && sender.Visible)
             {
-                if (PoeSettingsManager.Instance.IsSettingsOpen && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 3)
+                if (!_countdownTimer.IsEnabled)
                 {
-                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                    StartAutoMinimizeCountdown();
                 }
             }
         }
@@ -2408,9 +2410,9 @@ namespace GameBarWidget
         {
             if (sender != null && sender.Visible)
             {
-                if (PoeSettingsManager.Instance.IsSettingsOpen && (DateTime.UtcNow - _settingsOpenedTime).TotalSeconds > 3)
+                if (!_countdownTimer.IsEnabled)
                 {
-                    PoeSettingsManager.Instance.IsSettingsOpen = false;
+                    StartAutoMinimizeCountdown();
                 }
             }
         }

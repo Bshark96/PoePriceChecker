@@ -1201,6 +1201,16 @@ namespace GameBarWidget.Services
 
         public async Task<(bool success, string message)> SendDirectWhisperTokenAsync(string token, string? poesessid)
         {
+            return await SendTokenToEndpointAsync("whisper", token, poesessid);
+        }
+
+        public async Task<(bool success, string message)> SendDirectHideoutTokenAsync(string token, string? poesessid)
+        {
+            return await SendTokenToEndpointAsync("hideout", token, poesessid);
+        }
+
+        private async Task<(bool success, string message)> SendTokenToEndpointAsync(string endpoint, string token, string? poesessid)
+        {
             if (string.IsNullOrWhiteSpace(token))
             {
                 return (false, "No token available.");
@@ -1209,7 +1219,7 @@ namespace GameBarWidget.Services
             try
             {
                 string league = PoeSettingsManager.Instance.SelectedLeague;
-                string url = $"{TradeBaseUrl}/whisper";
+                string url = $"{TradeBaseUrl}/{endpoint}";
                 using (var request = new HttpRequestMessage(HttpMethod.Post, url))
                 {
                     request.Content = new StringContent($"{{\"token\":\"{token}\"}}", Encoding.UTF8, "application/json");
@@ -1230,17 +1240,17 @@ namespace GameBarWidget.Services
                     var response = await _httpClient.SendAsync(request);
                     if (response.IsSuccessStatusCode)
                     {
-                        return (true, "Direct whisper sent.");
+                        return (true, $"{endpoint} token sent successfully.");
                     }
                     else
                     {
-                        return (false, $"Whisper failed (HTTP {(int)response.StatusCode}).");
+                        return (false, $"Request failed (HTTP {(int)response.StatusCode}).");
                     }
                 }
             }
             catch (Exception ex)
             {
-                return (false, $"Whisper error: {ex.Message}");
+                return (false, $"Trade API error: {ex.Message}");
             }
         }
     }

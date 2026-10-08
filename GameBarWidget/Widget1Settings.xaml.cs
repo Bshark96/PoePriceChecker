@@ -292,7 +292,6 @@ namespace GameBarWidget
         private async void SaveSettingsBtn_Click(object sender, RoutedEventArgs e)
         {
             var settings = PoeSettingsManager.Instance;
-            settings.IsSettingsOpen = false;
 
             if (LeagueCombo.SelectedItem is ComboBoxItem selectedLeagueItem && selectedLeagueItem.Content != null)
             {
