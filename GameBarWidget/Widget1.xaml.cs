@@ -136,12 +136,6 @@ namespace GameBarWidget
             }
             catch { }
 
-            // Hook up window activation events to restore focus when widget deactivates
-            if (Window.Current != null && Window.Current.CoreWindow != null)
-            {
-                Window.Current.CoreWindow.Activated += OnCoreWindowActivated;
-            }
-
             // Ensure background hotkey daemon is running
             await EnsureDaemonStartedAsync();
 
@@ -1522,19 +1516,6 @@ namespace GameBarWidget
                     }
                     catch { }
                 }
-            }
-        }
-
-        private async void OnCoreWindowActivated(Windows.UI.Core.CoreWindow sender, Windows.UI.Core.WindowActivatedEventArgs args)
-        {
-            if (args.WindowActivationState == Windows.UI.Core.CoreWindowActivationState.Deactivated)
-            {
-                try
-                {
-                    var msg = new ValueSet { { "Command", "RestoreFocus" } };
-                    await AppServiceManager.Instance.SendToDaemonAsync(msg);
-                }
-                catch { }
             }
         }
 

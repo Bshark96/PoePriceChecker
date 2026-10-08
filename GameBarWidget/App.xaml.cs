@@ -20,8 +20,15 @@ namespace GameBarWidget
         public App()
         {
             this.InitializeComponent();
+            this.UnhandledException += OnUnhandledException;
             this.Suspending += OnSuspending;
             _ = Task.Run(PoeItemParser.InitializeStatsDatabaseAsync);
+        }
+
+        private void OnUnhandledException(object sender, Windows.UI.Xaml.UnhandledExceptionEventArgs e)
+        {
+            e.Handled = true;
+            System.Diagnostics.Debug.WriteLine($"[App] Prevented crash via Handled UnhandledException: {e.Message}");
         }
 
         protected override void OnLaunched(LaunchActivatedEventArgs e)
