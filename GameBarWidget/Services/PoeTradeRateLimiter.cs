@@ -55,12 +55,20 @@ namespace GameBarWidget.Services
             });
         }
 
+        private DateTime _globalLockoutUntil = DateTime.MinValue;
+
         public async Task<HttpResponseMessage> SendThrottledAsync(HttpClient client, HttpRequestMessage request)
         {
             await _gate.WaitAsync();
             try
             {
-                // Calculate required delay to respect 85% safety margin
+                if (DateTime.UtcNow < _globalLockoutUntil)
+                {
+                    var lockDelay = _globalLockoutUntil - DateTime.UtcNow;
+                    CurrentStatusText = $"RATE LIMITED ({lockDelay.TotalSeconds:F0}s)";
+                    await Task.Delay(lockDelay);
+                }
+
                 TimeSpan delay = GetMaxRequiredDelay();
                 if (delay > TimeSpan.Zero)
                 {
@@ -71,10 +79,7 @@ namespace GameBarWidget.Services
                 CurrentStatusText = "DISPATCHING";
                 var response = await client.SendAsync(request);
 
-                // Update rules from response headers
                 UpdateHeaders(response);
-
-                CurrentStatusText = "NORMAL";
                 return response;
             }
             finally
@@ -104,9 +109,43 @@ namespace GameBarWidget.Services
 
         private void UpdateHeaders(HttpResponseMessage response)
         {
-            if (response == null || response.Headers == null) return;
+            if (response == null) return;
 
-            // Increment local rule counters
+            if ((int)response.StatusCode == 429)
+            {
+                _globalLockoutUntil = DateTime.UtcNow.AddSeconds(15);
+                CurrentStatusText = "RATE LIMITED (429)";
+                return;
+            }
+
+            if (response.Headers != null)
+            {
+                IEnumerable<string> values = null;
+                if (response.Headers.TryGetValues("X-Rate-Limit-Account-State", out values) ||
+                    response.Headers.TryGetValues("X-Rate-Limit-Ip-State", out values))
+                {
+                    foreach (var val in values)
+                    {
+                        var parts = val.Split(',');
+                        foreach (var part in parts)
+                        {
+                            var sub = part.Trim().Split(':');
+                            if (sub.Length >= 3 &&
+                                int.TryParse(sub[0], out int hits) &&
+                                int.TryParse(sub[1], out int window) &&
+                                int.TryParse(sub[2], out int lockout))
+                            {
+                                if (lockout > 0)
+                                {
+                                    _globalLockoutUntil = DateTime.UtcNow.AddSeconds(lockout);
+                                    CurrentStatusText = $"LOCKED OUT ({lockout}s)";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             foreach (var rule in _ipRules)
             {
                 rule.CurrentHits++;

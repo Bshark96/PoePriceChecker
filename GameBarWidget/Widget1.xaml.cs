@@ -289,7 +289,7 @@ namespace GameBarWidget
             catch { }
         }
 
-        private void AddLiveSearchBtn_Click(object sender, RoutedEventArgs e)
+        private async void AddLiveSearchBtn_Click(object sender, RoutedEventArgs e)
         {
             string rawUrl = LiveSearchUrlBox.Text?.Trim() ?? string.Empty;
             var urlInfo = PoeUrlParser.Parse(rawUrl);
@@ -313,11 +313,16 @@ namespace GameBarWidget
                 currency = "chaos";
             }
 
-            string shortId = urlInfo.SearchId.Length > 12 ? urlInfo.SearchId.Substring(0, 10) + "..." : urlInfo.SearchId;
+            LiveSearchConnectionStatus.Text = "Resolving search ID...";
+            LiveSearchConnectionStatus.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 251, 191, 36));
+
+            string resolvedId = await PoeOfficialTradeClient.Instance.ResolveSearchIdAsync(urlInfo.League, urlInfo.SearchId);
+            string shortId = resolvedId.Length > 12 ? (resolvedId.Substring(0, 10) + "...") : resolvedId;
+
             var query = new PoeLiveSearchQuery
             {
                 League = urlInfo.League,
-                SearchId = urlInfo.SearchId,
+                SearchId = resolvedId,
                 RawUrl = urlInfo.RawUrl,
                 Label = $"{urlInfo.League}/{shortId}",
                 MaxPriceAmount = maxPrice,
@@ -332,7 +337,7 @@ namespace GameBarWidget
             LiveSearchUrlBox.Text = string.Empty;
             LiveSearchMaxPriceBox.Text = string.Empty;
 
-            LiveSearchConnectionStatus.Text = "Search added & streaming";
+            LiveSearchConnectionStatus.Text = "Search active & streaming";
             LiveSearchConnectionStatus.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 74, 222, 128));
         }
 

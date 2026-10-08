@@ -55,6 +55,11 @@ namespace GameBarWidget.Services
                 return;
             }
 
+            if (_sessions.TryGetValue(query.Id, out var existing) && existing.IsConnected)
+            {
+                return;
+            }
+
             StopQuery(query.Id);
 
             var session = new LiveSearchSession(query, OnItemParsed, OnStatusUpdate);
@@ -101,6 +106,8 @@ namespace GameBarWidget.Services
             private readonly Action<string, string, bool> _onStatus;
             private CancellationTokenSource _cts;
             private ClientWebSocket _ws;
+
+            public bool IsConnected { get; private set; }
 
             public LiveSearchSession(
                 PoeLiveSearchQuery query,
@@ -162,6 +169,7 @@ namespace GameBarWidget.Services
                         string wsUrl = $"wss://www.pathofexile.com/api/trade/live/{Uri.EscapeDataString(_query.League)}/{Uri.EscapeDataString(effectiveId)}";
                         await _ws.ConnectAsync(new Uri(wsUrl), ct);
 
+                        IsConnected = true;
                         _onStatus(_query.Id, "Connected", true);
                         attempt = 0;
 
@@ -184,6 +192,7 @@ namespace GameBarWidget.Services
                     }
                     catch (Exception ex) when (!ct.IsCancellationRequested)
                     {
+                        IsConnected = false;
                         attempt++;
                         int delaySec = Math.Min(30, (int)Math.Pow(2, attempt));
                         _onStatus(_query.Id, $"Reconnecting in {delaySec}s...", false);
@@ -195,6 +204,7 @@ namespace GameBarWidget.Services
                     }
                 }
 
+                IsConnected = false;
                 _onStatus(_query.Id, "Disconnected", false);
             }
 

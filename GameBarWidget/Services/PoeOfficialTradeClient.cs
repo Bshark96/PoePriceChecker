@@ -1489,6 +1489,39 @@ namespace GameBarWidget.Services
             return listings;
         }
 
+        private static string TryDecompressSearchState(string base64State)
+        {
+            if (string.IsNullOrWhiteSpace(base64State)) return null;
+            try
+            {
+                string clean = base64State.Trim().Replace('-', '+').Replace('_', '/');
+                switch (clean.Length % 4)
+                {
+                    case 2: clean += "=="; break;
+                    case 3: clean += "="; break;
+                }
+
+                byte[] compressedBytes = Convert.FromBase64String(clean);
+                using (var ms = new System.IO.MemoryStream(compressedBytes))
+                using (var gzip = new System.IO.Compression.GZipStream(ms, System.IO.Compression.CompressionMode.Decompress))
+                using (var reader = new System.IO.StreamReader(gzip, Encoding.UTF8))
+                {
+                    string decompressed = reader.ReadToEnd();
+                    if (!string.IsNullOrWhiteSpace(decompressed))
+                    {
+                        if (!decompressed.StartsWith("{\"query\"", StringComparison.OrdinalIgnoreCase))
+                        {
+                            decompressed = $"{{\"query\":{decompressed}}}";
+                        }
+                        return decompressed;
+                    }
+                }
+            }
+            catch { }
+
+            return null;
+        }
+
         public async Task<string> ResolveSearchIdAsync(string league, string rawSearchId)
         {
             if (string.IsNullOrWhiteSpace(rawSearchId)) return rawSearchId;
@@ -1500,11 +1533,20 @@ namespace GameBarWidget.Services
 
             try
             {
-                string url = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{rawSearchId}";
-                using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                // Decompress GZip base64 state token (H4sI...) if present
+                string payloadJson = TryDecompressSearchState(rawSearchId);
+                string url = !string.IsNullOrEmpty(payloadJson)
+                    ? $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}"
+                    : $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{rawSearchId}";
+
+                string requestBody = !string.IsNullOrEmpty(payloadJson) ? payloadJson : "{}";
+
+                using (var request = new HttpRequestMessage(HttpMethod.Post, url))
                 {
+                    request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
                     request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
                     request.Headers.TryAddWithoutValidation("Accept", "application/json");
+                    request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
                     request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
                     request.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
                     request.Headers.Referrer = new Uri($"https://www.pathofexile.com/trade/search/{Uri.EscapeDataString(league)}");
@@ -1515,7 +1557,7 @@ namespace GameBarWidget.Services
                         request.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={sessionId.Trim()}");
                     }
 
-                    var response = await _httpClient.SendAsync(request);
+                    var response = await PoeTradeRateLimiter.Instance.SendThrottledAsync(_httpClient, request);
                     if (response.IsSuccessStatusCode)
                     {
                         string json = await response.Content.ReadAsStringAsync();
@@ -1545,10 +1587,12 @@ namespace GameBarWidget.Services
                 string resolvedId = await ResolveSearchIdAsync(league, searchId);
                 string url = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}/{resolvedId}";
 
-                using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                using (var request = new HttpRequestMessage(HttpMethod.Post, url))
                 {
+                    request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
                     request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
                     request.Headers.TryAddWithoutValidation("Accept", "application/json");
+                    request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
                     request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
                     request.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
 
@@ -1558,7 +1602,7 @@ namespace GameBarWidget.Services
                         request.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={sessionId.Trim()}");
                     }
 
-                    var response = await _httpClient.SendAsync(request);
+                    var response = await PoeTradeRateLimiter.Instance.SendThrottledAsync(_httpClient, request);
                     if (response.IsSuccessStatusCode)
                     {
                         string json = await response.Content.ReadAsStringAsync();

@@ -73,6 +73,12 @@ namespace GameBarWidget.Services
             set => SetValue("PoeSessionId", value);
         }
 
+        public string CfClearance
+        {
+            get => GetValue("CfClearance", string.Empty);
+            set => SetValue("CfClearance", value);
+        }
+
         public bool IsLoggedIn
         {
             get => GetValue("IsLoggedIn", false);
