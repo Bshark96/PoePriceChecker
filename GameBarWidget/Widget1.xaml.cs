@@ -436,6 +436,12 @@ namespace GameBarWidget
                             SwitchToPriceCheckView();
                         });
 
+                    if (notificationCard is FrameworkElement feCard)
+                    {
+                        feCard.VerticalAlignment = VerticalAlignment.Stretch;
+                        feCard.HorizontalAlignment = HorizontalAlignment.Stretch;
+                    }
+
                     NotificationCardsContainer.Children.Add(notificationCard);
 
                     // 3. Automatically restore window and switch to View 3 ONLY IF window was minimized/hidden

@@ -390,6 +390,8 @@
 
             <!-- 3RD VIEW: LIVE NOTIFICATION OVERLAY VIEW -->
             <Border x:Name="LiveNotificationView" 
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
                     Background="#030e18" 
                     BorderThickness="0" 
                     CornerRadius="5" 
