@@ -89,11 +89,6 @@ namespace HotkeyDaemon
                 }
                 catch { }
             };
-            _appServiceClient.ExecuteHideoutRequested += (s, macro) =>
-            {
-                // Execute chat macro into Path of Exile game client
-                GameInputSimulator.SendChatMacro(macro);
-            };
             _appServiceClient.SettingsUpdated += (s, settings) =>
             {
                 if (settings != null && settings.ContainsKey("Hotkey"))
@@ -103,11 +98,6 @@ namespace HotkeyDaemon
                     _statusItem.Text = $"Hotkey: {hotkey} (Active)";
                     _trayIcon.Text = $"Xbox Game Bar Hotkey Daemon ({hotkey})";
                     ShowBalloonNotification("Settings Updated", $"Daemon hotkey configured to: {hotkey}");
-                }
-                if (settings != null && settings.ContainsKey("HideoutCommand"))
-                {
-                    string hideoutCmd = settings["HideoutCommand"]?.ToString() ?? "/hideout";
-                    ShowBalloonNotification("Settings Updated", $"Daemon synchronized: Hideout command '{hideoutCmd}'");
                 }
             };
             _appServiceClient.PoeLoginRequested += (s, e) =>

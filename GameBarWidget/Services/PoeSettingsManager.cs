@@ -114,25 +114,6 @@ namespace GameBarWidget.Services
             set => SetValue("MaxListingsCount", value);
         }
 
-        // In-Game Chat Macros
-        public string HideoutCommand
-        {
-            get => GetValue("HideoutCommand", "/hideout");
-            set => SetValue("HideoutCommand", value);
-        }
-
-        public string HideoutMacroCommand
-        {
-            get => HideoutCommand;
-            set => HideoutCommand = value;
-        }
-
-        public string LeavePartyCommand
-        {
-            get => GetValue("LeavePartyCommand", "/kick ");
-            set => SetValue("LeavePartyCommand", value);
-        }
-
         public void Save()
         {
         }

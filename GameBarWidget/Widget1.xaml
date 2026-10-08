@@ -63,17 +63,6 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                <Button x:Name="ToHideoutHeaderBtn" 
-                        Content="To Hideout" 
-                        Click="ToHideoutBtn_Click" 
-                        Background="#162c20" 
-                        Foreground="#4ade80" 
-                        BorderBrush="#22c55e" 
-                        BorderThickness="1" 
-                        FontSize="9.5" 
-                        Padding="5,1.5" 
-                        CornerRadius="3"/>
-
                 <Button x:Name="DismissHeaderBtn" 
                         Content="Dismiss [ESC]" 
                         Click="DismissBtn_Click" 

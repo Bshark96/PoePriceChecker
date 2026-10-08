@@ -168,8 +168,6 @@ namespace GameBarWidget
             DurationSlider.Value = settings.AutoDismissDurationSeconds;
             DurationLabel.Text = $"{settings.AutoDismissDurationSeconds}s";
 
-            HideoutBox.Text = settings.HideoutCommand;
-
             // Load Hotkey Combo selection
             string currentHotkey = settings.Hotkey.ToUpperInvariant();
             if (currentHotkey.Contains("CTRL+E")) HotkeyCombo.SelectedIndex = 1;
@@ -318,7 +316,6 @@ namespace GameBarWidget
             settings.AutoSearchOfficialTrade = AutoSearchCheck.IsChecked == true;
             settings.ModRollTolerancePercent = (int)ToleranceSlider.Value;
             settings.AutoDismissDurationSeconds = (int)DurationSlider.Value;
-            settings.HideoutCommand = HideoutBox.Text.Trim();
 
             // Save selected hotkey
             switch (HotkeyCombo.SelectedIndex)
@@ -334,7 +331,6 @@ namespace GameBarWidget
             var syncMsg = new ValueSet
             {
                 { "Command", "UpdateSettings" },
-                { "HideoutCommand", settings.HideoutCommand },
                 { "DurationSeconds", settings.AutoDismissDurationSeconds },
                 { "Hotkey", settings.Hotkey }
             };

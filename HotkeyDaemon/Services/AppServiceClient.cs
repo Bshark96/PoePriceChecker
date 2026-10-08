@@ -46,7 +46,6 @@ namespace HotkeyDaemon.Services
         public event EventHandler<bool>? ConnectionStatusChanged;
         public event EventHandler? ShutdownRequested;
         public event EventHandler<ValueSet>? SettingsUpdated;
-        public event EventHandler<string>? ExecuteHideoutRequested;
         public event EventHandler? PoeLoginRequested;
 
         public bool IsConnected => _uwpConnection != null;
@@ -283,12 +282,6 @@ namespace HotkeyDaemon.Services
                     {
                         LogMessage?.Invoke(this, "[AppService] Widget commanded daemon shutdown.");
                         ShutdownRequested?.Invoke(this, EventArgs.Empty);
-                    }
-                    else if (string.Equals(command, "ExecuteHideout", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string macro = message.ContainsKey("Macro") ? message["Macro"]?.ToString() ?? "/hideout" : "/hideout";
-                        LogMessage?.Invoke(this, $"[AppService] Widget requested chat macro execution: {macro}");
-                        ExecuteHideoutRequested?.Invoke(this, macro);
                     }
                     else if (string.Equals(command, "UpdateSettings", StringComparison.OrdinalIgnoreCase))
                     {

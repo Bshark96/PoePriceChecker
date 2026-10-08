@@ -1129,7 +1129,24 @@ namespace GameBarWidget.Services
                     }
 
                     string whisperToken = listingObj.ContainsKey("whisper_token") ? listingObj.GetNamedString("whisper_token") : string.Empty;
+                    if (string.IsNullOrEmpty(whisperToken) && listingObj.ContainsKey("token"))
+                    {
+                        whisperToken = listingObj.GetNamedString("token");
+                    }
+                    if (string.IsNullOrEmpty(whisperToken) && itemObj.ContainsKey("token"))
+                    {
+                        whisperToken = itemObj.GetNamedString("token");
+                    }
+
                     string hideoutToken = listingObj.ContainsKey("hideout_token") ? listingObj.GetNamedString("hideout_token") : string.Empty;
+                    if (string.IsNullOrEmpty(hideoutToken) && listingObj.ContainsKey("token"))
+                    {
+                        hideoutToken = listingObj.GetNamedString("token");
+                    }
+                    if (string.IsNullOrEmpty(hideoutToken) && itemObj.ContainsKey("token"))
+                    {
+                        hideoutToken = itemObj.GetNamedString("token");
+                    }
 
                     int goldFee = 0;
                     if (listingObj.ContainsKey("fee"))

@@ -216,12 +216,6 @@
                         <TextBlock Grid.Column="1" x:Name="DurationLabel" Text="10s" FontSize="11" FontWeight="Bold" Foreground="#4ade80" VerticalAlignment="Center" Margin="8,0,0,0"/>
                     </Grid>
                 </StackPanel>
-
-                <!-- In-Game Hideout Macro -->
-                <StackPanel Spacing="3">
-                    <TextBlock Text="Hideout Chat Command:" FontSize="11" Foreground="#cbd5e1"/>
-                    <TextBox x:Name="HideoutBox" Text="/hideout" Background="#111924" Foreground="#f8fafc" BorderBrush="#22384e" FontSize="11" Padding="6,4"/>
-                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 

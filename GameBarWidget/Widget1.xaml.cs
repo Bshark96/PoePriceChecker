@@ -1732,21 +1732,24 @@ namespace GameBarWidget
                     try
                     {
                         bool apiSent = false;
+                        string token = !string.IsNullOrEmpty(l.HideoutToken) ? l.HideoutToken : l.WhisperToken;
 
-                        if (!string.IsNullOrEmpty(l.HideoutToken))
+                        if (!string.IsNullOrEmpty(token))
                         {
-                            var res = await PoeOfficialTradeClient.Instance.SendDirectHideoutTokenAsync(l.HideoutToken, PoeSettingsManager.Instance.PoeSessionId);
-                            if (res.success)
+                            var hideoutRes = await PoeOfficialTradeClient.Instance.SendDirectHideoutTokenAsync(token, PoeSettingsManager.Instance.PoeSessionId);
+                            if (hideoutRes.success)
                             {
                                 apiSent = true;
+                                actionBtn.Content = "Teleported!";
                             }
-                        }
-                        else if (!string.IsNullOrEmpty(l.WhisperToken))
-                        {
-                            var res = await PoeOfficialTradeClient.Instance.SendDirectWhisperTokenAsync(l.WhisperToken, PoeSettingsManager.Instance.PoeSessionId);
-                            if (res.success)
+                            else
                             {
-                                apiSent = true;
+                                var whisperRes = await PoeOfficialTradeClient.Instance.SendDirectWhisperTokenAsync(token, PoeSettingsManager.Instance.PoeSessionId);
+                                if (whisperRes.success)
+                                {
+                                    apiSent = true;
+                                    actionBtn.Content = "Sent!";
+                                }
                             }
                         }
 
@@ -1755,11 +1758,7 @@ namespace GameBarWidget
                             CopyWhisperToClipboard(l.WhisperString);
                         }
 
-                        if (apiSent)
-                        {
-                            actionBtn.Content = "Sent!";
-                        }
-                        else
+                        if (!apiSent)
                         {
                             actionBtn.Content = "Copied!";
                         }
@@ -2299,28 +2298,6 @@ namespace GameBarWidget
             if (_currentItem != null)
             {
                 await QueryMarketAsync(_currentItem);
-            }
-        }
-
-        private async void ToHideoutBtn_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                await EnsureDaemonStartedAsync();
-                var msg = new ValueSet
-                {
-                    { "Command", "ExecuteHideout" },
-                    { "Macro", PoeSettingsManager.Instance.HideoutMacroCommand }
-                };
-                bool sent = await AppServiceManager.Instance.SendMessageToDaemonAsync(msg);
-                if (!sent)
-                {
-                    CopyWhisperToClipboard(PoeSettingsManager.Instance.HideoutMacroCommand);
-                }
-            }
-            catch
-            {
-                CopyWhisperToClipboard(PoeSettingsManager.Instance.HideoutMacroCommand);
             }
         }
 
