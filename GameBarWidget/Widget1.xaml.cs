@@ -1432,9 +1432,11 @@ namespace GameBarWidget
         {
             try
             {
+                Window.Current.Activate();
                 if (_widgetControl != null)
                 {
                     await _widgetControl.RestoreAsync("Widget1");
+                    await _widgetControl.ActivateAsync("Widget1");
                 }
             }
             catch { }
@@ -1482,6 +1484,13 @@ namespace GameBarWidget
             {
                 if (sender.Visible)
                 {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                    }
+                    catch { }
+
                     if (!_countdownTimer.IsEnabled)
                     {
                         StartAutoMinimizeCountdown();
@@ -1505,6 +1514,13 @@ namespace GameBarWidget
             {
                 if (sender.Visible)
                 {
+                    try
+                    {
+                        Window.Current.Activate();
+                        if (_widgetControl != null) await _widgetControl.ActivateAsync("Widget1");
+                    }
+                    catch { }
+
                     if (!_countdownTimer.IsEnabled)
                     {
                         StartAutoMinimizeCountdown();

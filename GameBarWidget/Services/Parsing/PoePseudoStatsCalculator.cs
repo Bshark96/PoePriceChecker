@@ -59,7 +59,11 @@ namespace GameBarWidget.Services
 
         private static void AddPseudo(PoeItem item, string statId, string text, double val, double min, double max)
         {
-            if (val <= 0) return;
+            val = Math.Abs(val);
+            min = Math.Abs(min);
+            max = Math.Abs(max);
+            if (min > max) { double tmp = min; min = max; max = tmp; }
+            if (val == 0) return;
             item.PseudoModifiers.Add(new ItemModifier
             {
                 Type = ModifierType.Pseudo,
