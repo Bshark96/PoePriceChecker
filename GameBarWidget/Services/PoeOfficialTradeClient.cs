@@ -570,6 +570,147 @@ namespace GameBarWidget.Services
             return defaultLeagues;
         }
 
+        private static string MapCurrencyToTradeId(string currencyName)
+        {
+            if (string.IsNullOrWhiteSpace(currencyName)) return "divine";
+            string name = currencyName.Trim().ToLowerInvariant();
+            if (name.Contains("divine")) return "divine";
+            if (name.Contains("chaos")) return "chaos";
+            if (name.Contains("mirror")) return "mirror";
+            if (name.Contains("exalt")) return "exalted";
+            if (name.Contains("vaal")) return "vaal";
+            if (name.Contains("annul")) return "annul";
+            if (name.Contains("alch")) return "alch";
+            if (name.Contains("fusing")) return "fusing";
+            if (name.Contains("chrom")) return "chrom";
+            if (name.Contains("gcp") || name.Contains("gemcutter")) return "gcp";
+            if (name.Contains("bauble")) return "bauble";
+            if (name.Contains("regret")) return "regret";
+            if (name.Contains("scour")) return "scour";
+            if (name.Contains("blessed")) return "blessed";
+            if (name.Contains("regal")) return "regal";
+            if (name.Contains("veiled")) return "veiled-orb";
+            if (name.Contains("ancient")) return "ancient";
+            if (name.Contains("sacred")) return "sacred";
+            return name.Replace(" ", "-");
+        }
+
+        public async Task<TradeSearchResult> SearchExchangeAsync(PoeItem item, string league, string? poesessid, double divineRate)
+        {
+            var result = new TradeSearchResult();
+            result.DivinePriceChaosRate = divineRate;
+
+            string currencyId = MapCurrencyToTradeId(!string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType);
+            string wantCurrency = currencyId;
+            string haveCurrency = (currencyId == "chaos") ? "divine" : "chaos";
+
+            string payload = $"{{\"query\":{{\"status\":{{\"option\":\"online\"}},\"have\":[\"{haveCurrency}\"],\"want\":[\"{wantCurrency}\"]}},\"engine\":\"new\"}}";
+            string url = $"{TradeBaseUrl}/exchange/{Uri.EscapeDataString(league)}";
+
+            try
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Post, url))
+                {
+                    request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                    if (!string.IsNullOrWhiteSpace(poesessid))
+                    {
+                        request.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={poesessid.Trim()}");
+                    }
+                    else if (!string.IsNullOrWhiteSpace(PoeSettingsManager.Instance.OAuthAccessToken))
+                    {
+                        request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {PoeSettingsManager.Instance.OAuthAccessToken.Trim()}");
+                    }
+
+                    var response = await PoeTradeRateLimiter.Instance.SendThrottledAsync(_httpClient, request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseJson = await response.Content.ReadAsStringAsync();
+                        if (JsonObject.TryParse(responseJson, out var rootObj))
+                        {
+                            string queryId = rootObj.ContainsKey("id") ? rootObj.GetNamedString("id") : string.Empty;
+                            int total = rootObj.ContainsKey("total") ? (int)rootObj.GetNamedNumber("total") : 0;
+                            result.QueryId = queryId;
+                            result.SearchUrl = $"https://www.pathofexile.com/trade/exchange/{Uri.EscapeDataString(league)}/{queryId}";
+                            result.TotalListings = total;
+
+                            if (total > 0 && rootObj.ContainsKey("result") && rootObj.GetNamedValue("result").ValueType == JsonValueType.Object)
+                            {
+                                var resultMap = rootObj.GetNamedObject("result");
+                                var keys = new List<string>();
+                                foreach (var k in resultMap.Keys)
+                                {
+                                    keys.Add(k);
+                                    if (keys.Count >= 10) break;
+                                }
+
+                                if (keys.Count > 0)
+                                {
+                                    string fetchUrl = $"{TradeBaseUrl}/fetch/{string.Join(",", keys)}?query={queryId}&exchange=true";
+                                    using (var fetchReq = new HttpRequestMessage(HttpMethod.Get, fetchUrl))
+                                    {
+                                        if (!string.IsNullOrWhiteSpace(poesessid))
+                                        {
+                                            fetchReq.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={poesessid.Trim()}");
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(PoeSettingsManager.Instance.OAuthAccessToken))
+                                        {
+                                            fetchReq.Headers.TryAddWithoutValidation("Authorization", $"Bearer {PoeSettingsManager.Instance.OAuthAccessToken.Trim()}");
+                                        }
+
+                                        var fetchRes = await PoeTradeRateLimiter.Instance.SendThrottledAsync(_httpClient, fetchReq);
+                                        if (fetchRes.IsSuccessStatusCode)
+                                        {
+                                            string fetchJson = await fetchRes.Content.ReadAsStringAsync();
+                                            var listings = ParseFetchListings(fetchJson, league, divineRate);
+                                            if (listings.Count > 0)
+                                            {
+                                                listings.Sort((a, b) => a.PriceInChaos.CompareTo(b.PriceInChaos));
+                                                result.IsSuccess = true;
+                                                result.Listings = listings;
+                                                CalculateStatistics(result, listings);
+                                                return result;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // Fallback to poe.ninja benchmark rate if exchange query returned no active offers or offline
+            var benchmark = PoeNinjaClient.Instance.GetBenchmark(item);
+            if (benchmark.Found)
+            {
+                result.IsSuccess = true;
+                result.MinPriceChaos = benchmark.ChaosEquivalent;
+                result.MedianPriceChaos = benchmark.ChaosEquivalent;
+                result.SummaryText = $"{benchmark.ChaosEquivalent:0.##} Chaos (≈{benchmark.DivineEquivalent:0.##} Div)";
+                result.TotalListings = 1;
+                result.SearchUrl = $"https://www.pathofexile.com/trade/exchange/{Uri.EscapeDataString(league)}";
+                result.Listings = new List<TradeListing>
+                {
+                    new TradeListing
+                    {
+                        AccountName = "poe.ninja rate",
+                        ItemName = !string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType,
+                        PriceAmount = benchmark.ChaosEquivalent,
+                        PriceCurrency = "chaos",
+                        PriceInChaos = benchmark.ChaosEquivalent,
+                        PriceInDivine = benchmark.DivineEquivalent,
+                        WhisperString = $"Exchange Rate: 1 {!string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType} = {benchmark.ChaosEquivalent:0.##} Chaos",
+                        AgeText = "Live rate"
+                    }
+                };
+                return result;
+            }
+
+            return result;
+        }
+
         public async Task<TradeSearchResult> SearchItemAsync(PoeItem item, string? league = null, string? poesessid = null)
         {
             var result = new TradeSearchResult();
@@ -603,6 +744,19 @@ namespace GameBarWidget.Services
                 }
                 catch { }
                 result.DivinePriceChaosRate = divineRate;
+
+                bool isCurrencyItem = item.Namespace == ItemNamespace.Currency || 
+                                       item.Rarity == PoeRarity.Currency || 
+                                       (!string.IsNullOrEmpty(item.Name) && (item.Name.EndsWith("Orb", StringComparison.OrdinalIgnoreCase) || item.Name.Contains("Mirror of Kalandra") || item.Name.Contains("Divine") || item.Name.Contains("Chaos")));
+
+                if (isCurrencyItem)
+                {
+                    var exchangeRes = await SearchExchangeAsync(item, league, poesessid, divineRate);
+                    if (exchangeRes != null && exchangeRes.IsSuccess && exchangeRes.Listings != null && exchangeRes.Listings.Count > 0)
+                    {
+                        return exchangeRes;
+                    }
+                }
 
                 string queryJson = BuildSearchPayload(item);
                 string searchUrl = $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}";
@@ -678,6 +832,32 @@ namespace GameBarWidget.Services
 
                     if (total == 0 || string.IsNullOrEmpty(queryId))
                     {
+                        var benchmark = PoeNinjaClient.Instance.GetBenchmark(item);
+                        if (benchmark.Found)
+                        {
+                            result.IsSuccess = true;
+                            result.MinPriceChaos = benchmark.ChaosEquivalent;
+                            result.MedianPriceChaos = benchmark.ChaosEquivalent;
+                            result.SummaryText = $"{benchmark.ChaosEquivalent:0.##} Chaos (≈{benchmark.DivineEquivalent:0.##} Div)";
+                            result.TotalListings = 1;
+                            result.SearchUrl = $"https://www.pathofexile.com/trade/exchange/{Uri.EscapeDataString(league)}";
+                            result.Listings = new List<TradeListing>
+                            {
+                                new TradeListing
+                                {
+                                    AccountName = "poe.ninja rate",
+                                    ItemName = !string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType,
+                                    PriceAmount = benchmark.ChaosEquivalent,
+                                    PriceCurrency = "chaos",
+                                    PriceInChaos = benchmark.ChaosEquivalent,
+                                    PriceInDivine = benchmark.DivineEquivalent,
+                                    WhisperString = $"Exchange Rate: 1 {!string.IsNullOrEmpty(item.Name) ? item.Name : item.BaseType} = {benchmark.ChaosEquivalent:0.##} Chaos",
+                                    AgeText = "Live rate"
+                                }
+                            };
+                            return result;
+                        }
+
                         result.IsSuccess = true;
                         result.Listings = new List<TradeListing>();
                         result.ErrorReason = $"No active listings found in '{league}'.";
