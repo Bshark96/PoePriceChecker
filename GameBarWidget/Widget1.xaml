@@ -353,6 +353,37 @@
                                 <TextBlock Text="Incoming live search items will appear here in real time." FontSize="9" Foreground="#94a3b8" Margin="2,2,0,2"/>
                             </StackPanel>
                         </StackPanel>
+
+                        <!-- Live Search Diagnostics & Debug Log Box -->
+                        <Border Background="#090e15" BorderBrush="#1e2c3d" BorderThickness="1" CornerRadius="4" Padding="6" Margin="0,4,0,0">
+                            <StackPanel Spacing="4">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <Border Width="5" Height="5" CornerRadius="2.5" Background="#38bdf8"/>
+                                        <TextBlock Text="LIVE SEARCH DIAGNOSTICS LOG" FontSize="9" FontWeight="Bold" Foreground="#38bdf8"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                        <Button x:Name="CopyDebugLogBtn" Content="Copy Log" Click="CopyDebugLogBtn_Click" Background="#1e2c3d" Foreground="#38bdf8" FontSize="8" Padding="5,1" CornerRadius="2"/>
+                                        <Button x:Name="ClearDebugLogBtn" Content="Clear" Click="ClearDebugLogBtn_Click" Background="#1e2c3d" Foreground="#94a3b8" FontSize="8" Padding="5,1" CornerRadius="2"/>
+                                    </StackPanel>
+                                </Grid>
+                                <ScrollViewer Height="110" VerticalScrollBarVisibility="Auto" Background="#05080c" CornerRadius="3" Padding="4">
+                                    <TextBox x:Name="LiveSearchDebugLogText" 
+                                             IsReadOnly="True" 
+                                             TextWrapping="Wrap" 
+                                             AcceptsReturn="True" 
+                                             Background="Transparent" 
+                                             Foreground="#38bdf8" 
+                                             FontFamily="Consolas" 
+                                             FontSize="8.5" 
+                                             BorderThickness="0"/>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </Border>

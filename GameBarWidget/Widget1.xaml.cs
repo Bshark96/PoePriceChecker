@@ -100,6 +100,12 @@ namespace GameBarWidget
             PoeLiveSearchClient.Instance.ItemReceived += OnLiveItemReceived;
             PoeLiveSearchClient.Instance.StatusChanged += OnLiveStatusChanged;
 
+            LiveSearchLogger.OnLogAdded += OnLiveSearchLogAdded;
+            if (LiveSearchDebugLogText != null)
+            {
+                LiveSearchDebugLogText.Text = LiveSearchLogger.GetFullLog();
+            }
+
             // Load full official stat database (21k+ entries)
             await PoeItemParser.InitializeStatsDatabaseAsync();
 
@@ -142,6 +148,8 @@ namespace GameBarWidget
 
             PoeLiveSearchClient.Instance.ItemReceived -= OnLiveItemReceived;
             PoeLiveSearchClient.Instance.StatusChanged -= OnLiveStatusChanged;
+
+            LiveSearchLogger.OnLogAdded -= OnLiveSearchLogAdded;
 
             Window.Current.CoreWindow.KeyDown -= CoreWindow_KeyDown;
 
@@ -391,8 +399,8 @@ namespace GameBarWidget
                     var card = LiveSearchCardBuilder.BuildLiveListingNotificationCard(e.Query, e.Listing, CopyWhisperToClipboard);
                     LiveListingsContainer.Children.Insert(0, card);
 
-                    // Maintain max 25 live listings
-                    while (LiveListingsContainer.Children.Count > 25)
+                    // Maintain max 100 live listings in UI stream
+                    while (LiveListingsContainer.Children.Count > 100)
                     {
                         LiveListingsContainer.Children.RemoveAt(LiveListingsContainer.Children.Count - 1);
                     }
@@ -421,6 +429,37 @@ namespace GameBarWidget
                 Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 148, 163, 184)),
                 Margin = new Thickness(2, 2, 0, 2)
             });
+        }
+
+        private void OnLiveSearchLogAdded(string entry)
+        {
+            _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                if (LiveSearchDebugLogText != null)
+                {
+                    LiveSearchDebugLogText.Text = LiveSearchLogger.GetFullLog();
+                }
+            });
+        }
+
+        private void CopyDebugLogBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                dp.SetText(LiveSearchLogger.GetFullLog());
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+            }
+            catch { }
+        }
+
+        private void ClearDebugLogBtn_Click(object sender, RoutedEventArgs e)
+        {
+            LiveSearchLogger.Clear();
+            if (LiveSearchDebugLogText != null)
+            {
+                LiveSearchDebugLogText.Text = string.Empty;
+            }
         }
 
         #endregion

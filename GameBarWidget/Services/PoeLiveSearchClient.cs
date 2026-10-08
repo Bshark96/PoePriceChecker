@@ -10,6 +10,18 @@ using Windows.Foundation.Collections;
 
 namespace GameBarWidget.Services
 {
+    public static class LiveSearchLogger
+    {
+        public static event EventHandler<string> LogMessage;
+
+        public static void Log(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return;
+            string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            LogMessage?.Invoke(null, $"[{timestamp}] {message}");
+        }
+    }
+
     public sealed class LiveItemEventArgs : EventArgs
     {
         public PoeLiveSearchQuery Query { get; }
@@ -143,14 +155,32 @@ namespace GameBarWidget.Services
                     try
                     {
                         string effectiveId = _query.SearchId;
+                        LiveSearchLogger.Log($"Starting Live Search Query Session [{_query.Label}] | Search ID: '{effectiveId}' | League: '{_query.League}'");
+
                         if (effectiveId.Length > 20 || effectiveId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
                         {
                             _onStatus(_query.Id, "Resolving search ID...", false);
-                            var (resolved, _) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
+                            LiveSearchLogger.Log("Resolving compressed/long search ID with GGG Trade API...");
+                            var (resolved, initialHashes) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, effectiveId);
                             if (!string.IsNullOrWhiteSpace(resolved) && resolved != effectiveId)
                             {
+                                LiveSearchLogger.Log($"Successfully resolved Search ID: '{effectiveId}' -> '{resolved}'");
                                 _query.SearchId = resolved;
                                 effectiveId = resolved;
+                            }
+
+                            if (initialHashes != null && initialHashes.Count > 0)
+                            {
+                                LiveSearchLogger.Log($"Fetching initial {initialHashes.Count} active query items for immediate rendering...");
+                                var initListings = await PoeOfficialTradeClient.Instance.FetchListingsAsync(initialHashes, _query.League, effectiveId);
+                                if (initListings != null && initListings.Count > 0)
+                                {
+                                    LiveSearchLogger.Log($"Successfully loaded {initListings.Count} initial search results.");
+                                    foreach (var item in initListings)
+                                    {
+                                        _onItem(_query, item);
+                                    }
+                                }
                             }
                         }
 
@@ -164,13 +194,20 @@ namespace GameBarWidget.Services
                         if (!string.IsNullOrWhiteSpace(sessionId))
                         {
                             _ws.Options.SetRequestHeader("Cookie", $"POESESSID={sessionId.Trim()}");
+                            LiveSearchLogger.Log($"WebSocket Header Attached: Cookie POESESSID ({sessionId.Substring(0, Math.Min(6, sessionId.Length))}...)");
+                        }
+                        else
+                        {
+                            LiveSearchLogger.Log("WARNING: No POESESSID found in settings. WebSockets may be rejected by GGG server.");
                         }
 
                         string wsUrl = $"wss://www.pathofexile.com/api/trade/live/{Uri.EscapeDataString(_query.League)}/{Uri.EscapeDataString(effectiveId)}";
+                        LiveSearchLogger.Log($"Connecting WebSocket: {wsUrl}");
                         await _ws.ConnectAsync(new Uri(wsUrl), ct);
 
                         IsConnected = true;
                         _onStatus(_query.Id, "Connected", true);
+                        LiveSearchLogger.Log($"WebSocket Stream CONNECTED successfully for search '{effectiveId}'. Listening for new listings...");
                         attempt = 0;
 
                         // Start 30s heartbeat ping task
@@ -182,6 +219,7 @@ namespace GameBarWidget.Services
                         IsConnected = false;
                         attempt++;
                         int delaySec = Math.Min(30, (int)Math.Pow(2, attempt));
+                        LiveSearchLogger.Log($"WebSocket Error / Disconnected: {ex.Message}. Reconnecting in {delaySec}s (Attempt #{attempt})...");
                         _onStatus(_query.Id, $"Reconnecting in {delaySec}s...", false);
                         try
                         {
@@ -193,6 +231,7 @@ namespace GameBarWidget.Services
 
                 IsConnected = false;
                 _onStatus(_query.Id, "Disconnected", false);
+                LiveSearchLogger.Log($"Live Search session ended for search '{_query.SearchId}'.");
             }
 
             private async Task HeartbeatLoopAsync(CancellationToken ct)
@@ -206,6 +245,7 @@ namespace GameBarWidget.Services
                         {
                             var pingBytes = Encoding.UTF8.GetBytes("{\"action\":\"ping\"}");
                             await _ws.SendAsync(new ArraySegment<byte>(pingBytes), WebSocketMessageType.Text, true, ct);
+                            LiveSearchLogger.Log("WebSocket heartbeat ping sent.");
                         }
                     }
                     catch { break; }
@@ -222,6 +262,7 @@ namespace GameBarWidget.Services
                     var result = await _ws.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
+                        LiveSearchLogger.Log("WebSocket received CLOSE frame from GGG server.");
                         break;
                     }
 
@@ -231,6 +272,7 @@ namespace GameBarWidget.Services
                         string json = Encoding.UTF8.GetString(ms.ToArray());
                         ms.SetLength(0);
 
+                        LiveSearchLogger.Log($"WebSocket RAW EVENT RECEIVE: {json}");
                         await ParseAndProcessPayloadAsync(json);
                     }
                 }
@@ -296,17 +338,28 @@ namespace GameBarWidget.Services
 
                     if (itemHashes.Count > 0)
                     {
+                        LiveSearchLogger.Log($"Extracted {itemHashes.Count} new item hash(es): [{string.Join(", ", itemHashes)}]. Hydrating details from GGG Trade API...");
                         var realListings = await PoeOfficialTradeClient.Instance.FetchListingsAsync(itemHashes, _query.League, _query.SearchId);
                         if (realListings != null && realListings.Count > 0)
                         {
+                            LiveSearchLogger.Log($"Successfully hydrated {realListings.Count} item listing(s). Displaying in UI live stream...");
                             foreach (var listing in realListings)
                             {
+                                // Show ALL items received from GGG live search with zero local filtering
+                                LiveSearchLogger.Log($"STREAM ITEM DISPATCH: '{listing.ItemName}' | Price: {listing.PriceAmount} {listing.PriceCurrency} | Seller: {listing.AccountName}");
                                 _onItem(_query, listing);
                             }
                         }
+                        else
+                        {
+                            LiveSearchLogger.Log("WARNING: FetchListingsAsync returned 0 item listings from GGG.");
+                        }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    LiveSearchLogger.Log($"Parse/Process Error: {ex.Message}");
+                }
             }
         }
     }

@@ -1561,8 +1561,15 @@ namespace GameBarWidget.Services
 
             try
             {
+                string sessionId = PoeSettingsManager.Instance.PoeSessionId;
+                LiveSearchLogger.Log($"Resolving query for league '{league}'. POESESSID Status: {(string.IsNullOrWhiteSpace(sessionId) ? "MISSING (Set in Settings)" : "LOADED (" + sessionId.Substring(0, Math.Min(6, sessionId.Length)) + "...)")}");
+
                 string payloadJson = TryDecompressSearchState(rawSearchId);
                 bool isCompressed = !string.IsNullOrEmpty(payloadJson);
+                if (isCompressed)
+                {
+                    LiveSearchLogger.Log($"Decompressed GZip state -> {payloadJson}");
+                }
 
                 string url = isCompressed
                     ? $"{TradeBaseUrl}/search/{Uri.EscapeDataString(league)}"
@@ -1584,13 +1591,14 @@ namespace GameBarWidget.Services
                     request.Headers.TryAddWithoutValidation("Origin", "https://www.pathofexile.com");
                     request.Headers.Referrer = new Uri($"https://www.pathofexile.com/trade/search/{Uri.EscapeDataString(league)}");
 
-                    string sessionId = PoeSettingsManager.Instance.PoeSessionId;
                     if (!string.IsNullOrWhiteSpace(sessionId))
                     {
                         request.Headers.TryAddWithoutValidation("Cookie", $"POESESSID={sessionId.Trim()}");
                     }
 
                     var response = await PoeTradeRateLimiter.Instance.SendThrottledAsync(_httpClient, request);
+                    LiveSearchLogger.Log($"Search API Endpoint: {url} | HTTP Status: {(int)response.StatusCode} {response.ReasonPhrase}");
+
                     if (response.IsSuccessStatusCode)
                     {
                         string json = await response.Content.ReadAsStringAsync();
@@ -1611,12 +1619,20 @@ namespace GameBarWidget.Services
                                 }
                             }
 
+                            LiveSearchLogger.Log($"Resolved Search ID: '{id}' | Total active result hashes in query: {hashes.Count}");
                             return (id, hashes);
                         }
                     }
+                    else
+                    {
+                        LiveSearchLogger.Log($"Search API Error ({(int)response.StatusCode}): Check POESESSID cookie or rate limits.");
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LiveSearchLogger.Log($"Resolve Exception: {ex.Message}");
+            }
 
             return (rawSearchId, hashes);
         }
