@@ -435,6 +435,7 @@ namespace GameBarWidget.Services
         public string CharacterIgn { get; set; } = string.Empty;
         public string OnlineStatus { get; set; } = "online";
         public string ListedAge { get; set; } = "Recent";
+        public string AgeText { get => ListedAge; set => ListedAge = value; }
         public string WhisperString { get; set; } = string.Empty;
         public string WhisperToken { get; set; } = string.Empty;
         public string HideoutToken { get; set; } = string.Empty;
@@ -484,10 +485,12 @@ namespace GameBarWidget.Services
         public double DivinePriceChaosRate { get; set; } = 150.0;
         public List<TradeListing> Listings { get; set; } = new List<TradeListing>();
 
+        private string? _customSummaryText;
         public string SummaryText
         {
             get
             {
+                if (!string.IsNullOrEmpty(_customSummaryText)) return _customSummaryText;
                 if (!IsSuccess) return ErrorReason;
                 if (TotalListings == 0) return "No active listings found.";
 
@@ -500,6 +503,7 @@ namespace GameBarWidget.Services
 
                 return $"{Math.Round(MinPriceChaos)} - {Math.Round(MedianPriceChaos)} chaos ({TotalListings} offers)";
             }
+            set => _customSummaryText = value;
         }
     }
 
