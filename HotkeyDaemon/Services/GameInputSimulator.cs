@@ -60,11 +60,20 @@ namespace HotkeyDaemon.Services
         private const byte SCAN_D = 0x20;
         private const byte SCAN_RETURN = 0x1C;
 
+        private const byte VK_SHIFT = 0x10;
+        private const byte SCAN_LSHIFT = 0x2A;
+
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.dll")]
+        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
         private static IntPtr _lastGameHwnd = IntPtr.Zero;
 
@@ -81,14 +90,36 @@ namespace HotkeyDaemon.Services
             catch { }
         }
 
+        public static void ReleaseStuckModifierKeys()
+        {
+            try
+            {
+                SendKey(VK_CONTROL, SCAN_LCTRL, true);
+                SendKey(VK_MENU, SCAN_LALT, true);
+                SendKey(VK_SHIFT, SCAN_LSHIFT, true);
+            }
+            catch { }
+        }
+
         public static void RestoreFocusToGameWindow()
         {
             try
             {
+                ReleaseStuckModifierKeys();
                 if (_lastGameHwnd != IntPtr.Zero)
                 {
-                    SetForegroundWindow(_lastGameHwnd);
+                    IntPtr currentForeground = GetForegroundWindow();
+                    if (currentForeground != _lastGameHwnd)
+                    {
+                        uint currentThreadId = (uint)Environment.CurrentManagedThreadId;
+                        uint gameThreadId = GetWindowThreadProcessId(_lastGameHwnd, out _);
+
+                        AttachThreadInput(currentThreadId, gameThreadId, true);
+                        SetForegroundWindow(_lastGameHwnd);
+                        AttachThreadInput(currentThreadId, gameThreadId, false);
+                    }
                 }
+                ReleaseStuckModifierKeys();
             }
             catch { }
         }
@@ -194,6 +225,8 @@ Corrupted
             Thread.Sleep(15);
             SendKey(VK_MENU, SCAN_LALT, true);
             SendKey(VK_CONTROL, SCAN_LCTRL, true);
+            Thread.Sleep(10);
+            ReleaseStuckModifierKeys();
         }
     }
 }

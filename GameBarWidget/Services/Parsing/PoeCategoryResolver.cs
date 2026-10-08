@@ -59,20 +59,35 @@ namespace GameBarWidget.Services
             string c = (((item.ItemClass ?? "") + " " + (item.Name ?? "") + " " + (item.BaseType ?? "")).Trim()).ToLowerInvariant();
 
             // 1. Gems
-            if (item.Rarity == PoeRarity.Gem || c.Contains("gem"))
+            string itemClass = item.ItemClass ?? string.Empty;
+            bool isGemClass = item.Rarity == PoeRarity.Gem ||
+                              itemClass.Equals("Skill Gems", StringComparison.OrdinalIgnoreCase) ||
+                              itemClass.Equals("Support Gems", StringComparison.OrdinalIgnoreCase) ||
+                              itemClass.Equals("Active Skill Gems", StringComparison.OrdinalIgnoreCase);
+
+            if (isGemClass)
             {
                 item.Namespace = ItemNamespace.Gem;
                 if (c.Contains("support")) item.Category = "gem.supportgem";
                 else if (c.Contains("meta")) item.Category = "gem.metagem";
                 else item.Category = "gem.activegem";
 
-                // Transfigured Gem check
+                // Gems in clipboard text only have 1 header line (Name == BaseType)
                 string gemFullName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : item.BaseType;
-                if (!string.IsNullOrWhiteSpace(gemFullName) && gemFullName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase) > 0)
+                item.Name = gemFullName;
+                item.BaseType = gemFullName;
+
+                // Transfigured Gem check
+                int idxOf = gemFullName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase);
+                if (idxOf > 0)
                 {
                     item.IsTransfiguredGem = true;
-                    int idxOf = gemFullName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase);
                     item.NormalGemVariant = gemFullName.Substring(0, idxOf).Trim();
+                }
+                else
+                {
+                    item.IsTransfiguredGem = false;
+                    item.NormalGemVariant = gemFullName;
                 }
                 return;
             }
