@@ -19,7 +19,27 @@ namespace GameBarWidget.Services
         }
 
         // Runtime UI State
-        public bool IsSettingsOpen { get; set; } = false;
+        private bool _isSettingsOpen = false;
+        public bool IsSettingsOpen
+        {
+            get => _isSettingsOpen;
+            set
+            {
+                if (_isSettingsOpen != value)
+                {
+                    _isSettingsOpen = value;
+                    IsSettingsOpenChanged?.Invoke(this, value);
+                    if (!value)
+                    {
+                        SettingsClosed?.Invoke(this, EventArgs.Empty);
+                    }
+                }
+            }
+        }
+
+        public event EventHandler<bool> IsSettingsOpenChanged;
+        public event EventHandler SettingsClosed;
+        public event EventHandler SettingsSaved;
 
         // Overlay Behavior
         public int AutoDismissDurationSeconds
@@ -116,6 +136,7 @@ namespace GameBarWidget.Services
 
         public void Save()
         {
+            SettingsSaved?.Invoke(this, EventArgs.Empty);
         }
 
         private T GetValue<T>(string key, T defaultValue)

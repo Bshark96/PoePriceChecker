@@ -92,6 +92,8 @@ namespace GameBarWidget
         private async void Widget1_Loaded(object sender, RoutedEventArgs e)
         {
             AppServiceManager.Instance.MessageReceived += OnAppServiceMessageReceived;
+            PoeSettingsManager.Instance.SettingsClosed += OnSettingsClosed;
+            PoeSettingsManager.Instance.SettingsSaved += OnSettingsSaved;
 
             // Load full official stat database (21k+ entries)
             await PoeItemParser.InitializeStatsDatabaseAsync();
@@ -130,6 +132,8 @@ namespace GameBarWidget
         private void Widget1_Unloaded(object sender, RoutedEventArgs e)
         {
             AppServiceManager.Instance.MessageReceived -= OnAppServiceMessageReceived;
+            PoeSettingsManager.Instance.SettingsClosed -= OnSettingsClosed;
+            PoeSettingsManager.Instance.SettingsSaved -= OnSettingsSaved;
             Window.Current.CoreWindow.KeyDown -= CoreWindow_KeyDown;
 
             if (_widget != null)
@@ -139,6 +143,24 @@ namespace GameBarWidget
             }
 
             _countdownTimer.Stop();
+        }
+
+        private async void OnSettingsClosed(object sender, EventArgs e)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            {
+                LoadSettingsIntoUi();
+                await RestoreWidgetAsync();
+                StartAutoMinimizeCountdown();
+            });
+        }
+
+        private async void OnSettingsSaved(object sender, EventArgs e)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                LoadSettingsIntoUi();
+            });
         }
 
         private async Task EnsureDaemonStartedAsync()
@@ -400,7 +422,7 @@ namespace GameBarWidget
             }
 
             // Quality Group
-            bool canHaveQuality = item.Quality > 0 || item.Rarity == PoeRarity.Gem || item.Category == "weapon" || item.Category == "armour" || item.Category == "flask" || item.SocketCount > 0 || (!string.IsNullOrEmpty(item.ItemClass) && (item.ItemClass.IndexOf("Weapon", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Armour", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Flask", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Gem", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Map", StringComparison.OrdinalIgnoreCase) >= 0));
+            bool canHaveQuality = item.Quality > 0 || item.Rarity == PoeRarity.Gem || item.Category.StartsWith("weapon", StringComparison.OrdinalIgnoreCase) || item.Category.StartsWith("armour", StringComparison.OrdinalIgnoreCase) || item.Category == "flask" || item.Category == "map" || item.SocketCount > 0 || (!string.IsNullOrEmpty(item.ItemClass) && (item.ItemClass.IndexOf("Weapon", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Armour", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Flask", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Gem", StringComparison.OrdinalIgnoreCase) >= 0 || item.ItemClass.IndexOf("Map", StringComparison.OrdinalIgnoreCase) >= 0));
             if (canHaveQuality)
             {
                 if (renderedGroups > 0) AddDivider(ModContainer);

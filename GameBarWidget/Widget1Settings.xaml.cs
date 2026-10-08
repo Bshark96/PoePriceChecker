@@ -327,6 +327,8 @@ namespace GameBarWidget
                 default: settings.Hotkey = "CTRL+D"; break;
             }
 
+            settings.Save();
+
             // Sync with daemon
             var syncMsg = new ValueSet
             {

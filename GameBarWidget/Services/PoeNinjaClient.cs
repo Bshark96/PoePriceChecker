@@ -90,18 +90,35 @@ namespace GameBarWidget.Services
             {
                 string safeLeague = Uri.EscapeDataString(league);
 
-                // 1. Fetch Currency Overview
-                string currUrl = $"https://poe.ninja/api/data/currencyoverview?league={safeLeague}&type=Currency";
-                string currJson = await _httpClient.GetStringAsync(currUrl);
-                ParsePoeNinjaCurrency(currJson);
+                // 1. Fetch Currency & Fragments Overview
+                string[] currencyTypes = new[] { "Currency", "Fragment" };
+                foreach (string ct in currencyTypes)
+                {
+                    try
+                    {
+                        string currUrl = $"https://poe.ninja/api/data/currencyoverview?league={safeLeague}&type={ct}";
+                        string currJson = await _httpClient.GetStringAsync(currUrl);
+                        ParsePoeNinjaCurrency(currJson);
+                    }
+                    catch { }
+                }
 
                 // 2. Fetch Skill Gems Overview (including Transfigured Gems)
-                string gemUrl = $"https://poe.ninja/api/data/itemoverview?league={safeLeague}&type=SkillGem";
-                string gemJson = await _httpClient.GetStringAsync(gemUrl);
-                ParsePoeNinjaItems(gemJson, _gemCache);
+                try
+                {
+                    string gemUrl = $"https://poe.ninja/api/data/itemoverview?league={safeLeague}&type=SkillGem";
+                    string gemJson = await _httpClient.GetStringAsync(gemUrl);
+                    ParsePoeNinjaItems(gemJson, _gemCache);
+                }
+                catch { }
 
-                // 3. Fetch Unique Weapons, Armours, Accessories
-                string[] itemTypes = new[] { "UniqueWeapon", "UniqueArmour", "UniqueAccessory", "UniqueFlask", "UniqueJewel", "DivinationCard" };
+                // 3. Fetch All Item Overviews
+                string[] itemTypes = new[]
+                {
+                    "UniqueWeapon", "UniqueArmour", "UniqueAccessory", "UniqueFlask", "UniqueJewel", "UniqueMap",
+                    "DivinationCard", "Essence", "Oil", "Incubator", "Scarab", "Fossil", "Resonator",
+                    "Tattoo", "Omen", "Map", "BlightedMap", "BlightRavagedMap", "ClusterJewel", "Beast"
+                };
                 foreach (string t in itemTypes)
                 {
                     try
@@ -188,7 +205,7 @@ namespace GameBarWidget.Services
             string lookupName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : item.BaseType;
 
             // 1. Check Currency Cache
-            if (_currencyCache.TryGetValue(lookupName, out double currencyChaos))
+            if (!string.IsNullOrWhiteSpace(lookupName) && _currencyCache.TryGetValue(lookupName, out double currencyChaos))
             {
                 return new BenchmarkResult
                 {
@@ -199,11 +216,22 @@ namespace GameBarWidget.Services
                     Source = "poe.ninja (Currency)"
                 };
             }
+            if (!string.IsNullOrWhiteSpace(item.BaseType) && _currencyCache.TryGetValue(item.BaseType, out double currencyBaseChaos))
+            {
+                return new BenchmarkResult
+                {
+                    Found = true,
+                    ChaosEquivalent = currencyBaseChaos,
+                    DivineEquivalent = Math.Round(currencyBaseChaos / _divinePriceInChaos, 1),
+                    Confidence = "High",
+                    Source = "poe.ninja (Currency)"
+                };
+            }
 
             // 2. Check Gem Cache
-            if (item.Rarity == PoeRarity.Gem || _gemCache.ContainsKey(lookupName))
+            if (item.Rarity == PoeRarity.Gem || item.Namespace == ItemNamespace.Gem || _gemCache.ContainsKey(lookupName))
             {
-                if (_gemCache.TryGetValue(lookupName, out double gemChaos))
+                if (!string.IsNullOrWhiteSpace(lookupName) && _gemCache.TryGetValue(lookupName, out double gemChaos))
                 {
                     return new BenchmarkResult
                     {
@@ -214,10 +242,21 @@ namespace GameBarWidget.Services
                         Source = "poe.ninja (Skill Gem)"
                     };
                 }
+                if (!string.IsNullOrWhiteSpace(item.NormalGemVariant) && _gemCache.TryGetValue(item.NormalGemVariant, out double baseGemChaos))
+                {
+                    return new BenchmarkResult
+                    {
+                        Found = true,
+                        ChaosEquivalent = baseGemChaos,
+                        DivineEquivalent = Math.Round(baseGemChaos / _divinePriceInChaos, 1),
+                        Confidence = "Medium",
+                        Source = "poe.ninja (Base Gem Benchmark)"
+                    };
+                }
             }
 
             // 3. Check Unique & Item Cache
-            if (_itemCache.TryGetValue(lookupName, out double itemChaos))
+            if (!string.IsNullOrWhiteSpace(lookupName) && _itemCache.TryGetValue(lookupName, out double itemChaos))
             {
                 return new BenchmarkResult
                 {
@@ -226,6 +265,17 @@ namespace GameBarWidget.Services
                     DivineEquivalent = Math.Round(itemChaos / _divinePriceInChaos, 1),
                     Confidence = "High",
                     Source = "poe.ninja (Market Benchmark)"
+                };
+            }
+            if (!string.IsNullOrWhiteSpace(item.BaseType) && _itemCache.TryGetValue(item.BaseType, out double baseItemChaos))
+            {
+                return new BenchmarkResult
+                {
+                    Found = true,
+                    ChaosEquivalent = baseItemChaos,
+                    DivineEquivalent = Math.Round(baseItemChaos / _divinePriceInChaos, 1),
+                    Confidence = "Medium",
+                    Source = "poe.ninja (Base Market Benchmark)"
                 };
             }
 

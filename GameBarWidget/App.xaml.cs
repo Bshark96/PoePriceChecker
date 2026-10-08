@@ -83,6 +83,7 @@ namespace GameBarWidget
                         Window.Current.Closed += (s, e) =>
                         {
                             _widget1Settings = null;
+                            PoeSettingsManager.Instance.IsSettingsOpen = false;
                         };
                     }
                     else
