@@ -702,6 +702,8 @@ namespace GameBarWidget
                 }
             }
 
+            int renderedGroups = 0;
+
             // Jewel Base Type Crafting Filter Group (Awakened PoE Trade standard: deselected exact base by default)
             if (item.Category.StartsWith("jewel", StringComparison.OrdinalIgnoreCase))
             {
@@ -961,7 +963,7 @@ namespace GameBarWidget
             var rowGrid = new Grid
             {
                 Padding = new Thickness(4, 2, 4, 2),
-                Background = DesignPalette.Brush(DesignPalette.SurfaceRow)
+                Background = DesignPalette.Brush(DesignPalette.SurfaceHeaderCollapsed)
             };
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -1001,7 +1003,7 @@ namespace GameBarWidget
                 Text = item.IsJewelCraftingBase ? "ANY JEWEL BASE" : "EXACT BASE",
                 FontSize = 8,
                 FontWeight = Windows.UI.Text.FontWeights.SemiBold,
-                Foreground = DesignPalette.Brush(item.IsJewelCraftingBase ? DesignPalette.AccentSky : DesignPalette.TextSecondary)
+                Foreground = DesignPalette.Brush(item.IsJewelCraftingBase ? DesignPalette.AccentCyan : DesignPalette.TextSecondary)
             };
             Grid.SetColumn(badgeBorder, 1);
             rowGrid.Children.Add(badgeBorder);
