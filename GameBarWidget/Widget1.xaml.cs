@@ -43,6 +43,10 @@ namespace GameBarWidget
             this.InitializeComponent();
             UiComponentFactory.SuppressContextMenu(this);
 
+            if (LiveSearchUrlBox != null) NumpadFlyoutBuilder.AttachNumpadContextMenu(LiveSearchUrlBox);
+            if (LiveSearchMaxPriceBox != null) NumpadFlyoutBuilder.AttachNumpadContextMenu(LiveSearchMaxPriceBox);
+            if (LiveSearchDebugLogText != null) NumpadFlyoutBuilder.AttachNumpadContextMenu(LiveSearchDebugLogText);
+
             _countdownTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(100)
@@ -1255,6 +1259,19 @@ namespace GameBarWidget
         private async Task QueryMarketAsync(PoeItem item)
         {
             if (item == null) return;
+
+            if (PoeTradeRateLimiter.Instance.IsRateLimited)
+            {
+                var remaining = PoeTradeRateLimiter.Instance.LockoutRemaining;
+                double seconds = Math.Ceiling(remaining.TotalSeconds);
+                if (seconds < 1) seconds = 1;
+
+                MarketStatusText.Text = $"Rate Limited (Wait {seconds}s)";
+                MarketStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 248, 113, 113));
+                RateLimitStatusText.Text = $"RATE LIMIT COOLDOWN ACTIVE ({seconds}s)";
+                return;
+            }
+
             string league = PoeSettingsManager.Instance.SelectedLeague;
             string sessId = PoeSettingsManager.Instance.PoeSessionId;
 
@@ -1264,7 +1281,6 @@ namespace GameBarWidget
             var searchResult = await PoeOfficialTradeClient.Instance.SearchItemAsync(item, league, sessId);
             RenderListings(searchResult, league);
 
-            // Update rate limit badge
             RateLimitStatusText.Text = $"RATE LIMIT: {PoeTradeRateLimiter.Instance.CurrentStatusText}";
         }
 
@@ -1433,9 +1449,9 @@ namespace GameBarWidget
                 return;
             }
 
-            if (_isTimerPaused)
+            if (_isTimerPaused || NumpadFlyoutBuilder.IsFlyoutOpen)
             {
-                CountdownText.Text = $"Paused at {_remainingSeconds:F1}s (Hovering)";
+                CountdownText.Text = $"Paused at {_remainingSeconds:F1}s (Menu Open)";
                 return;
             }
 

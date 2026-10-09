@@ -11,6 +11,8 @@ namespace GameBarWidget.Design
 {
     public static class NumpadFlyoutBuilder
     {
+        public static bool IsFlyoutOpen { get; set; } = false;
+
         public static Flyout CreateNumpadFlyout(
             Control targetControl,
             Action onValueChanged = null,
@@ -104,11 +106,17 @@ namespace GameBarWidget.Design
             {
                 caretLine.Visibility = (caretLine.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible;
             };
-            caretTimer.Start();
+
+            flyout.Opened += (s, e) =>
+            {
+                caretTimer.Start();
+                NumpadFlyoutBuilder.IsFlyoutOpen = true;
+            };
 
             flyout.Closed += (s, e) =>
             {
                 caretTimer.Stop();
+                NumpadFlyoutBuilder.IsFlyoutOpen = false;
             };
 
             Action syncTextAndCaret = () =>
@@ -334,6 +342,16 @@ namespace GameBarWidget.Design
             Action<MenuFlyout> populateCustomActions = null)
         {
             var menuFlyout = new MenuFlyout();
+
+            menuFlyout.Opened += (s, e) =>
+            {
+                IsFlyoutOpen = true;
+            };
+
+            menuFlyout.Closed += (s, e) =>
+            {
+                IsFlyoutOpen = false;
+            };
 
             // 1. Numpad Launch Action
             var openNumpadItem = new MenuFlyoutItem { Text = "Show Visual Numpad" };

@@ -81,22 +81,18 @@ namespace GameBarWidget.Design
             }
         }
 
-        public static TextBox CreateNumericInputBox(string initialText, string placeholder)
+        public static TextBox CreateTextInputBox(string initialText, string placeholder, double width = double.NaN, double height = double.NaN, double fontSize = 10)
         {
             var box = new TextBox
             {
                 Text = initialText ?? string.Empty,
-                PlaceholderText = placeholder,
-                Width = 36,
-                Height = 16,
-                MinHeight = 0,
-                MinWidth = 0,
-                FontSize = 8.5,
-                Padding = new Thickness(2, 0, 2, 0),
+                PlaceholderText = placeholder ?? string.Empty,
+                FontSize = fontSize,
                 Background = DesignPalette.Brush(DesignPalette.SurfaceDark),
                 Foreground = DesignPalette.Brush(DesignPalette.TextPrimary),
                 BorderBrush = DesignPalette.Brush(DesignPalette.BorderInput),
-                CornerRadius = new CornerRadius(2),
+                CornerRadius = new CornerRadius(3),
+                Padding = new Thickness(6, 3, 6, 3),
                 IsTabStop = true,
                 AllowFocusOnInteraction = true,
                 IsHitTestVisible = true,
@@ -105,6 +101,19 @@ namespace GameBarWidget.Design
                 IsTextPredictionEnabled = false,
                 VerticalContentAlignment = VerticalAlignment.Center
             };
+
+            if (!double.IsNaN(width)) box.Width = width;
+            if (!double.IsNaN(height)) box.Height = height;
+
+            NumpadFlyoutBuilder.AttachNumpadContextMenu(box);
+            return box;
+        }
+
+        public static TextBox CreateNumericInputBox(string initialText, string placeholder)
+        {
+            var box = CreateTextInputBox(initialText, placeholder, width: 36, height: 16, fontSize: 8.5);
+            box.Padding = new Thickness(2, 0, 2, 0);
+            box.CornerRadius = new CornerRadius(2);
             return box;
         }
 

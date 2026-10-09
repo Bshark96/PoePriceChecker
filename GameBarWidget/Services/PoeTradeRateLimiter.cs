@@ -14,7 +14,7 @@ namespace GameBarWidget.Services
         public int CurrentHits { get; set; }
         public DateTime WindowStart { get; set; } = DateTime.UtcNow;
 
-        public bool IsNearThreshold => CurrentHits >= (int)(MaxHits * 0.85);
+        public bool IsNearThreshold => CurrentHits >= (int)(MaxHits * 0.75);
 
         public TimeSpan DelayRequired
         {
@@ -42,6 +42,27 @@ namespace GameBarWidget.Services
         private readonly List<RateLimitRule> _accountRules = new List<RateLimitRule>();
 
         public string CurrentStatusText { get; private set; } = "NORMAL";
+
+        public bool IsRateLimited
+        {
+            get
+            {
+                if (DateTime.UtcNow < _globalLockoutUntil) return true;
+                return GetMaxRequiredDelay() > TimeSpan.Zero;
+            }
+        }
+
+        public TimeSpan LockoutRemaining
+        {
+            get
+            {
+                if (DateTime.UtcNow < _globalLockoutUntil)
+                {
+                    return _globalLockoutUntil - DateTime.UtcNow;
+                }
+                return GetMaxRequiredDelay();
+            }
+        }
 
         private PoeTradeRateLimiter()
         {
@@ -112,6 +133,7 @@ namespace GameBarWidget.Services
             if (response == null) return;
 
             int lockoutSec = 60;
+
             if (response.Headers != null)
             {
                 if (response.Headers.RetryAfter?.Delta.HasValue == true)
@@ -130,22 +152,18 @@ namespace GameBarWidget.Services
                     }
                 }
 
-                if (response.Headers.TryGetValues("X-Rate-Limit-Account-State", out var accountStates) ||
-                    response.Headers.TryGetValues("X-Rate-Limit-Ip-State", out accountStates))
+                // Parse X-Rate-Limit-Ip and X-Rate-Limit-Account rules (e.g., "12:6:60,16:12:120")
+                if (response.Headers.TryGetValues("X-Rate-Limit-Ip", out var ipRuleVals) ||
+                    response.Headers.TryGetValues("X-Rate-Limit-Account", out ipRuleVals))
                 {
-                    foreach (var val in accountStates)
-                    {
-                        var parts = val.Split(',');
-                        foreach (var part in parts)
-                        {
-                            var sub = part.Trim().Split(':');
-                            if (sub.Length >= 3 &&
-                                int.TryParse(sub[2], out int ruleLockout) && ruleLockout > 0)
-                            {
-                                lockoutSec = Math.Max(lockoutSec, ruleLockout);
-                            }
-                        }
-                    }
+                    ParseAndSyncRules(_ipRules, ipRuleVals);
+                }
+
+                // Parse X-Rate-Limit-Ip-State and X-Rate-Limit-Account-State states (e.g., "1:6:0,2:12:0")
+                if (response.Headers.TryGetValues("X-Rate-Limit-Ip-State", out var stateVals) ||
+                    response.Headers.TryGetValues("X-Rate-Limit-Account-State", out stateVals))
+                {
+                    lockoutSec = Math.Max(lockoutSec, SyncRuleStates(_ipRules, stateVals));
                 }
             }
 
@@ -166,6 +184,77 @@ namespace GameBarWidget.Services
                     rule.CurrentHits = 1;
                 }
             }
+        }
+
+        private void ParseAndSyncRules(List<RateLimitRule> rules, IEnumerable<string> headerValues)
+        {
+            try
+            {
+                foreach (var header in headerValues)
+                {
+                    var parts = header.Split(',');
+                    for (int i = 0; i < parts.Length; i++)
+                    {
+                        var tokens = parts[i].Trim().Split(':');
+                        if (tokens.Length >= 3 &&
+                            int.TryParse(tokens[0], out int maxHits) &&
+                            int.TryParse(tokens[1], out int windowSec) &&
+                            int.TryParse(tokens[2], out int lockSec))
+                        {
+                            if (i < rules.Count)
+                            {
+                                rules[i].MaxHits = maxHits;
+                                rules[i].WindowSeconds = windowSec;
+                                rules[i].LockoutSeconds = lockSec;
+                            }
+                            else
+                            {
+                                rules.Add(new RateLimitRule
+                                {
+                                    MaxHits = maxHits,
+                                    WindowSeconds = windowSec,
+                                    LockoutSeconds = lockSec,
+                                    CurrentHits = 0,
+                                    WindowStart = DateTime.UtcNow
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private int SyncRuleStates(List<RateLimitRule> rules, IEnumerable<string> headerValues)
+        {
+            int maxLockout = 0;
+            try
+            {
+                foreach (var header in headerValues)
+                {
+                    var parts = header.Split(',');
+                    for (int i = 0; i < parts.Length; i++)
+                    {
+                        var tokens = parts[i].Trim().Split(':');
+                        if (tokens.Length >= 3 &&
+                            int.TryParse(tokens[0], out int currentHits) &&
+                            int.TryParse(tokens[1], out int windowSec) &&
+                            int.TryParse(tokens[2], out int lockSec))
+                        {
+                            if (i < rules.Count)
+                            {
+                                rules[i].CurrentHits = currentHits;
+                            }
+                            if (lockSec > maxLockout)
+                            {
+                                maxLockout = lockSec;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return maxLockout;
         }
     }
 }
