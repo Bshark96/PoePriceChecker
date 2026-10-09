@@ -4,29 +4,22 @@ using System.Globalization;
 namespace GameBarWidget.Services.Parsing
 {
     /// <summary>
-    /// Specialized parser for Weapons (Bows, Wands, Swords, Axes, Maces, Daggers, Staffs).
-    /// Extracts attack speed, critical strike chance, physical and elemental damage ranges, and DPS.
+    /// Specialized parser for Weapons.
+    /// Extracts attack speed, crit chance, damage ranges, and DPS metrics.
     /// </summary>
     public sealed class WeaponParser : IItemTypeParser
     {
         public bool CanParse(PoeItem item, string[] headerLines, string[] blocks)
         {
-            string itemClass = item.ItemClass ?? string.Empty;
-            string combined = $"{itemClass} {item.Name} {item.BaseType}".ToLowerInvariant();
-
-            return itemClass.IndexOf("Weapon", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Bow", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Sword", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Axe", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Mace", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Dagger", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Staff", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Wand", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Claw", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Sceptre", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   combined.Contains("bow") || combined.Contains("wand") || combined.Contains("dagger") ||
-                   combined.Contains("sword") || combined.Contains("axe") || combined.Contains("mace") ||
-                   combined.Contains("sceptre") || combined.Contains("staff") || combined.Contains("claw");
+            if (item.Category.StartsWith("weapon", StringComparison.OrdinalIgnoreCase)) return true;
+            string key = !string.IsNullOrEmpty(item.BaseType) ? item.BaseType : item.Name;
+            if (PoeItemsDatabase.TryGetEntry(key, out var entry))
+            {
+                string cat = PoeItemsDatabase.ResolveTradeCategory(entry.CraftableCategory);
+                if (cat.StartsWith("weapon", StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return (item.ItemClass ?? string.Empty).IndexOf("Weapon", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   (item.ItemClass ?? string.Empty).IndexOf("Bow", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public void Parse(PoeItem item, string[] headerLines, string[] blocks)
@@ -83,7 +76,6 @@ namespace GameBarWidget.Services.Parsing
                 }
             }
 
-            // Calculate weapon DPS metrics
             if (item.AttacksPerSecond > 0)
             {
                 if (item.PhysDamageMax > 0)

@@ -4,15 +4,15 @@ namespace GameBarWidget.Services.Parsing
 {
     /// <summary>
     /// Specialized parser for Divination Cards.
+    /// Uses PoeItemsDatabase for canonical validation.
     /// </summary>
     public sealed class DivinationCardParser : IItemTypeParser
     {
         public bool CanParse(PoeItem item, string[] headerLines, string[] blocks)
         {
-            string itemClass = item.ItemClass ?? string.Empty;
-            return item.Rarity == PoeRarity.DivinationCard ||
-                   itemClass.IndexOf("Divination", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Card", StringComparison.OrdinalIgnoreCase) >= 0;
+            if (item.Namespace == ItemNamespace.DivinationCard || item.Rarity == PoeRarity.DivinationCard) return true;
+            string key = !string.IsNullOrEmpty(item.BaseType) ? item.BaseType : item.Name;
+            return PoeItemsDatabase.TryGetEntry(key, out var entry) && entry.Namespace == "DIVINATION_CARD";
         }
 
         public void Parse(PoeItem item, string[] headerLines, string[] blocks)
@@ -20,7 +20,6 @@ namespace GameBarWidget.Services.Parsing
             item.Namespace = ItemNamespace.DivinationCard;
             item.Category = "card";
 
-            // Divination cards match on exact card name with no explicit modifier rolls
             item.Modifiers.Clear();
             item.PseudoModifiers.Clear();
         }

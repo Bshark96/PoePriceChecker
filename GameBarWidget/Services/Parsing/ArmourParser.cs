@@ -4,25 +4,20 @@ namespace GameBarWidget.Services.Parsing
 {
     /// <summary>
     /// Specialized parser for Body Armours, Helmets, Gloves, Boots, and Shields.
-    /// Extracts Armour, Evasion Rating, and Energy Shield defensive values.
+    /// Extracts Armour, Evasion, and Energy Shield values.
     /// </summary>
     public sealed class ArmourParser : IItemTypeParser
     {
         public bool CanParse(PoeItem item, string[] headerLines, string[] blocks)
         {
-            string itemClass = item.ItemClass ?? string.Empty;
-            string combined = $"{itemClass} {item.Name} {item.BaseType}".ToLowerInvariant();
-
-            return itemClass.IndexOf("Armour", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Helmet", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Glove", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Boot", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   itemClass.IndexOf("Shield", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   combined.Contains("helmet") || combined.Contains("circlet") || combined.Contains("crown") ||
-                   combined.Contains("plate") || combined.Contains("vestment") || combined.Contains("regalia") ||
-                   combined.Contains("glove") || combined.Contains("gauntlet") || combined.Contains("mitt") ||
-                   combined.Contains("boot") || combined.Contains("greave") || combined.Contains("shield") ||
-                   combined.Contains("buckler");
+            if (item.Category.StartsWith("armour", StringComparison.OrdinalIgnoreCase)) return true;
+            string key = !string.IsNullOrEmpty(item.BaseType) ? item.BaseType : item.Name;
+            if (PoeItemsDatabase.TryGetEntry(key, out var entry))
+            {
+                string cat = PoeItemsDatabase.ResolveTradeCategory(entry.CraftableCategory);
+                if (cat.StartsWith("armour", StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return (item.ItemClass ?? string.Empty).IndexOf("Armour", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public void Parse(PoeItem item, string[] headerLines, string[] blocks)
