@@ -11,7 +11,7 @@ namespace GameBarWidget.Design
     public static class NumpadFlyoutBuilder
     {
         public static Flyout CreateNumpadFlyout(
-            TextBox targetBox,
+            Control targetControl,
             Action onValueChanged = null,
             Action onSearchRequested = null)
         {
@@ -28,8 +28,21 @@ namespace GameBarWidget.Design
                 CornerRadius = new CornerRadius(4)
             };
 
+            Func<string> getText = () =>
+            {
+                if (targetControl is TextBox tb) return tb.Text ?? string.Empty;
+                if (targetControl is PasswordBox pb) return pb.Password ?? string.Empty;
+                return string.Empty;
+            };
+
+            Action<string> setText = (val) =>
+            {
+                if (targetControl is TextBox tb) tb.Text = val;
+                else if (targetControl is PasswordBox pb) pb.Password = val;
+            };
+
             // 1. Text View Box with Flashing Caret
-            string initialText = targetBox.Text ?? string.Empty;
+            string initialText = getText();
             int caretIndex = initialText.Length;
 
             var displayBox = new Border
@@ -99,7 +112,7 @@ namespace GameBarWidget.Design
 
             Action syncTextAndCaret = () =>
             {
-                string fullText = targetBox.Text ?? string.Empty;
+                string fullText = getText();
                 caretIndex = Math.Max(0, Math.Min(caretIndex, fullText.Length));
 
                 leftText.Text = fullText.Substring(0, caretIndex);
@@ -153,7 +166,7 @@ namespace GameBarWidget.Design
             };
             rightBtn.Click += (s, e) =>
             {
-                string full = targetBox.Text ?? string.Empty;
+                string full = getText();
                 if (caretIndex < full.Length)
                 {
                     caretIndex++;
@@ -178,7 +191,7 @@ namespace GameBarWidget.Design
             };
             clearBtn.Click += (s, e) =>
             {
-                targetBox.Text = string.Empty;
+                setText(string.Empty);
                 caretIndex = 0;
                 syncTextAndCaret();
             };
@@ -200,10 +213,10 @@ namespace GameBarWidget.Design
             };
             delBtn.Click += (s, e) =>
             {
-                string full = targetBox.Text ?? string.Empty;
+                string full = getText();
                 if (caretIndex > 0 && full.Length > 0)
                 {
-                    targetBox.Text = full.Remove(caretIndex - 1, 1);
+                    setText(full.Remove(caretIndex - 1, 1));
                     caretIndex--;
                     syncTextAndCaret();
                 }
@@ -248,12 +261,12 @@ namespace GameBarWidget.Design
 
                     btn.Click += (s, e) =>
                     {
-                        string full = targetBox.Text ?? string.Empty;
+                        string full = getText();
                         if (keyVal == ".")
                         {
                             if (!full.Contains("."))
                             {
-                                targetBox.Text = full.Insert(caretIndex, ".");
+                                setText(full.Insert(caretIndex, "."));
                                 caretIndex++;
                             }
                         }
@@ -261,18 +274,18 @@ namespace GameBarWidget.Design
                         {
                             if (full.StartsWith("-"))
                             {
-                                targetBox.Text = full.Substring(1);
+                                setText(full.Substring(1));
                                 caretIndex = Math.Max(0, caretIndex - 1);
                             }
                             else
                             {
-                                targetBox.Text = "-" + full;
+                                setText("-" + full);
                                 caretIndex++;
                             }
                         }
                         else
                         {
-                            targetBox.Text = full.Insert(caretIndex, keyVal);
+                            setText(full.Insert(caretIndex, keyVal));
                             caretIndex += keyVal.Length;
                         }
                         syncTextAndCaret();
@@ -313,7 +326,7 @@ namespace GameBarWidget.Design
         }
 
         public static void AttachNumpadContextMenu(
-            TextBox targetBox,
+            Control targetControl,
             Action onValueChanged = null,
             Action onSearchRequested = null,
             Action<MenuFlyoutSubItem> populateModifiersSubTab = null,
@@ -325,8 +338,8 @@ namespace GameBarWidget.Design
             var openNumpadItem = new MenuFlyoutItem { Text = "Show Visual Numpad" };
             openNumpadItem.Click += (s, e) =>
             {
-                var padFlyout = CreateNumpadFlyout(targetBox, onValueChanged, onSearchRequested);
-                padFlyout.ShowAt(targetBox);
+                var padFlyout = CreateNumpadFlyout(targetControl, onValueChanged, onSearchRequested);
+                padFlyout.ShowAt(targetControl);
             };
             menuFlyout.Items.Add(openNumpadItem);
 
@@ -344,7 +357,7 @@ namespace GameBarWidget.Design
                 }
             }
 
-            // 3. Custom Actions (Clear & Search Market Now)
+            // 3. Custom Actions
             if (populateCustomActions != null)
             {
                 populateCustomActions(menuFlyout);
@@ -352,28 +365,59 @@ namespace GameBarWidget.Design
             }
 
             // 4. Default Text / Clipboard Actions
-            var cutItem = new MenuFlyoutItem { Text = "Cut" };
-            cutItem.Click += (s, e) => { targetBox.CutSelectionToClipboard(); };
-            menuFlyout.Items.Add(cutItem);
-
-            var copyItem = new MenuFlyoutItem { Text = "Copy" };
-            copyItem.Click += (s, e) => { targetBox.CopySelectionToClipboard(); };
-            menuFlyout.Items.Add(copyItem);
-
-            var pasteItem = new MenuFlyoutItem { Text = "Paste" };
-            pasteItem.Click += (s, e) => { targetBox.PasteFromClipboard(); };
-            menuFlyout.Items.Add(pasteItem);
-
-            var selectAllItem = new MenuFlyoutItem { Text = "Select All" };
-            selectAllItem.Click += (s, e) => { targetBox.SelectAll(); };
-            menuFlyout.Items.Add(selectAllItem);
-
-            targetBox.ContextFlyout = menuFlyout;
-
-            targetBox.DoubleTapped += (s, e) =>
+            if (targetControl is TextBox tb)
             {
-                var padFlyout = CreateNumpadFlyout(targetBox, onValueChanged, onSearchRequested);
-                padFlyout.ShowAt(targetBox);
+                var cutItem = new MenuFlyoutItem { Text = "Cut" };
+                cutItem.Click += (s, e) => { tb.CutSelectionToClipboard(); };
+                menuFlyout.Items.Add(cutItem);
+
+                var copyItem = new MenuFlyoutItem { Text = "Copy" };
+                copyItem.Click += (s, e) => { tb.CopySelectionToClipboard(); };
+                menuFlyout.Items.Add(copyItem);
+
+                var pasteItem = new MenuFlyoutItem { Text = "Paste" };
+                pasteItem.Click += (s, e) => { tb.PasteFromClipboard(); };
+                menuFlyout.Items.Add(pasteItem);
+
+                var selectAllItem = new MenuFlyoutItem { Text = "Select All" };
+                selectAllItem.Click += (s, e) => { tb.SelectAll(); };
+                menuFlyout.Items.Add(selectAllItem);
+            }
+            else if (targetControl is PasswordBox pb)
+            {
+                var pasteItem = new MenuFlyoutItem { Text = "Paste" };
+                pasteItem.Click += (s, e) =>
+                {
+                    try
+                    {
+                        var data = Windows.ApplicationModel.DataTransfer.Clipboard.GetContent();
+                        if (data.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.Text))
+                        {
+                            _ = Task.Run(async () =>
+                            {
+                                string text = await data.GetTextAsync();
+                                await pb.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                                {
+                                    pb.Password = text;
+                                });
+                            });
+                        }
+                    }
+                    catch { }
+                };
+                menuFlyout.Items.Add(pasteItem);
+
+                var selectAllItem = new MenuFlyoutItem { Text = "Select All" };
+                selectAllItem.Click += (s, e) => { pb.SelectAll(); };
+                menuFlyout.Items.Add(selectAllItem);
+            }
+
+            targetControl.ContextFlyout = menuFlyout;
+
+            targetControl.DoubleTapped += (s, e) =>
+            {
+                var padFlyout = CreateNumpadFlyout(targetControl, onValueChanged, onSearchRequested);
+                padFlyout.ShowAt(targetControl);
             };
         }
     }
