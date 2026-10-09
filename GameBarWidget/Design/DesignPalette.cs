@@ -45,6 +45,7 @@ namespace GameBarWidget.Design
                 "PREFIXES" => AccentCyan,
                 "SUFFIXES" => AccentPurple,
                 "GEM PROPERTIES" => AccentTeal,
+                "GEM LEVEL" => AccentCyan,
                 "EXPLICIT MODIFIERS" => AccentAmber,
                 "FRACTURED & CRAFTED" => AccentTeal,
                 "SOCKETS" => AccentAmber,

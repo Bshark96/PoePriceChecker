@@ -649,6 +649,13 @@ namespace GameBarWidget
                 item.FilterQualityActive = false;
             }
 
+            // Initialize Gem Level filter state (default active for gems)
+            if (item.GemLevel > 0 && !item.FilterGemLevelActive && !item.FilterGemLevelMin.HasValue && !item.FilterGemLevelMax.HasValue)
+            {
+                item.FilterGemLevelMin = item.GemLevel;
+                item.FilterGemLevelActive = true;
+            }
+
             ItemRarityText.Text = item.IsCorrupted ? $"{item.Rarity.ToString().ToUpperInvariant()} (CORRUPTED)" : item.Rarity.ToString().ToUpperInvariant();
 
             // Initialize Corrupted Filter selection
@@ -729,6 +736,15 @@ namespace GameBarWidget
             {
                 if (renderedGroups > 0) AddDivider(ModContainer);
                 ModContainer.Children.Add(CreateQualityGroupSection(item));
+                renderedGroups++;
+            }
+
+            // Gem Level Group
+            bool isGem = item.GemLevel > 0 || item.Rarity == PoeRarity.Gem || item.Namespace == ItemNamespace.Gem;
+            if (isGem)
+            {
+                if (renderedGroups > 0) AddDivider(ModContainer);
+                ModContainer.Children.Add(CreateGemLevelGroupSection(item));
                 renderedGroups++;
             }
 
@@ -957,6 +973,31 @@ namespace GameBarWidget
                 DesignPalette.GetSectionAccentColor("QUALITY"),
                 rows,
                 () => item.FilterQualityActive ? 1 : 0);
+        }
+
+        private UIElement CreateGemLevelGroupSection(PoeItem item)
+        {
+            var rows = new List<UIElement>();
+
+            rows.Add(CreateItemPropertyFilterRow(
+                "Gem Level",
+                "LVL",
+                Windows.UI.Color.FromArgb(255, 30, 58, 138),
+                DesignPalette.AccentCyan,
+                item.FilterGemLevelMin,
+                item.FilterGemLevelMax,
+                item.FilterGemLevelActive,
+                isActive => item.FilterGemLevelActive = isActive,
+                min => item.FilterGemLevelMin = min,
+                max => item.FilterGemLevelMax = max,
+                () => { },
+                40));
+
+            return CreateGenericGroupSection(
+                "GEM LEVEL",
+                DesignPalette.GetSectionAccentColor("GEM LEVEL"),
+                rows,
+                () => item.FilterGemLevelActive ? 1 : 0);
         }
 
         private UIElement CreateJewelBaseFilterSection(PoeItem item)

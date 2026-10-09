@@ -61,8 +61,22 @@ namespace GameBarWidget.Services
 
             if (nameLineIndex >= 0 && nameLineIndex < headerLines.Length)
             {
-                item.Name = headerLines[nameLineIndex].Trim();
-                item.BaseType = (nameLineIndex + 1 < headerLines.Length) ? headerLines[nameLineIndex + 1].Trim() : item.Name;
+                string firstLine = headerLines[nameLineIndex].Trim();
+                string secondLine = (nameLineIndex + 1 < headerLines.Length) ? headerLines[nameLineIndex + 1].Trim() : string.Empty;
+
+                if (item.Rarity == PoeRarity.DivinationCard ||
+                    item.Rarity == PoeRarity.Currency ||
+                    item.Rarity == PoeRarity.Gem ||
+                    string.IsNullOrEmpty(secondLine))
+                {
+                    item.Name = firstLine;
+                    item.BaseType = firstLine;
+                }
+                else
+                {
+                    item.Name = firstLine;
+                    item.BaseType = secondLine;
+                }
             }
 
             // Contextualize base item category
@@ -204,10 +218,17 @@ namespace GameBarWidget.Services
 
         private static PoeRarity ParseRarity(string rarityStr)
         {
-            if (Enum.TryParse<PoeRarity>(rarityStr, true, out var r)) return r;
+            if (string.IsNullOrWhiteSpace(rarityStr)) return PoeRarity.Normal;
+            rarityStr = rarityStr.Trim();
+            if (rarityStr.Equals("Divination Card", StringComparison.OrdinalIgnoreCase) ||
+                rarityStr.Equals("DivinationCard", StringComparison.OrdinalIgnoreCase) ||
+                rarityStr.Equals("Card", StringComparison.OrdinalIgnoreCase))
+            {
+                return PoeRarity.DivinationCard;
+            }
             if (rarityStr.Equals("Currency", StringComparison.OrdinalIgnoreCase)) return PoeRarity.Currency;
             if (rarityStr.Equals("Gem", StringComparison.OrdinalIgnoreCase)) return PoeRarity.Gem;
-            if (rarityStr.Equals("Divination Card", StringComparison.OrdinalIgnoreCase)) return PoeRarity.DivinationCard;
+            if (Enum.TryParse<PoeRarity>(rarityStr, true, out var r)) return r;
             return PoeRarity.Normal;
         }
     }

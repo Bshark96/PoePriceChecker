@@ -44,7 +44,7 @@ namespace GameBarWidget.Services.Parsing
             }
 
             // Extract Gem Level and Quality from blocks
-            for (int b = 1; b < blocks.Length; b++)
+            for (int b = 0; b < blocks.Length; b++)
             {
                 string[] lines = blocks[b].Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string rawLine in lines)
