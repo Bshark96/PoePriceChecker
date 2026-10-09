@@ -68,7 +68,7 @@ namespace GameBarWidget.Services
             _deferral = null;
         }
 
-        public async Task<bool> SendMessageToDaemonAsync(ValueSet message)
+        public async Task<bool> SendToDaemonAsync(ValueSet message)
         {
             if (_connection == null) return false;
             try
@@ -81,8 +81,6 @@ namespace GameBarWidget.Services
                 return false;
             }
         }
-
-        public Task<bool> SendToDaemonAsync(ValueSet message) => SendMessageToDaemonAsync(message);
 
         public async Task NotifyDaemonToCloseAsync()
         {

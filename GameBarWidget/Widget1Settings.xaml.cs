@@ -20,8 +20,15 @@ namespace GameBarWidget
         {
             this.InitializeComponent();
             UiComponentFactory.SuppressContextMenu(this);
-            UiComponentFactory.SuppressContextMenu(AccountNameBox);
-            UiComponentFactory.SuppressContextMenu(PoeSessIdBox);
+
+            if (AccountNameBox != null)
+            {
+                NumpadFlyoutBuilder.AttachNumpadContextMenu(AccountNameBox);
+            }
+            if (PoeSessIdBox != null)
+            {
+                NumpadFlyoutBuilder.AttachNumpadContextMenu(PoeSessIdBox);
+            }
 
             this.PointerPressed += async (s, e) =>
             {

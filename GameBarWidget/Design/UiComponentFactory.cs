@@ -105,7 +105,6 @@ namespace GameBarWidget.Design
                 IsTextPredictionEnabled = false,
                 VerticalContentAlignment = VerticalAlignment.Center
             };
-            SuppressContextMenu(box);
             return box;
         }
 

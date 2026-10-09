@@ -128,6 +128,7 @@
     <Compile Include="Design\UiComponentFactory.cs" />
     <Compile Include="Design\ModifierRowBuilder.cs" />
     <Compile Include="Design\PropertyRowBuilder.cs" />
+    <Compile Include="Design\NumpadFlyoutBuilder.cs" />
     <Compile Include="Design\TradeCardBuilder.cs" />
     <Compile Include="Design\TradeRowBuilder.cs" />
     <Compile Include="Design\StatusStyleHelper.cs" />

@@ -1089,152 +1089,167 @@ namespace GameBarWidget
 
         private void AttachQuickRollFlyout(TextBox targetBox, ItemModifier mod, bool isMin, CheckBox parentCb)
         {
-            var menuFlyout = new MenuFlyout();
-
-            // Roll Presets SubMenu
-            var presetsSubMenu = new MenuFlyoutSubItem { Text = "Roll Presets" };
-            var presets = new List<(string Label, double Val)>();
-            if (mod.NumberValue.HasValue)
-            {
-                double exact = Math.Abs(mod.NumberValue.Value);
-                presets.Add(("Exact Roll", exact));
-                presets.Add(("-10%", Math.Floor(exact * 0.9)));
-                presets.Add(("-20%", Math.Floor(exact * 0.8)));
-            }
-            if (mod.MinRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - Math.Abs(mod.MinRoll.Value)) < 0.01))
-            {
-                presets.Add(("Min Tier", Math.Abs(mod.MinRoll.Value)));
-            }
-            if (mod.MaxRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - Math.Abs(mod.MaxRoll.Value)) < 0.01))
-            {
-                presets.Add(("Max Tier", Math.Abs(mod.MaxRoll.Value)));
-            }
-
-            foreach (var p in presets)
-            {
-                var pItem = new MenuFlyoutItem { Text = $"{p.Label} ({p.Val})" };
-                pItem.Click += (s, e) =>
+            NumpadFlyoutBuilder.AttachNumpadContextMenu(
+                targetBox,
+                onValueChanged: () =>
                 {
-                    targetBox.Text = p.Val.ToString(CultureInfo.InvariantCulture);
-                    if (isMin) mod.MinRoll = p.Val; else mod.MaxRoll = p.Val;
-                    mod.IsActive = true;
-                    parentCb.IsChecked = true;
+                    if (double.TryParse(targetBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double val))
+                    {
+                        if (isMin) mod.MinRoll = Math.Abs(val); else mod.MaxRoll = Math.Abs(val);
+                        mod.IsActive = true;
+                        parentCb.IsChecked = true;
+                    }
+                    else if (string.IsNullOrWhiteSpace(targetBox.Text))
+                    {
+                        if (isMin) mod.MinRoll = null; else mod.MaxRoll = null;
+                    }
+                },
+                onSearchRequested: () =>
+                {
                     _ = QueryMarketAsync(_currentItem);
-                };
-                presetsSubMenu.Items.Add(pItem);
-            }
-            if (presets.Count > 0)
-            {
-                menuFlyout.Items.Add(presetsSubMenu);
-                menuFlyout.Items.Add(new MenuFlyoutSeparator());
-            }
+                },
+                populateModifiersSubTab: modifiersSubMenu =>
+                {
+                    var presets = new List<(string Label, double Val)>();
 
-            // Clear & Search Market
-            var clearItem = new MenuFlyoutItem { Text = "Clear Roll" };
-            clearItem.Click += (s, e) =>
-            {
-                targetBox.Text = string.Empty;
-                if (isMin) mod.MinRoll = null; else mod.MaxRoll = null;
-                _ = QueryMarketAsync(_currentItem);
-            };
-            menuFlyout.Items.Add(clearItem);
+                    // Exact (Item's parsed value)
+                    if (mod.NumberValue.HasValue)
+                    {
+                        presets.Add(("Exact Roll", Math.Abs(mod.NumberValue.Value)));
+                    }
 
-            var searchItem = new MenuFlyoutItem { Text = "Search Market Now" };
-            searchItem.Click += (s, e) =>
-            {
-                _ = QueryMarketAsync(_currentItem);
-            };
-            menuFlyout.Items.Add(searchItem);
+                    // Current (Currently typed value in target box)
+                    if (double.TryParse(targetBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double curVal) && Math.Abs(curVal) > 0)
+                    {
+                        if (!presets.Any(p => Math.Abs(p.Val - Math.Abs(curVal)) < 0.01))
+                        {
+                            presets.Add(("Current", Math.Abs(curVal)));
+                        }
+                    }
 
-            menuFlyout.Items.Add(new MenuFlyoutSeparator());
+                    // Min (Tier Min or Range Min)
+                    if (mod.MinRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - Math.Abs(mod.MinRoll.Value)) < 0.01))
+                    {
+                        presets.Add(("Min Roll", Math.Abs(mod.MinRoll.Value)));
+                    }
 
-            // Standard Text / Clipboard Commands
-            var cutItem = new MenuFlyoutItem { Text = "Cut" };
-            cutItem.Click += (s, e) => { targetBox.CutSelectionToClipboard(); };
-            menuFlyout.Items.Add(cutItem);
+                    // Max (Tier Max or Range Max)
+                    if (mod.MaxRoll.HasValue && !presets.Any(p => Math.Abs(p.Val - Math.Abs(mod.MaxRoll.Value)) < 0.01))
+                    {
+                        presets.Add(("Max Roll", Math.Abs(mod.MaxRoll.Value)));
+                    }
 
-            var copyItem = new MenuFlyoutItem { Text = "Copy" };
-            copyItem.Click += (s, e) => { targetBox.CopySelectionToClipboard(); };
-            menuFlyout.Items.Add(copyItem);
+                    foreach (var p in presets)
+                    {
+                        var pItem = new MenuFlyoutItem { Text = $"{p.Label} ({p.Val})" };
+                        pItem.Click += (s, e) =>
+                        {
+                            targetBox.Text = p.Val.ToString(CultureInfo.InvariantCulture);
+                            if (isMin) mod.MinRoll = p.Val; else mod.MaxRoll = p.Val;
+                            mod.IsActive = true;
+                            parentCb.IsChecked = true;
+                            _ = QueryMarketAsync(_currentItem);
+                        };
+                        modifiersSubMenu.Items.Add(pItem);
+                    }
+                },
+                populateCustomActions: menuFlyout =>
+                {
+                    var clearItem = new MenuFlyoutItem { Text = "Clear Roll" };
+                    clearItem.Click += (s, e) =>
+                    {
+                        targetBox.Text = string.Empty;
+                        if (isMin) mod.MinRoll = null; else mod.MaxRoll = null;
+                        _ = QueryMarketAsync(_currentItem);
+                    };
+                    menuFlyout.Items.Add(clearItem);
 
-            var pasteItem = new MenuFlyoutItem { Text = "Paste" };
-            pasteItem.Click += (s, e) => { targetBox.PasteFromClipboard(); };
-            menuFlyout.Items.Add(pasteItem);
-
-            var selectAllItem = new MenuFlyoutItem { Text = "Select All" };
-            selectAllItem.Click += (s, e) => { targetBox.SelectAll(); };
-            menuFlyout.Items.Add(selectAllItem);
-
-            // Assign ContextFlyout to targetBox so right clicking brings up this custom context menu!
-            targetBox.ContextFlyout = menuFlyout;
-
-            targetBox.DoubleTapped += (s, e) =>
-            {
-                menuFlyout.ShowAt(targetBox);
-            };
+                    var searchItem = new MenuFlyoutItem { Text = "Search Market Now" };
+                    searchItem.Click += (s, e) =>
+                    {
+                        _ = QueryMarketAsync(_currentItem);
+                    };
+                    menuFlyout.Items.Add(searchItem);
+                });
         }
 
         private void AttachQuickPropertyFlyout(TextBox targetBox, bool isMin, CheckBox parentCb, Action<int?> onValChanged, Action onFilterChanged, int? initialVal)
         {
-            var menuFlyout = new MenuFlyout();
-
-            if (initialVal.HasValue)
-            {
-                var exactItem = new MenuFlyoutItem { Text = $"Exact Value ({initialVal.Value})" };
-                exactItem.Click += (s, e) =>
+            NumpadFlyoutBuilder.AttachNumpadContextMenu(
+                targetBox,
+                onValueChanged: () =>
                 {
-                    targetBox.Text = initialVal.Value.ToString(CultureInfo.InvariantCulture);
-                    onValChanged(initialVal.Value);
-                    parentCb.IsChecked = true;
+                    if (int.TryParse(targetBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int val))
+                    {
+                        onValChanged(val);
+                        parentCb.IsChecked = true;
+                    }
+                    else if (string.IsNullOrWhiteSpace(targetBox.Text))
+                    {
+                        onValChanged(null);
+                    }
                     onFilterChanged();
                     UpdateMasterToggleButton();
+                },
+                onSearchRequested: () =>
+                {
                     _ = QueryMarketAsync(_currentItem);
-                };
-                menuFlyout.Items.Add(exactItem);
-            }
+                },
+                populateModifiersSubTab: modifiersSubMenu =>
+                {
+                    if (initialVal.HasValue)
+                    {
+                        var exactItem = new MenuFlyoutItem { Text = $"Exact ({initialVal.Value})" };
+                        exactItem.Click += (s, e) =>
+                        {
+                            targetBox.Text = initialVal.Value.ToString(CultureInfo.InvariantCulture);
+                            onValChanged(initialVal.Value);
+                            parentCb.IsChecked = true;
+                            onFilterChanged();
+                            UpdateMasterToggleButton();
+                            _ = QueryMarketAsync(_currentItem);
+                        };
+                        modifiersSubMenu.Items.Add(exactItem);
+                    }
 
-            var clearItem = new MenuFlyoutItem { Text = "Clear Value" };
-            clearItem.Click += (s, e) =>
-            {
-                targetBox.Text = string.Empty;
-                onValChanged(null);
-                onFilterChanged();
-                UpdateMasterToggleButton();
-                _ = QueryMarketAsync(_currentItem);
-            };
-            menuFlyout.Items.Add(clearItem);
+                    if (int.TryParse(targetBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int curVal) && curVal > 0)
+                    {
+                        if (!initialVal.HasValue || initialVal.Value != curVal)
+                        {
+                            var curItem = new MenuFlyoutItem { Text = $"Current ({curVal})" };
+                            curItem.Click += (s, e) =>
+                            {
+                                targetBox.Text = curVal.ToString(CultureInfo.InvariantCulture);
+                                onValChanged(curVal);
+                                parentCb.IsChecked = true;
+                                onFilterChanged();
+                                UpdateMasterToggleButton();
+                                _ = QueryMarketAsync(_currentItem);
+                            };
+                            modifiersSubMenu.Items.Add(curItem);
+                        }
+                    }
+                },
+                populateCustomActions: menuFlyout =>
+                {
+                    var clearItem = new MenuFlyoutItem { Text = "Clear Value" };
+                    clearItem.Click += (s, e) =>
+                    {
+                        targetBox.Text = string.Empty;
+                        onValChanged(null);
+                        onFilterChanged();
+                        UpdateMasterToggleButton();
+                        _ = QueryMarketAsync(_currentItem);
+                    };
+                    menuFlyout.Items.Add(clearItem);
 
-            var searchItem = new MenuFlyoutItem { Text = "Search Market Now" };
-            searchItem.Click += (s, e) =>
-            {
-                _ = QueryMarketAsync(_currentItem);
-            };
-            menuFlyout.Items.Add(searchItem);
-
-            menuFlyout.Items.Add(new MenuFlyoutSeparator());
-
-            var cutItem = new MenuFlyoutItem { Text = "Cut" };
-            cutItem.Click += (s, e) => { targetBox.CutSelectionToClipboard(); };
-            menuFlyout.Items.Add(cutItem);
-
-            var copyItem = new MenuFlyoutItem { Text = "Copy" };
-            copyItem.Click += (s, e) => { targetBox.CopySelectionToClipboard(); };
-            menuFlyout.Items.Add(copyItem);
-
-            var pasteItem = new MenuFlyoutItem { Text = "Paste" };
-            pasteItem.Click += (s, e) => { targetBox.PasteFromClipboard(); };
-            menuFlyout.Items.Add(pasteItem);
-
-            var selectAllItem = new MenuFlyoutItem { Text = "Select All" };
-            selectAllItem.Click += (s, e) => { targetBox.SelectAll(); };
-            menuFlyout.Items.Add(selectAllItem);
-
-            targetBox.ContextFlyout = menuFlyout;
-
-            targetBox.DoubleTapped += (s, e) =>
-            {
-                menuFlyout.ShowAt(targetBox);
-            };
+                    var searchItem = new MenuFlyoutItem { Text = "Search Market Now" };
+                    searchItem.Click += (s, e) =>
+                    {
+                        _ = QueryMarketAsync(_currentItem);
+                    };
+                    menuFlyout.Items.Add(searchItem);
+                });
         }
 
         private async Task QueryMarketAsync(PoeItem item)
