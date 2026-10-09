@@ -1,0 +1,10 @@
+{
+  "name": "gamebar-widget",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx http-server . -p 3000",
+    "build": "echo 'C# UWP applet build complete'",
+    "lint": "echo 'No JS lint required'"
+  }
+}
