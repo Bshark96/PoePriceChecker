@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Xuo9Ky4UGgs=",
+  "dgSpecHash": "QtwrT8hsUks=",
   "success": true,
-  "projectFilePath": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\GameBarWidget\\GameBarWidget.csproj",
+  "projectFilePath": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\PoePriceChecker\\GameBarWidget\\GameBarWidget.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\SuicideParty\\.nuget\\packages\\microsoft.gaming.xboxgamebar\\5.6.210414002\\microsoft.gaming.xboxgamebar.5.6.210414002.nupkg.sha512",
     "C:\\Users\\SuicideParty\\.nuget\\packages\\microsoft.net.native.compiler\\2.2.12-rel-31116-00\\microsoft.net.native.compiler.2.2.12-rel-31116-00.nupkg.sha512",

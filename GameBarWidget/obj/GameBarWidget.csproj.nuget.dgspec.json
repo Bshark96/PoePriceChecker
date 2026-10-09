@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\GameBarWidget\\GameBarWidget.csproj": {}
+    "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\PoePriceChecker\\GameBarWidget\\GameBarWidget.csproj": {}
   },
   "projects": {
-    "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\GameBarWidget\\GameBarWidget.csproj": {
+    "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\PoePriceChecker\\GameBarWidget\\GameBarWidget.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\GameBarWidget\\GameBarWidget.csproj",
+        "projectUniqueName": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\PoePriceChecker\\GameBarWidget\\GameBarWidget.csproj",
         "projectName": "GameBarWidget",
-        "projectPath": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\GameBarWidget\\GameBarWidget.csproj",
+        "projectPath": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\PoePriceChecker\\GameBarWidget\\GameBarWidget.csproj",
         "packagesPath": "C:\\Users\\SuicideParty\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\GameBarWidget\\obj\\",
+        "outputPath": "C:\\Users\\SuicideParty\\Desktop\\WidgetAdvSampleCS\\PoePriceChecker\\GameBarWidget\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "UsingMicrosoftNETSdk": false,

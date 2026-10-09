@@ -1,76 +1,43 @@
-# Prerequisites
-*.d
+## Ignore Visual Studio / MSBuild / C# temporary and compiled artifacts
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][搁g][Mm]/
+[Aa][搁g][Mm]64/
+bld/
+[Bb]in/
+[Ob]j/
+[Lg]og/
+[Lg]ogs/
 
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
+# Visual Studio files
+.vs/
+*.user
+*.userosmat
+*.suo
+*.userlibraries
+*.cache
+*.pc
 *.pdb
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-
-# Frontend & Web Artifacts
+# NuGet
 node_modules/
-.next/
-next-env.d.ts
-next.config.ts
-package.json
-package-lock.json
-bun.lock
-bun.lockb
-yarn.lock
-pnpm-lock.yaml
-tsconfig.json
-postcss.config.mjs
-app/
-components/
-lib/
-public/
-out/
-dist/
-build/
-.vercel/
-*.tsbuildinfo
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.assets.json
 
+# UWP / AppX Package outputs
+AppPackages/
+BundleArtifacts/
+PackageLayout/
+_pkg/
+
+# Temporary files
+*.tmp
+*.log
