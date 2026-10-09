@@ -25,9 +25,10 @@ namespace GameBarWidget.Services
             new FlaskParser()
         };
 
-        public static Task InitializeStatsDatabaseAsync()
+        public static async Task InitializeStatsDatabaseAsync()
         {
-            return PoeStatsDatabase.InitializeAsync();
+            await PoeStatsDatabase.InitializeAsync();
+            await PoeItemsDatabase.InitializeAsync();
         }
 
         public static PoeItem Parse(string rawText)

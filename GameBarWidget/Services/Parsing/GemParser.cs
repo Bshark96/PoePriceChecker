@@ -4,54 +4,43 @@ namespace GameBarWidget.Services.Parsing
 {
     /// <summary>
     /// Specialized parser for Skill Gems, Support Gems, and Transfigured Gems.
-    /// Handles Gem Level, Quality, and Transfigured variant resolution.
+    /// Uses PoeItemsDatabase for canonical variants, discriminators, and level parsing.
     /// </summary>
     public sealed class GemParser : IItemTypeParser
     {
         public bool CanParse(PoeItem item, string[] headerLines, string[] blocks)
         {
-            string itemClass = item.ItemClass ?? string.Empty;
-            return item.Rarity == PoeRarity.Gem ||
-                   itemClass.Equals("Skill Gems", StringComparison.OrdinalIgnoreCase) ||
-                   itemClass.Equals("Support Gems", StringComparison.OrdinalIgnoreCase) ||
-                   itemClass.Equals("Active Skill Gems", StringComparison.OrdinalIgnoreCase) ||
-                   itemClass.IndexOf("Gem", StringComparison.OrdinalIgnoreCase) >= 0;
+            return item.Namespace == ItemNamespace.Gem ||
+                   item.Rarity == PoeRarity.Gem ||
+                   (item.ItemClass ?? string.Empty).IndexOf("Gem", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public void Parse(PoeItem item, string[] headerLines, string[] blocks)
         {
             item.Namespace = ItemNamespace.Gem;
-            string combined = $"{item.ItemClass} {item.Name} {item.BaseType}".ToLowerInvariant();
-
-            if (combined.Contains("support"))
-            {
-                item.Category = "gem.supportgem";
-            }
-            else if (combined.Contains("meta"))
-            {
-                item.Category = "gem.metagem";
-            }
-            else
-            {
-                item.Category = "gem.activegem";
-            }
-
-            // In PoE clipboard text, gems only have one header line (Name equals BaseType)
             string gemFullName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : item.BaseType;
             item.Name = gemFullName;
             item.BaseType = gemFullName;
 
-            // Transfigured Gem detection (e.g., "Cyclone of Tumult")
-            int ofIndex = gemFullName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase);
-            if (ofIndex > 0)
+            if (PoeItemsDatabase.TryGetEntry(gemFullName, out var entry))
             {
-                item.IsTransfiguredGem = true;
-                item.NormalGemVariant = gemFullName.Substring(0, ofIndex).Trim();
+                item.Category = entry.Name.IndexOf("Support", StringComparison.OrdinalIgnoreCase) >= 0 ? "gem.supportgem" : "gem.activegem";
+                if (entry.IsTransfigured)
+                {
+                    item.IsTransfiguredGem = true;
+                    item.NormalGemVariant = entry.NormalGemVariant;
+                    item.TradeDiscriminator = entry.TradeDisc;
+                }
             }
             else
             {
-                item.IsTransfiguredGem = false;
-                item.NormalGemVariant = gemFullName;
+                int ofIdx = gemFullName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase);
+                if (ofIdx > 0)
+                {
+                    item.IsTransfiguredGem = true;
+                    item.NormalGemVariant = gemFullName.Substring(0, ofIdx).Trim();
+                    item.TradeDiscriminator = "alt_x";
+                }
             }
 
             // Extract Gem Level and Quality from blocks
@@ -88,7 +77,6 @@ namespace GameBarWidget.Services.Parsing
                 }
             }
 
-            // Gems do not have explicit stat roll filters; clear description text lines
             item.Modifiers.Clear();
             item.PseudoModifiers.Clear();
         }

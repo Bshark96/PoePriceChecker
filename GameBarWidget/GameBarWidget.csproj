@@ -119,6 +119,7 @@
     <Compile Include="Services\Parsing\JewelParser.cs" />
     <Compile Include="Services\Parsing\FlaskParser.cs" />
     <Compile Include="Services\Parsing\PoeStatsDatabase.cs" />
+    <Compile Include="Services\Parsing\PoeItemsDatabase.cs" />
     <Compile Include="Services\Parsing\PoeCategoryResolver.cs" />
     <Compile Include="Services\Parsing\PoeModifierParser.cs" />
     <Compile Include="Services\Parsing\PoePseudoStatsCalculator.cs" />
@@ -159,6 +160,7 @@
     <Content Include="Assets\Wide310x150Logo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-100.png" />
     <Content Include="Assets\stats.ndjson" />
+    <Content Include="Assets\items.ndjson" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
