@@ -2,11 +2,29 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
+using GameBarWidget.Services.Parsing;
 
 namespace GameBarWidget.Services
 {
+    /// <summary>
+    /// Master item parser. Orchestrates block tokenization, modifier parsing,
+    /// and delegates domain-specific logic to modular IItemTypeParser implementations.
+    /// </summary>
     public static class PoeItemParser
     {
+        private static readonly List<IItemTypeParser> TypeParsers = new List<IItemTypeParser>
+        {
+            new GemParser(),
+            new CurrencyParser(),
+            new DivinationCardParser(),
+            new MapParser(),
+            new WeaponParser(),
+            new ArmourParser(),
+            new AccessoryParser(),
+            new JewelParser(),
+            new FlaskParser()
+        };
+
         public static Task InitializeStatsDatabaseAsync()
         {
             return PoeStatsDatabase.InitializeAsync();
@@ -23,13 +41,16 @@ namespace GameBarWidget.Services
             string[] blocks = rawText.Split(new[] { "--------" }, StringSplitOptions.None);
             if (blocks.Length == 0) return item;
 
-            // Block 0: Header & Names
+            // Block 0: Header, Item Class, Rarity, and Names
             string[] headerLines = blocks[0].Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             int nameLineIndex = -1;
             for (int i = 0; i < headerLines.Length; i++)
             {
                 string line = headerLines[i].Trim();
-                if (line.StartsWith("Item Class:", StringComparison.OrdinalIgnoreCase)) item.ItemClass = line.Substring(11).Trim();
+                if (line.StartsWith("Item Class:", StringComparison.OrdinalIgnoreCase))
+                {
+                    item.ItemClass = line.Substring(11).Trim();
+                }
                 else if (line.StartsWith("Rarity:", StringComparison.OrdinalIgnoreCase))
                 {
                     item.Rarity = ParseRarity(line.Substring(7).Trim());
@@ -43,7 +64,7 @@ namespace GameBarWidget.Services
                 item.BaseType = (nameLineIndex + 1 < headerLines.Length) ? headerLines[nameLineIndex + 1].Trim() : item.Name;
             }
 
-            // Contextualize item category and namespace
+            // Contextualize base item category
             PoeCategoryResolver.ResolveItemNamespaceAndCategory(item);
 
             // Determine if Alt-copy ({ Prefix/Suffix ... }) is used
@@ -81,13 +102,14 @@ namespace GameBarWidget.Services
             ModifierType pendingType = ModifierType.Explicit;
             string pendingTier = string.Empty;
 
+            // Parse general properties and modifiers across all blocks
             for (int b = 1; b < blocks.Length; b++)
             {
                 ModifierType blockDefaultType = (b == implicitBlockIndex) ? ModifierType.Implicit : ModifierType.Explicit;
                 pendingType = blockDefaultType;
 
                 string[] lines = blocks[b].Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-                
+
                 if (hasAdvancedHeaders)
                 {
                     bool blockHasHeader = false;
@@ -133,31 +155,8 @@ namespace GameBarWidget.Services
                     }
 
                     if (line.StartsWith("Item Level:", StringComparison.OrdinalIgnoreCase) && int.TryParse(line.Substring(11).Trim(), out int ilvl)) item.ItemLevel = ilvl;
-                    else if ((line.StartsWith("Level:", StringComparison.OrdinalIgnoreCase) || line.StartsWith("Gem Level:", StringComparison.OrdinalIgnoreCase)) && PoeModifierParser.NumberRegex.Match(line).Success && int.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, out int gLvl)) { item.GemLevel = gLvl; }
                     else if (line.StartsWith("Quality:", StringComparison.OrdinalIgnoreCase) && PoeModifierParser.NumberRegex.Match(line).Success && int.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, out int q)) item.Quality = q;
-                    else if (line.StartsWith("Map Tier:", StringComparison.OrdinalIgnoreCase) && int.TryParse(line.Substring(9).Trim(), out int tier)) item.MapTier = tier;
                     else if (line.StartsWith("Sockets:", StringComparison.OrdinalIgnoreCase)) ParseSockets(line.Substring(8).Trim(), item);
-                    else if (line.StartsWith("Attacks per Second:", StringComparison.OrdinalIgnoreCase) && double.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double aps)) item.AttacksPerSecond = aps;
-                    else if (line.StartsWith("Critical Strike Chance:", StringComparison.OrdinalIgnoreCase) && double.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double crit)) item.CritChance = crit;
-                    else if (line.StartsWith("Physical Damage:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var rm = PoeModifierParser.RangeDamageRegex.Match(line);
-                        if (rm.Success) { double.TryParse(rm.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double pmin); double.TryParse(rm.Groups[2].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double pmax); item.PhysDamageMin = pmin; item.PhysDamageMax = pmax; }
-                    }
-                    else if (line.StartsWith("Elemental Damage:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        double tmin = 0, tmax = 0;
-                        foreach (System.Text.RegularExpressions.Match m in PoeModifierParser.RangeDamageRegex.Matches(line))
-                        {
-                            double.TryParse(m.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double emin);
-                            double.TryParse(m.Groups[2].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double emax);
-                            tmin += emin; tmax += emax;
-                        }
-                        item.EleDamageMin = tmin; item.EleDamageMax = tmax;
-                    }
-                    else if (line.StartsWith("Armour:", StringComparison.OrdinalIgnoreCase) && int.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, out int arm)) item.Armour = arm;
-                    else if (line.StartsWith("Evasion Rating:", StringComparison.OrdinalIgnoreCase) && int.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, out int eva)) item.Evasion = eva;
-                    else if (line.StartsWith("Energy Shield:", StringComparison.OrdinalIgnoreCase) && int.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, out int es)) item.EnergyShield = es;
                     else if (line.Equals("Corrupted", StringComparison.OrdinalIgnoreCase)) item.IsCorrupted = true;
                     else if (line.Equals("Mirrored", StringComparison.OrdinalIgnoreCase)) item.IsMirrored = true;
                     else if (line.Equals("Unidentified", StringComparison.OrdinalIgnoreCase)) item.IsUnidentified = true;
@@ -171,22 +170,17 @@ namespace GameBarWidget.Services
                 }
             }
 
-            // DPS Math
-            if (item.AttacksPerSecond > 0)
+            // Delegate to specialized <itemType>Parser implementations
+            foreach (var parser in TypeParsers)
             {
-                if (item.PhysDamageMax > 0) item.PhysicalDps = Math.Round(((item.PhysDamageMin + item.PhysDamageMax) / 2.0) * item.AttacksPerSecond, 1);
-                if (item.EleDamageMax > 0) item.ElementalDps = Math.Round(((item.EleDamageMin + item.EleDamageMax) / 2.0) * item.AttacksPerSecond, 1);
-                item.TotalDps = Math.Round(item.PhysicalDps + item.ElementalDps, 1);
+                if (parser.CanParse(item, headerLines, blocks))
+                {
+                    parser.Parse(item, headerLines, blocks);
+                    break;
+                }
             }
 
             PoePseudoStatsCalculator.CalculatePseudoStats(item);
-
-            // Gems do not have explicit stat filters; ignore gem description text lines
-            if (item.Rarity == PoeRarity.Gem || item.Namespace == ItemNamespace.Gem)
-            {
-                item.Modifiers.Clear();
-                item.PseudoModifiers.Clear();
-            }
 
             return item;
         }

@@ -1018,11 +1018,11 @@ namespace GameBarWidget.Services
                 case ItemNamespace.Map:
                 case ItemNamespace.Item:
                 default:
-                    if (!string.IsNullOrWhiteSpace(item.BaseType))
+                    if (item.FilterBaseTypeActive && !string.IsNullOrWhiteSpace(item.BaseType))
                     {
                         sb.Append($",\"type\":\"{EscapeJson(item.BaseType)}\"");
                     }
-                    else if (!string.IsNullOrWhiteSpace(item.Name))
+                    else if (item.FilterBaseTypeActive && !string.IsNullOrWhiteSpace(item.Name))
                     {
                         sb.Append($",\"type\":\"{EscapeJson(item.Name)}\"");
                     }
@@ -1116,7 +1116,8 @@ namespace GameBarWidget.Services
             var filterGroups = new List<string>();
 
             var typeFilters = new List<string>();
-            if (!string.IsNullOrEmpty(item.Category) && item.Namespace != ItemNamespace.Unique && string.IsNullOrWhiteSpace(item.BaseType))
+            if (!string.IsNullOrEmpty(item.Category) && item.Namespace != ItemNamespace.Unique &&
+                (string.IsNullOrWhiteSpace(item.BaseType) || !item.FilterBaseTypeActive))
             {
                 typeFilters.Add($"\"category\":{{\"option\":\"{item.Category}\"}}");
             }

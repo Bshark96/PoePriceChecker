@@ -108,6 +108,16 @@
     <Compile Include="Services\FullTrustLauncherHelper.cs" />
     <Compile Include="Services\PoeItemParser.cs" />
     <Compile Include="Services\Parsing\PoeItemModels.cs" />
+    <Compile Include="Services\Parsing\IItemTypeParser.cs" />
+    <Compile Include="Services\Parsing\GemParser.cs" />
+    <Compile Include="Services\Parsing\CurrencyParser.cs" />
+    <Compile Include="Services\Parsing\MapParser.cs" />
+    <Compile Include="Services\Parsing\DivinationCardParser.cs" />
+    <Compile Include="Services\Parsing\WeaponParser.cs" />
+    <Compile Include="Services\Parsing\ArmourParser.cs" />
+    <Compile Include="Services\Parsing\AccessoryParser.cs" />
+    <Compile Include="Services\Parsing\JewelParser.cs" />
+    <Compile Include="Services\Parsing\FlaskParser.cs" />
     <Compile Include="Services\Parsing\PoeStatsDatabase.cs" />
     <Compile Include="Services\Parsing\PoeCategoryResolver.cs" />
     <Compile Include="Services\Parsing\PoeModifierParser.cs" />

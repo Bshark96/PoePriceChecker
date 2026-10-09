@@ -76,6 +76,8 @@ namespace GameBarWidget.Services
         public string Category { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string BaseType { get; set; } = string.Empty;
+        public bool FilterBaseTypeActive { get; set; } = true;
+        public bool IsJewelCraftingBase { get; set; } = false;
         public int ItemLevel { get; set; }
         public int Quality { get; set; }
         public int GemLevel { get; set; }

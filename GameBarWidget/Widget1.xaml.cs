@@ -702,11 +702,17 @@ namespace GameBarWidget
                 }
             }
 
-            int renderedGroups = 0;
+            // Jewel Base Type Crafting Filter Group (Awakened PoE Trade standard: deselected exact base by default)
+            if (item.Category.StartsWith("jewel", StringComparison.OrdinalIgnoreCase))
+            {
+                ModContainer.Children.Add(CreateJewelBaseFilterSection(item));
+                renderedGroups++;
+            }
 
             // Sockets Group (Count & Links)
             if (item.SocketCount > 0)
             {
+                if (renderedGroups > 0) AddDivider(ModContainer);
                 ModContainer.Children.Add(CreateSocketsGroupSection(item));
                 renderedGroups++;
             }
@@ -947,6 +953,68 @@ namespace GameBarWidget
                 () => item.FilterQualityActive ? 1 : 0);
         }
 
+        private UIElement CreateJewelBaseFilterSection(PoeItem item)
+        {
+            var rows = new List<UIElement>();
+            string baseLabel = !string.IsNullOrWhiteSpace(item.BaseType) ? item.BaseType : item.Name;
+
+            var rowGrid = new Grid
+            {
+                Padding = new Thickness(4, 2, 4, 2),
+                Background = DesignPalette.Brush(DesignPalette.SurfaceRow)
+            };
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var checkStack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+            var baseCheck = new CheckBox
+            {
+                IsChecked = item.FilterBaseTypeActive,
+                Content = $"Exact Base: {baseLabel}",
+                FontSize = 9.5,
+                Foreground = DesignPalette.Brush(item.FilterBaseTypeActive ? DesignPalette.TextPrimary : DesignPalette.TextSecondary),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            baseCheck.Checked += (s, e) =>
+            {
+                item.FilterBaseTypeActive = true;
+                baseCheck.Foreground = DesignPalette.Brush(DesignPalette.TextPrimary);
+            };
+            baseCheck.Unchecked += (s, e) =>
+            {
+                item.FilterBaseTypeActive = false;
+                baseCheck.Foreground = DesignPalette.Brush(DesignPalette.TextSecondary);
+            };
+            checkStack.Children.Add(baseCheck);
+            Grid.SetColumn(checkStack, 0);
+            rowGrid.Children.Add(checkStack);
+
+            var badgeBorder = new Border
+            {
+                Background = DesignPalette.Brush(Windows.UI.Color.FromArgb(255, 30, 41, 59)),
+                CornerRadius = new CornerRadius(2),
+                Padding = new Thickness(4, 1, 4, 1),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            badgeBorder.Child = new TextBlock
+            {
+                Text = item.IsJewelCraftingBase ? "ANY JEWEL BASE" : "EXACT BASE",
+                FontSize = 8,
+                FontWeight = Windows.UI.Text.FontWeights.SemiBold,
+                Foreground = DesignPalette.Brush(item.IsJewelCraftingBase ? DesignPalette.AccentSky : DesignPalette.TextSecondary)
+            };
+            Grid.SetColumn(badgeBorder, 1);
+            rowGrid.Children.Add(badgeBorder);
+
+            rows.Add(rowGrid);
+
+            return CreateGenericGroupSection(
+                "ITEM BASE",
+                DesignPalette.GetSectionAccentColor("ITEM BASE"),
+                rows,
+                () => item.FilterBaseTypeActive ? 1 : 0);
+        }
+
         private static void AddDivider(StackPanel container)
         {
             UiComponentFactory.AddDivider(container);
@@ -1020,27 +1088,6 @@ namespace GameBarWidget
         private void AttachQuickRollFlyout(TextBox targetBox, ItemModifier mod, bool isMin, CheckBox parentCb)
         {
             var menuFlyout = new MenuFlyout();
-
-            // Direct quick steps at top level
-            double[] topSteps = { 1, -1, 5, -5, 10, -10 };
-            foreach (double step in topSteps)
-            {
-                string label = step > 0 ? $"+{step}" : $"{step}";
-                var stepItem = new MenuFlyoutItem { Text = label };
-                stepItem.Click += (s, e) =>
-                {
-                    double cur = Math.Abs((isMin ? mod.MinRoll : mod.MaxRoll) ?? mod.NumberValue ?? 0);
-                    cur = Math.Max(0, cur + step);
-                    targetBox.Text = cur.ToString(CultureInfo.InvariantCulture);
-                    if (isMin) mod.MinRoll = cur; else mod.MaxRoll = cur;
-                    mod.IsActive = true;
-                    parentCb.IsChecked = true;
-                    _ = QueryMarketAsync(_currentItem);
-                };
-                menuFlyout.Items.Add(stepItem);
-            }
-
-            menuFlyout.Items.Add(new MenuFlyoutSeparator());
 
             // Roll Presets SubMenu
             var presetsSubMenu = new MenuFlyoutSubItem { Text = "Roll Presets" };
@@ -1128,30 +1175,6 @@ namespace GameBarWidget
         private void AttachQuickPropertyFlyout(TextBox targetBox, bool isMin, CheckBox parentCb, Action<int?> onValChanged, Action onFilterChanged, int? initialVal)
         {
             var menuFlyout = new MenuFlyout();
-
-            double[] topSteps = { 1, -1, 5, -5, 10, -10 };
-            foreach (double step in topSteps)
-            {
-                string label = step > 0 ? $"+{step}" : $"{step}";
-                var stepItem = new MenuFlyoutItem { Text = label };
-                stepItem.Click += (s, e) =>
-                {
-                    int cur = 0;
-                    if (int.TryParse(targetBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int parsed)) cur = parsed;
-                    else if (initialVal.HasValue) cur = initialVal.Value;
-
-                    cur = Math.Max(0, cur + (int)step);
-                    targetBox.Text = cur.ToString(CultureInfo.InvariantCulture);
-                    onValChanged(cur);
-                    parentCb.IsChecked = true;
-                    onFilterChanged();
-                    UpdateMasterToggleButton();
-                    _ = QueryMarketAsync(_currentItem);
-                };
-                menuFlyout.Items.Add(stepItem);
-            }
-
-            menuFlyout.Items.Add(new MenuFlyoutSeparator());
 
             if (initialVal.HasValue)
             {
