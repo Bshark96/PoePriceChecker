@@ -1477,7 +1477,7 @@ namespace GameBarWidget.Services
 
         public async Task<(bool success, string message)> SendDirectHideoutTokenAsync(string token, string? poesessid)
         {
-            return await SendTokenToEndpointAsync("hideout", token, poesessid);
+            return await SendTokenToEndpointAsync("whisper", token, poesessid);
         }
 
         private async Task<(bool success, string message)> SendTokenToEndpointAsync(string endpoint, string token, string? poesessid)
