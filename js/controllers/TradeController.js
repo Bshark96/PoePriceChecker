@@ -47,8 +47,9 @@ TradeController.prototype.triggerSearch = function() {
     });
   }
 
-  var corruptedSel = document.getElementById('corruptedFilterSelect');
-  var corruptedVal = corruptedSel ? corruptedSel.value : '';
+  var corruptedBadge = document.getElementById('corruptedBadge');
+  var isCorrSel = corruptedBadge && corruptedBadge.classList.contains('is-selected');
+  var corruptedVal = isCorrSel ? 'true' : '';
 
   if (window.PoeBridge) {
     window.PoeBridge.notifyHost({
