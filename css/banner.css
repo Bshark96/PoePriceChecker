@@ -156,14 +156,14 @@
 }
 
 .banner-header-row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
   align-items: center;
+  justify-content: center;
   width: 100%;
   position: relative;
   z-index: 2;
   box-sizing: border-box;
-  height: 22px;
+  height: 20px;
 }
 
 .banner-base-row {
