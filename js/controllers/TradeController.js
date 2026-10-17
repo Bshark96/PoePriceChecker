@@ -47,13 +47,17 @@ TradeController.prototype.triggerSearch = function() {
     });
   }
 
+  var corruptedSel = document.getElementById('corruptedFilterSelect');
+  var corruptedVal = corruptedSel ? corruptedSel.value : '';
+
   if (window.PoeBridge) {
     window.PoeBridge.notifyHost({
       action: 'search',
       preset: presetKey,
       filters: {
         modifiers: modFilters,
-        properties: propFilters
+        properties: propFilters,
+        corrupted: corruptedVal
       }
     });
   }

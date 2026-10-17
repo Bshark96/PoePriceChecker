@@ -645,6 +645,11 @@ namespace GameBarWidget
                         }
                     }
                 }
+
+                if (filters.ContainsKey("corrupted") && filters.GetNamedValue("corrupted").ValueType == JsonValueType.String)
+                {
+                    item.CorruptedFilterOption = filters.GetNamedString("corrupted");
+                }
             }
             catch { }
         }

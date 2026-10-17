@@ -160,6 +160,11 @@ ItemController.prototype.loadCustomItem = function(itemData) {
   this.renderProperties(this.currentItem.properties || []);
   this.renderModifiers(this.currentItem.modifiers || []);
 
+  var corruptedSel = document.getElementById('corruptedFilterSelect');
+  if (corruptedSel) {
+    corruptedSel.value = this.currentItem.isCorrupted ? 'true' : 'false';
+  }
+
   var resultsList = document.getElementById('resultsList');
   var resultsCount = document.getElementById('resultsCount');
   if (resultsList) {
