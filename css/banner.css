@@ -7,7 +7,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   background: linear-gradient(180deg, #180903 0%, #290f05 45%, #1c0a03 75%, #0c0401 100%);
   border: 1px solid #8e3d16;
