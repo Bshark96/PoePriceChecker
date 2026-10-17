@@ -167,12 +167,6 @@ ItemController.prototype.loadCustomItem = function(itemData) {
     } else {
       corruptedBadge.classList.remove('is-selected');
     }
-    if (!corruptedBadge._hasClickBound) {
-      corruptedBadge._hasClickBound = true;
-      corruptedBadge.addEventListener('click', function() {
-        corruptedBadge.classList.toggle('is-selected');
-      });
-    }
   }
 
   var resultsList = document.getElementById('resultsList');

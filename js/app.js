@@ -100,6 +100,13 @@
 
     // Click Delegation
     overlay.addEventListener('click', function(e) {
+      var corr = e.target.closest('#corruptedBadge');
+      if (corr) {
+        e.stopPropagation();
+        corr.classList.toggle('is-selected');
+        return;
+      }
+
       var target = e.target;
       var btn = target.closest('button, [data-action], [data-view], [data-preset], [data-num]');
       if (!btn) return;
