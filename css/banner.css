@@ -164,6 +164,7 @@
   position: relative;
   z-index: 2;
   box-sizing: border-box;
+  height: 20px;
 }
 
 .banner-corrupted-text {
