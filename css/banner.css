@@ -148,7 +148,6 @@
   color: #bfa15f;
   letter-spacing: 0.4px;
   text-transform: uppercase;
-  margin-top: 2px;
   z-index: 2;
   text-shadow: 0 1px 2px #000000;
   position: relative;
@@ -165,6 +164,18 @@
   z-index: 2;
   box-sizing: border-box;
   height: 22px;
+}
+
+.banner-base-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  margin-top: 2px;
+  height: 18px;
 }
 
 .banner-grid-spacer {
