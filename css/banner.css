@@ -173,9 +173,9 @@
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 10;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
   user-select: none;
@@ -184,8 +184,8 @@
   padding: 0 4px;
   color: #94a3b8;
   transition: all 0.2s ease;
-  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  font-family: Fontin, "Cinzel", Georgia, "Times New Roman", serif;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 2px 5px rgba(0, 0, 0, 0.9);
   pointer-events: auto;
   white-space: nowrap;
 }
