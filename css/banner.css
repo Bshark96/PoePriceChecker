@@ -180,28 +180,33 @@
 
 .banner-corrupted-text {
   z-index: 10;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   cursor: pointer;
   user-select: none;
-  background: transparent;
-  border: none;
-  padding: 0 4px;
-  color: #cbd5e1;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  padding: 2px 8px;
+  color: #f8fafc;
   transition: all 0.2s ease;
-  font-family: Fontin, "Cinzel", Georgia, "Times New Roman", serif;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.8);
+  font-family: Arial, Helvetica, sans-serif;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.9);
   pointer-events: auto;
   white-space: nowrap;
 }
 
 .banner-corrupted-text:hover {
   color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .banner-corrupted-text.is-selected {
   color: #ff3333;
+  border-color: rgba(255, 51, 51, 0.6);
+  background: rgba(255, 51, 51, 0.2);
   text-shadow: 0 0 14px rgba(255, 51, 51, 0.95), 0 0 6px rgba(255, 0, 0, 0.85);
 }
