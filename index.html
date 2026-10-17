@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PoE 1 Overlay - Evaluate (Awakened Design)</title>
+
+  <!-- Modular Stylesheets -->
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/banner.css">
+  <link rel="stylesheet" href="css/tooltip.css">
+  <link rel="stylesheet" href="css/search.css">
+  <link rel="stylesheet" href="css/live-search.css">
+  <link rel="stylesheet" href="css/alarm.css">
+</head>
+<body>
+
+  <div class="overlay-wrapper" id="overlayWrapper">
+    <!-- Minimized Overlay View -->
+    <div class="minimized-pill" id="minimizedPill" data-action="restore">
+      <span>POE 1 OVERLAY (MINIMIZED)</span>
+      <span style="font-size: 10px; color: #a0a5b5; font-weight: normal;">[Click to Restore]</span>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <div class="top-bar">
+      <div class="view-selector-tabs">
+        <button type="button" class="view-tab-btn active" id="tabEvaluate" data-view="evaluate">Evaluate</button>
+        <button type="button" class="view-tab-btn" id="tabLive" data-view="live">Live Search</button>
+        <button type="button" class="view-tab-btn" id="tabAlarm" data-view="alarm">Alarm</button>
+      </div>
+    </div>
+
+    <!-- View 1: Evaluate Mode -->
+    <div class="view-panel" id="viewEvaluatePanel">
+      <div class="evaluate-container">
+        <!-- Item Tooltip Card -->
+        <div class="item-column">
+          <div class="item-banner" id="itemBanner">
+            <img src="VisualAssets/08_left_endcap_trimmed.png" class="banner-endcap left" id="endcapLeft" alt="" />
+            <img src="VisualAssets/08_right_endcap_trimmed.png" class="banner-endcap right" id="endcapRight" alt="" />
+            <img src="VisualAssets/02_right_ornament.png" class="banner-ornament left" id="ornamentLeft" alt="" />
+            <img src="VisualAssets/01_left_ornament.png" class="banner-ornament right" id="ornamentRight" alt="" />
+            <img src="VisualAssets/04_straight_backing_bar.png" class="banner-bar-bottom" id="backingBar" alt="" />
+            <div class="banner-center-diamond" id="centerDiamond">
+              <img src="VisualAssets/03_center_diamond_with_mount.png" class="diamond-mount" id="diamondMount" alt="" />
+              <div class="diamond-core" id="diamondCore">
+                <img src="VisualAssets/03_center_diamond_with_mount.png" class="gem-texture-img" id="gemTextureImg" alt="" />
+              </div>
+            </div>
+            <div class="item-name" id="itemName">WAITING FOR ITEM</div>
+            <div class="item-base" id="itemBase">PRESS CTRL+D IN PATH OF EXILE 1</div>
+          </div>
+
+          <div class="container-property" id="propertyContainer">
+            <div style="color: #64748b; font-size: 11px; padding: 16px; text-align: center;">No item currently evaluated. Press CTRL+D over any in-game item.</div>
+          </div>
+          <div class="container-modifier" id="modifierContainer"></div>
+
+          <div class="ninja-box">
+            <span>Disenchants: <span class="disenchant-label">44.3K</span></span>
+            <span class="ninja-val" id="ninjaPrice">Hover item and press hotkey</span>
+          </div>
+        </div>
+
+        <!-- Virtual Numpad Flyout -->
+        <div class="numpad-overlay" id="numpadFlyout">
+          <div class="numpad-title">QUICK NUMPAD</div>
+          <div class="numpad-grid">
+            <button type="button" class="num-btn" data-num="7">7</button>
+            <button type="button" class="num-btn" data-num="8">8</button>
+            <button type="button" class="num-btn" data-num="9">9</button>
+            <button type="button" class="num-btn" data-num="4">4</button>
+            <button type="button" class="num-btn" data-num="5">5</button>
+            <button type="button" class="num-btn" data-num="6">6</button>
+            <button type="button" class="num-btn" data-num="1">1</button>
+            <button type="button" class="num-btn" data-num="2">2</button>
+            <button type="button" class="num-btn" data-num="3">3</button>
+            <button type="button" class="num-btn" data-num="0">0</button>
+            <button type="button" class="num-btn clear" data-action="clear-num">C</button>
+            <button type="button" class="num-btn confirm" data-action="close-numpad">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="search-btn" id="searchMarketBtn" data-action="search">Search Market</button>
+
+      <div class="search-results-panel" id="searchResultsPanel">
+        <!-- Loading Indicator -->
+        <div class="search-loading-bar is-hidden" id="searchLoadingBar">
+          <div class="spinner"></div>
+          <span>Querying official PoE trade index...</span>
+        </div>
+
+        <!-- Results Cards Container -->
+        <div class="results-list" id="resultsList"></div>
+      </div>
+    </div>
+
+    <!-- View 2: Live Search Mode -->
+    <div class="view-panel is-hidden" id="viewLivePanel">
+      <div class="live-unified-menu">
+        <!-- Top Section enclosed in Gold Border -->
+        <div class="live-top-section">
+          <!-- Mode Header Banner -->
+          <div class="item-banner live-banner">
+            <img src="VisualAssets/08_left_endcap_trimmed.png" class="banner-endcap left" alt="" />
+            <img src="VisualAssets/08_right_endcap_trimmed.png" class="banner-endcap right" alt="" />
+            <img src="VisualAssets/02_right_ornament.png" class="banner-ornament left" alt="" />
+            <img src="VisualAssets/01_left_ornament.png" class="banner-ornament right" alt="" />
+            <img src="VisualAssets/04_straight_backing_bar.png" class="banner-bar-bottom" alt="" />
+            <div class="banner-center-diamond">
+              <img src="VisualAssets/03_center_diamond_with_mount.png" class="diamond-mount" alt="" />
+              <div class="diamond-core">
+                <img src="VisualAssets/03_center_diamond_with_mount.png" class="gem-texture-img" alt="" />
+              </div>
+            </div>
+            <div class="live-banner-content">
+              <div class="live-pulse-dot" id="livePulseDot"></div>
+              <span class="live-banner-title">LIVE SEARCH FEED</span>
+            </div>
+          </div>
+
+          <!-- Add Search Controls Section -->
+          <div class="live-add-search-card">
+            <div class="live-input-row">
+              <input type="text" id="liveSearchInput" class="live-search-input" placeholder="Type item name to monitor..." />
+              <button type="button" class="live-add-search-btn" id="liveAddSearchBtn" data-action="add-live">Add Search</button>
+            </div>
+            <div class="live-limit-row">
+              <label class="live-limit-label" for="liveMaxPriceInput">Max price Limit:</label>
+              <input type="number" id="liveMaxPriceInput" class="live-price-input" placeholder="0" step="any" min="0" />
+              <select id="liveCurrencySelect" class="live-currency-select">
+                <option value="Chaos">Chaos</option>
+                <option value="Divine">Divine</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Active Monitored Searches Card -->
+          <div class="monitored-searches-card">
+            <div class="monitored-header">
+              <div class="monitored-title-wrap">
+                <span class="monitored-title">ACTIVE MONITORED SEARCHES</span>
+                <span class="monitored-badge" id="monitoredCountBadge">2 ACTIVE</span>
+              </div>
+            </div>
+            <div class="monitored-chips-list" id="monitoredChipsList"></div>
+          </div>
+        </div>
+
+        <!-- Real-time Live Feed Container -->
+        <div class="live-feed-container" id="liveResultsList">
+          <div class="trade-card trade-card-divine">
+            <div class="trade-left-column">
+              <div class="item-title-row trade-title-gold">CHAMBERS OF INSCRIPTION</div>
+              <div class="trade-seller-info">
+                <span class="status-dot online"></span>
+                <div class="seller-identity">
+                  <span class="seller-name">@FastExile_Trade</span>
+                  <span class="seller-char">ign: FastVaultRunner</span>
+                </div>
+                <span class="listing-age">• JUST NOW</span>
+              </div>
+            </div>
+            <div class="trade-right-group">
+              <div class="trade-price-tag">
+                <span class="price-amount">2.5</span>
+                <span class="currency-badge currency-divine">Divine</span>
+              </div>
+              <div class="trade-actions">
+                <button type="button" class="hideout-btn" data-action="to-hideout" data-seller="FastExile_Trade">
+                  <span>To hideout</span>
+                  <span class="btn-gold-val">(450)</span>
+                </button>
+                <button type="button" class="whisper-btn" data-action="whisper" data-seller="FastExile_Trade" data-char="FastVaultRunner" data-price="2.5" data-currency="Divine">Whisper</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 3: Alarm Mode -->
+    <div class="view-panel is-hidden" id="viewAlarmPanel">
+      <div class="alert-content-wrapper">
+        <!-- Mode Header Banner -->
+        <div class="item-banner alert-banner" id="alertItemBanner">
+          <img src="VisualAssets/08_left_endcap_trimmed.png" class="banner-endcap left" id="alertEndcapLeft" alt="" />
+          <img src="VisualAssets/08_right_endcap_trimmed.png" class="banner-endcap right" id="alertEndcapRight" alt="" />
+          <img src="VisualAssets/02_right_ornament.png" class="banner-ornament left" id="alertOrnamentLeft" alt="" />
+          <img src="VisualAssets/01_left_ornament.png" class="banner-ornament right" id="alertOrnamentRight" alt="" />
+          <img src="VisualAssets/04_straight_backing_bar.png" class="banner-bar-bottom" id="alertBackingBar" alt="" />
+          <div class="banner-center-diamond">
+            <img src="VisualAssets/03_center_diamond_with_mount.png" class="diamond-mount" id="alertDiamondMount" alt="" />
+            <div class="diamond-core" id="alertDiamondCore">
+              <img src="VisualAssets/03_center_diamond_with_mount.png" class="gem-texture-img" id="alertGemTextureImg" alt="" />
+            </div>
+          </div>
+          <div class="item-name" id="alertItemName">CHAMBERS OF INSCRIPTION</div>
+          <div class="item-base" id="alertItemBase">TEMPLE OF ATZOATL - TIER 3</div>
+        </div>
+
+        <!-- Live Alert Status Pill -->
+        <div class="live-alert-pill">
+          <div class="live-alert-pill-dot"></div>
+          <span>LIVE ALERT</span>
+        </div>
+
+        <!-- Center Content -->
+        <div class="alert-main-content">
+          <!-- Price Display Inside Dark Recessed Panel -->
+          <div class="alert-price-panel">
+            <div class="alert-price-display" id="alertPriceDisplay">
+              <span id="alertPriceVal">2.5 DIVINE</span>
+              <span class="alert-price-approx" id="alertPriceApprox">(≈375c)</span>
+            </div>
+          </div>
+
+          <div class="alert-seller-pill" id="alertSellerPill">@InscribedGod_US#1395</div>
+        </div>
+
+        <!-- Bottom Action Buttons -->
+        <div class="alert-actions-row">
+          <button type="button" class="alert-hideout-btn" id="alertHideoutBtn" data-action="alert-hideout">
+            <span>TO HIDEOUT</span> <span id="alertGoldCost">(450g)</span>
+          </button>
+          <button type="button" class="alert-dismiss-btn" id="alertDismissBtn" data-action="alert-dismiss">DISMISS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <div class="bottom-status-bar" id="bottomStatusBar">
+      <div class="bottom-progress-bar" id="bottomProgressBar"></div>
+      <div class="bottom-status-left">
+        <span id="autoMinimizeText">Auto-minimizing in <span id="autoMinimizeTimer">0.0</span>s (Hover to pause)</span>
+      </div>
+      <div class="bottom-status-right">
+        <span class="wss-badge" id="wssStatusBadge">WSS LISTEN (14ms)</span>
+        <span class="rate-limit-badge">RATE LIMIT: DISPATCHING</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-notification" id="toastNotification">Whisper copied to clipboard!</div>
+
+  <!-- Decomposed Domain Models -->
+  <script src="js/models/ItemModel.js"></script>
+  <script src="js/models/TradeListingModel.js"></script>
+  <script src="js/models/LiveSearchQueryModel.js"></script>
+  <script src="js/models/AlarmRuleModel.js"></script>
+
+  <!-- Static Data Presets -->
+  <script src="js/data/presets.js"></script>
+  <script src="js/data/marketData.js"></script>
+
+  <!-- EdgeHTML Web-to-C# Bridge -->
+  <script src="js/bridge.js"></script>
+
+  <!-- UI Component Renderers -->
+  <script src="js/ui/TradeCardRenderer.js"></script>
+  <script src="js/ui/BannerRenderer.js"></script>
+  <script src="js/ui/NumpadFlyout.js"></script>
+  <script src="js/ui/CountdownTimer.js"></script>
+
+  <!-- Application Controllers -->
+  <script src="js/controllers/ViewController.js"></script>
+  <script src="js/controllers/ItemController.js"></script>
+  <script src="js/controllers/TradeController.js"></script>
+  <script src="js/controllers/LiveSearchController.js"></script>
+  <script src="js/controllers/AlarmController.js"></script>
+
+  <!-- Main Orchestrator -->
+  <script src="js/app.js"></script>
+</body>
+</html>

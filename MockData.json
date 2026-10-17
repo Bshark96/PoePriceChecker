@@ -1,0 +1,289 @@
+{
+  "presets": {
+    "chambers": {
+      "key": "chambers",
+      "name": "CHAMBERS OF INSCRIPTION",
+      "base": "TEMPLE OF ATZOATL - TIER 3",
+      "bannerBg": "linear-gradient(180deg, #1d0f04 0%, #2e1806 45%, #201004 75%, #0f0701 100%)",
+      "bannerBorder": "#a86d26",
+      "nameColor": "#e6a243",
+      "endcapFilter": "sepia(100%) hue-rotate(5deg) saturate(320%) brightness(0.9) contrast(1.15)",
+      "gemFilter": "sepia(100%) hue-rotate(85deg) saturate(450%) brightness(1.05) contrast(1.15)",
+      "ninja": "Room Value: 2.5 -> 3.8 Divine",
+      "props": [
+        { "label": "Room Tier:", "val": "Tier III (Inscribed)", "min": "3", "max": "3" },
+        { "label": "Architect:", "val": "Guatelitzi, Architect of Flesh", "min": "", "max": "" },
+        { "label": "Inscribed Altar:", "val": "Active", "min": "1", "max": "" },
+        { "label": "Item Quantity:", "val": "+25%", "min": "25", "max": "" }
+      ],
+      "mods": [
+        { "roll": "T3", "text": "CONTAINS THE MONOLITH OF SACRIFICIAL INSCRIPTION", "min": "null", "max": "" },
+        { "roll": "100%", "text": "SACRIFICE A UNIQUE ITEM FOR ANOTHER RANDOM UNIQUE OF SAME CLASS", "min": "null", "max": "" },
+        { "roll": "+25%", "text": "MONSTERS IN THIS ROOM HAVE 25% INCREASED ITEM QUANTITY", "min": "25", "max": "" },
+        { "roll": "+15%", "text": "MONSTERS IN THIS ROOM DEAL 15% INCREASED DAMAGE", "min": "15", "max": "" }
+      ]
+    },
+    "doryani": {
+      "key": "doryani",
+      "name": "DORYANI'S PROTOTYPE",
+      "base": "SAINT'S HAUBERK",
+      "bannerBg": "linear-gradient(180deg, #180903 0%, #290f05 45%, #1c0a03 75%, #0c0401 100%)",
+      "bannerBorder": "#a34918",
+      "nameColor": "#d86a22",
+      "endcapFilter": "sepia(100%) hue-rotate(-25deg) saturate(450%) brightness(0.75) contrast(1.2)",
+      "gemFilter": "sepia(100%) hue-rotate(-25deg) saturate(450%) brightness(0.85) contrast(1.2)",
+      "ninja": "1 -> 10 Divine (-44.9%)",
+      "props": [
+        { "label": "Item Level:", "val": "70", "min": "70", "max": "67" },
+        { "label": "Sockets:", "val": "6", "min": "6", "max": "" },
+        { "label": "Links:", "val": "5", "min": "5", "max": "" },
+        { "label": "Quality:", "val": "+9%", "min": "9", "max": "" },
+        { "label": "Armour:", "val": "1638", "min": "1638", "max": "" },
+        { "label": "Energy Shield:", "val": "280", "min": "280", "max": "" }
+      ],
+      "mods": [
+        { "roll": "100%", "text": "200% INCREASED ARMOUR AND ENERGY SHIELD", "min": "196", "max": "" },
+        { "roll": "17%", "text": "65 TO MAXIMUM LIFE", "min": "65", "max": "" },
+        { "roll": "", "text": "DEAL NO NON-LIGHTNING DAMAGE", "min": "null", "max": "" },
+        { "roll": "", "text": "ARMOUR ALSO APPLIES TO LIGHTNING DAMAGE TAKEN FROM HITS", "min": "null", "max": "" },
+        { "roll": "", "text": "LIGHTNING RESISTANCE DOES NOT AFFECT LIGHTNING DAMAGE TAKEN", "min": "null", "max": "" },
+        { "roll": "", "text": "NEARBY ENEMIES HAVE LIGHTNING RESISTANCE EQUAL TO YOURS", "min": "null", "max": "" }
+      ]
+    },
+    "gem": {
+      "key": "gem",
+      "name": "FLAMEBLAST OF CINDER",
+      "base": "TRANSFIGURED GEM",
+      "bannerBg": "linear-gradient(180deg, #041416 0%, #092225 45%, #051618 75%, #020b0d 100%)",
+      "bannerBorder": "#198c86",
+      "nameColor": "#22baba",
+      "endcapFilter": "sepia(100%) hue-rotate(135deg) saturate(380%) brightness(0.85) contrast(1.15)",
+      "gemFilter": "grayscale(100%) brightness(1.75) contrast(1.25)",
+      "ninja": "1.8 Divine (approx 270 C)",
+      "props": [
+        { "label": "Gem Level:", "val": "20", "min": "20", "max": "20" },
+        { "label": "Quality:", "val": "+20%", "min": "20", "max": "" }
+      ],
+      "mods": [
+        { "roll": "100%", "text": "EXPANDS RADIUS PER STAGE", "min": "null", "max": "" },
+        { "roll": "100%", "text": "DEALS 120% MORE DAMAGE PER STAGE", "min": "null", "max": "" }
+      ]
+    },
+    "rare": {
+      "key": "rare",
+      "name": "DEMON SLAYER SWORD",
+      "base": "TWO HANDED SWORD",
+      "bannerBg": "linear-gradient(180deg, #1b1704 0%, #292407 45%, #1c1804 75%, #0e0c01 100%)",
+      "bannerBorder": "#a89022",
+      "nameColor": "#e0c548",
+      "endcapFilter": "sepia(100%) hue-rotate(15deg) saturate(350%) brightness(1.0) contrast(1.15)",
+      "gemFilter": "sepia(100%) hue-rotate(150deg) saturate(420%) brightness(1.05) contrast(1.15)",
+      "ninja": "5.0 Divine (approx 750 C)",
+      "props": [
+        { "label": "Item Level:", "val": "85", "min": "85", "max": "" },
+        { "label": "Sockets:", "val": "6", "min": "6", "max": "" },
+        { "label": "Quality:", "val": "+20%", "min": "20", "max": "" },
+        { "label": "Physical DPS:", "val": "840", "min": "800", "max": "" }
+      ],
+      "mods": [
+        { "roll": "92%", "text": "165% INCREASED PHYSICAL DAMAGE", "min": "160", "max": "" },
+        { "roll": "88%", "text": "18% INCREASED ATTACK SPEED", "min": "17", "max": "" }
+      ]
+    }
+  },
+  "marketListings": {
+    "chambers": [
+      {
+        "seller": "FastVaultRunner",
+        "character": "TempleFarmer_US",
+        "status": "online",
+        "age": "just now",
+        "goldVal": "450",
+        "priceVal": "2.5",
+        "priceType": "Divine",
+        "highlights": ["Tier III", "Guatelitzi"],
+        "whisper": "@FastVaultRunner Hi, I would like to buy your Chambers of Inscription listed for 2.5 Divine in Settlers."
+      },
+      {
+        "seller": "AtzoatlCrafter",
+        "character": "Chronos_Master",
+        "status": "online",
+        "age": "12m ago",
+        "goldVal": "500",
+        "priceVal": "2.8",
+        "priceType": "Divine",
+        "highlights": ["Tier III", "Inscribed Altar"],
+        "whisper": "@AtzoatlCrafter Hi, I would like to buy your Chambers of Inscription listed for 2.8 Divine in Settlers."
+      },
+      {
+        "seller": "VaalOverlord",
+        "character": "SacrificeKing",
+        "status": "afk",
+        "age": "45m ago",
+        "goldVal": "400",
+        "priceVal": "380",
+        "priceType": "Chaos",
+        "highlights": ["Tier III"],
+        "whisper": "@VaalOverlord Hi, I would like to buy your Chambers of Inscription listed for 380 Chaos in Settlers."
+      }
+    ],
+    "doryani": [
+      {
+        "seller": "ArmorSmith_Oriath",
+        "character": "Jugg_Unbreakable",
+        "status": "online",
+        "age": "5m ago",
+        "goldVal": "650",
+        "priceVal": "1.0",
+        "priceType": "Divine",
+        "highlights": ["6 Sockets", "5 Links", "iLvl 70"],
+        "whisper": "@ArmorSmith_Oriath Hi, I would like to buy your Doryani's Prototype listed for 1.0 Divine in Settlers."
+      },
+      {
+        "seller": "NegativeRes_God",
+        "character": "LightningStrike_Beast",
+        "status": "online",
+        "age": "18m ago",
+        "goldVal": "700",
+        "priceVal": "1.2",
+        "priceType": "Divine",
+        "highlights": ["6 Sockets", "5 Links", "iLvl 72"],
+        "whisper": "@NegativeRes_God Hi, I would like to buy your Doryani's Prototype listed for 1.2 Divine in Settlers."
+      },
+      {
+        "seller": "HeistRunner_Speed",
+        "character": "ZoomZoom_Ranger",
+        "status": "online",
+        "age": "35m ago",
+        "goldVal": "600",
+        "priceVal": "160",
+        "priceType": "Chaos",
+        "highlights": ["6 Sockets", "iLvl 70"],
+        "whisper": "@HeistRunner_Speed Hi, I would like to buy your Doryani's Prototype listed for 160 Chaos in Settlers."
+      }
+    ],
+    "gem": [
+      {
+        "seller": "GemMaster_EU",
+        "character": "Elementalist_Ignite",
+        "status": "online",
+        "age": "3m ago",
+        "goldVal": "350",
+        "priceVal": "1.8",
+        "priceType": "Divine",
+        "highlights": ["Lvl 20", "Quality +20%"],
+        "whisper": "@GemMaster_EU Hi, I would like to buy your Flameblast of Cinder listed for 1.8 Divine in Settlers."
+      },
+      {
+        "seller": "TransfiguredGems",
+        "character": "LabFarmer_Grand",
+        "status": "online",
+        "age": "14m ago",
+        "goldVal": "380",
+        "priceVal": "2.0",
+        "priceType": "Divine",
+        "highlights": ["Lvl 20", "Quality +20%"],
+        "whisper": "@TransfiguredGems Hi, I would like to buy your Flameblast of Cinder listed for 2 Divine in Settlers."
+      },
+      {
+        "seller": "Spellcaster_PRO",
+        "character": "WitchIgnite",
+        "status": "afk",
+        "age": "1h ago",
+        "goldVal": "300",
+        "priceVal": "300",
+        "priceType": "Chaos",
+        "highlights": ["Lvl 20", "Quality +18%"],
+        "whisper": "@Spellcaster_PRO Hi, I would like to buy your Flameblast of Cinder listed for 300 Chaos in Settlers."
+      }
+    ],
+    "rare": [
+      {
+        "seller": "SwordCrafter_US",
+        "character": "PhysDPS_Beast_SlayerOverlord",
+        "status": "online",
+        "age": "1m ago",
+        "goldVal": "850",
+        "priceVal": "5.0",
+        "priceType": "Divine",
+        "highlights": ["840 pDPS", "iLvl 85", "18% Atk Speed"],
+        "whisper": "@SwordCrafter_US Hi, I would like to buy your Demon Slayer Sword listed for 5 Divine in Settlers."
+      },
+      {
+        "seller": "BladeMaster_EU",
+        "character": "Slayer_Spin2Win",
+        "status": "online",
+        "age": "10m ago",
+        "goldVal": "900",
+        "priceVal": "5.2",
+        "priceType": "Divine",
+        "highlights": ["835 pDPS", "iLvl 85", "6 Sockets"],
+        "whisper": "@BladeMaster_EU Hi, I would like to buy your Demon Slayer Sword listed for 5.2 Divine in Settlers."
+      },
+      {
+        "seller": "RareHunter",
+        "character": "Cyclone_God",
+        "status": "online",
+        "age": "22m ago",
+        "goldVal": "720",
+        "priceVal": "750",
+        "priceType": "Chaos",
+        "highlights": ["820 pDPS", "iLvl 84", "Quality +20%"],
+        "whisper": "@RareHunter Hi, I would like to buy your Demon Slayer Sword listed for 750 Chaos in Settlers."
+      },
+      {
+        "seller": "CraftingBench",
+        "character": "TwoHander_King",
+        "status": "afk",
+        "age": "55m ago",
+        "goldVal": "950",
+        "priceVal": "5.8",
+        "priceType": "Divine",
+        "highlights": ["850 pDPS", "iLvl 86"],
+        "whisper": "@CraftingBench Hi, I would like to buy your Demon Slayer Sword listed for 5.8 Divine in Settlers."
+      }
+    ]
+  },
+  "monitoredSearches": [
+    {
+      "id": "m1",
+      "queryText": "CHAMBERS OF INSCRIPTION",
+      "maxPrice": 3.0,
+      "currency": "Divine",
+      "active": true
+    },
+    {
+      "id": "m2",
+      "queryText": "DORYANI'S PROTOTYPE",
+      "maxPrice": 2.0,
+      "currency": "Divine",
+      "active": true
+    }
+  ],
+  "alarmRules": [
+    {
+      "id": "r1",
+      "maxPrice": 2.5,
+      "currency": "Divine",
+      "maxGold": 500,
+      "active": true
+    },
+    {
+      "id": "r2",
+      "maxPrice": 1.2,
+      "currency": "Divine",
+      "maxGold": 700,
+      "active": true
+    }
+  ],
+  "currentAlert": {
+    "itemKey": "chambers",
+    "itemName": "CHAMBERS OF INSCRIPTION",
+    "itemBase": "TEMPLE OF ATZOATL - TIER 3",
+    "seller": "InscribedGod_US#1395",
+    "priceVal": "2.5 DIVINE",
+    "priceType": "Divine",
+    "approx": "(≈375c)",
+    "goldVal": "450g"
+  }
+}

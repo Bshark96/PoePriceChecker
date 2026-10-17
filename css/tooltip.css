@@ -1,0 +1,231 @@
+/* Item Tooltip & Properties */
+.evaluate-container {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  background: var(--poe-bg);
+  border: 1px solid var(--poe-border-subtle);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.9);
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.item-column {
+  flex: 1;
+  background: var(--poe-card-bg);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.property-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.4;
+  margin-bottom: 2px;
+  border-radius: 3px;
+  padding: 2px 4px;
+  transition: background 0.15s ease;
+}
+
+.property-line.is-selected,
+.stat-line.is-selected {
+  background: rgba(88, 101, 242, 0.15);
+}
+
+.prop-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 3px;
+  padding: 1px 2px;
+  transition: background 0.15s ease;
+}
+
+.prop-label-wrap:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.property-value {
+  color: var(--poe-text-value);
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.property-line:not(.is-selected) .property-value {
+  opacity: 0.5;
+}
+
+.property-line:not(.is-selected) .input-pair,
+.stat-line:not(.is-selected) .input-pair {
+  opacity: 0.35;
+}
+
+.stat-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-size: 10.5px;
+  line-height: 1.35;
+  margin-bottom: 3px;
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+
+.stat-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-align: left;
+  flex: 1;
+  padding-right: 8px;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 3px;
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+
+.stat-label-wrap:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.roll-quality {
+  color: #c49fff;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 24px;
+}
+
+.stat-text {
+  color: var(--poe-text-stat);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  display: inline-block;
+  transition: all 0.15s ease;
+}
+
+
+
+.unscalable-badge {
+  color: #94a3b8;
+  font-size: 8.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 4px;
+  background: rgba(148, 163, 184, 0.15);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 2px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.stat-line:not(.is-selected) .stat-text {
+  opacity: 0.5;
+  background: transparent;
+  border-color: transparent;
+}
+
+.input-pair {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.poe-input {
+  width: 38px;
+  height: 18px;
+  background: var(--poe-input-bg);
+  border: 1px solid var(--poe-input-border);
+  color: #a0a5b5;
+  font-size: 10px;
+  text-align: center;
+  border-radius: 2px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.poe-input:focus {
+  border-color: var(--poe-gold);
+  color: var(--poe-gold);
+}
+
+.ninja-box {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  background: #0d0f14;
+  border: 1px solid #1c202b;
+  border-radius: 2px;
+  padding: 4px 8px;
+  margin-top: 8px;
+  font-size: 10px;
+  box-sizing: border-box;
+}
+
+.ninja-val {
+  color: var(--poe-gold);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* Virtual Numpad Flyout */
+.numpad-overlay {
+  position: absolute;
+  right: 16px;
+  top: 60px;
+  background: #0f1115;
+  border: 1px solid var(--poe-gold);
+  border-radius: 4px;
+  padding: 8px;
+  width: 160px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+  display: none;
+  z-index: 200;
+  box-sizing: border-box;
+}
+
+.numpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.num-btn {
+  background: #181b22;
+  border: 1px solid #2d313b;
+  color: #e0e2e8;
+  padding: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.num-btn:hover {
+  background: #282d38;
+  color: var(--poe-gold);
+}

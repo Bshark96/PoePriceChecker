@@ -1,0 +1,30 @@
+/* PoE 1 Theme Styles */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&display=swap');
+
+:root {
+  --poe-bg: #090a0c;
+  --poe-card-bg: #0c0d10;
+  --poe-border-unique: #af6025;
+  --poe-border-rare: #f7d070;
+  --poe-border-subtle: #24221f;
+  --poe-text-unique: #af6025;
+  --poe-text-rare: #f7d070;
+  --poe-text-gem: #1ba29b;
+  --poe-text-stat: #7f96ff;
+  --poe-text-muted: #7f7f7f;
+  --poe-text-value: #d0c8b0;
+  --poe-input-bg: #14161b;
+  --poe-input-border: #2d313b;
+  --poe-btn-bg: #1a1714;
+  --poe-gold: #e2b35c;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+button, input, select, textarea {
+  font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}

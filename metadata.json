@@ -1,0 +1,6 @@
+{
+  "name": "PoE 1 Overlay - Evaluate (Awakened Design)",
+  "description": "Path of Exile 1 Game Bar widget overlay, C# backend hotkey daemon, and UWP EdgeHTML compatible trade app.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

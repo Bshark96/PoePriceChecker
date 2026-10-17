@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PoE Overlay - Evaluate (Awakened Design)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&display=swap');
+
+    :root {
+      --poe-bg: #090a0c;
+      --poe-card-bg: #0c0d10;
+      --poe-border-unique: #af6025;
+      --poe-border-rare: #f7d070;
+      --poe-border-subtle: #24221f;
+      --poe-text-unique: #af6025;
+      --poe-text-rare: #f7d070;
+      --poe-text-gem: #1ba29b;
+      --poe-text-stat: #7f96ff;
+      --poe-text-muted: #7f7f7f;
+      --poe-text-value: #d0c8b0;
+      --poe-input-bg: #14161b;
+      --poe-input-border: #2d313b;
+      --poe-btn-bg: #1a1714;
+      --poe-gold: #e2b35c;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background-color: #050506;
+      color: #7f7f7f;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0d0e12;
+      border: 1px solid #1f222a;
+      padding: 6px 12px;
+      border-radius: 4px 4px 0 0;
+      font-size: 11px;
+      color: #9a9b9e;
+    }
+
+    .preset-selector {
+      display: flex;
+      gap: 6px;
+    }
+
+    .preset-btn {
+      background: #161820;
+      border: 1px solid #2d313b;
+      color: #c8c9ce;
+      padding: 3px 8px;
+      font-size: 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--poe-gold);
+      color: var(--poe-gold);
+    }
+
+    .evaluate-container {
+      width: 100%;
+      max-width: 620px;
+      display: flex;
+      background: var(--poe-bg);
+      border: 1px solid var(--poe-border-subtle);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9);
+      position: relative;
+    }
+
+    /* Left Item Tooltip Column */
+    .item-column {
+      flex: 1;
+      background: var(--poe-card-bg);
+      border-right: 1px solid var(--poe-border-subtle);
+      padding: 12px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      overflow: visible;
+    }
+
+    .item-banner {
+      width: calc(100% - 16px);
+      min-height: 52px;
+      padding: 8px 16px;
+      margin-bottom: 18px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #180903 0%, #290f05 45%, #1c0a03 75%, #0c0401 100%);
+      border: 1px solid #8e3d16;
+      border-radius: 1px;
+      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.95), 0 4px 14px rgba(0, 0, 0, 0.85);
+      box-sizing: border-box;
+      overflow: visible;
+    }
+
+    .banner-ornament {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      height: 100%;
+      width: auto;
+      max-width: 45%;
+      pointer-events: none;
+      z-index: 1;
+      object-fit: contain;
+      opacity: 0.85;
+    }
+
+    .banner-ornament.left {
+      left: 0;
+      -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.45) 55%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.45) 55%, rgba(0, 0, 0, 0) 100%);
+    }
+
+    .banner-ornament.right {
+      right: 0;
+      -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.45) 55%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.45) 55%, rgba(0, 0, 0, 0) 100%);
+    }
+
+    /* Element 08 Vertical End Caps with alpha-shape outline filter */
+    .banner-endcap {
+      position: absolute;
+      top: -1px;
+      bottom: -1px;
+      height: calc(100% + 2px);
+      width: 10px;
+      pointer-events: none;
+      z-index: 10;
+      object-fit: fill;
+    }
+
+    .banner-endcap.left {
+      right: 100%;
+      margin-right: 0;
+    }
+
+    .banner-endcap.right {
+      left: 100%;
+      margin-left: 0;
+    }
+
+    /* Element 04: Straight Backing Bar overlapping exact bottom border pixel */
+    .banner-bar-bottom {
+      position: absolute;
+      top: calc(100% - 1px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 14px;
+      pointer-events: none;
+      z-index: 2;
+      object-fit: fill;
+    }
+
+    /* Element 03: Center Diamond Overlay centered at mid-height of Element 04 */
+    .banner-center-diamond {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 28px;
+      height: 28px;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .diamond-mount {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    .diamond-core {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 12px;
+      height: 12px;
+      border-radius: 1px;
+      pointer-events: none;
+      z-index: 2;
+      border: none;
+      outline: none;
+      overflow: hidden;
+      background: transparent;
+      box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.4), 0 0 3px rgba(0, 0, 0, 0.8);
+    }
+
+    .gem-texture-img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 28px;
+      height: 28px;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      pointer-events: none;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    .item-name {
+      font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #f7d070;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      z-index: 2;
+      text-shadow: 0 1px 2px #000000, 0 2px 4px rgba(0, 0, 0, 0.95);
+      position: relative;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .item-base {
+      font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #bfa15f;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-top: 2px;
+      z-index: 2;
+      text-shadow: 0 1px 2px #000000;
+      position: relative;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .property-line {
+      font-size: 11.5px;
+      color: var(--poe-text-muted);
+      margin: 2px 0;
+      min-height: 24px;
+      height: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .prop-label-wrap {
+      width: 70%;
+      flex: 0 0 70%;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .property-value {
+      color: var(--poe-text-value);
+      font-weight: 700;
+    }
+
+    .stat-line {
+      font-size: 11px;
+      color: var(--poe-text-stat);
+      margin: 3px 0;
+      min-height: 26px;
+      height: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .stat-label-wrap {
+      width: 70%;
+      flex: 0 0 70%;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .roll-quality {
+      font-size: 10px;
+      color: #9040c0;
+      font-weight: 700;
+      width: 15%;
+      flex: 0 0 15%;
+      text-align: left;
+    }
+
+    .stat-text {
+      width: 85%;
+      flex: 1;
+      background: rgba(127, 150, 255, 0.08);
+      border-radius: 2px;
+      padding: 2px 6px;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    .input-pair {
+      width: 28%;
+      flex: 0 0 28%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4%;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    .poe-input {
+      width: 100%;
+      height: 20px;
+      background: var(--poe-input-bg);
+      border: 1px solid var(--poe-input-border);
+      color: #a0a5b5;
+      font-size: 9.5px;
+      padding: 0 1px;
+      text-align: center;
+      border-radius: 2px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .poe-input:focus {
+      border-color: var(--poe-input-border);
+      filter: brightness(1.3);
+      color: #ffffff;
+    }
+
+    .ninja-box {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--poe-border-subtle);
+      width: 100%;
+      font-size: 10.5px;
+      color: var(--poe-text-muted);
+    }
+
+    .ninja-val {
+      color: var(--poe-gold);
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .search-btn {
+      width: 100%;
+      max-width: 620px;
+      background: linear-gradient(180deg, #2a2218 0%, #14100c 100%);
+      border: 1px solid var(--poe-gold);
+      color: var(--poe-gold);
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+      border-top: none;
+    }
+
+    .search-btn:hover {
+      background: linear-gradient(180deg, #3d3020 0%, #1a1510 100%);
+    }
+
+    /* Ornamental Square Buttons Showcase */
+    .ornamental-btn-showcase {
+      width: 100%;
+      max-width: 620px;
+      background: #100d0a;
+      border: 1px solid var(--poe-border-subtle);
+      border-top: none;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9);
+    }
+
+    .showcase-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--poe-gold);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(175, 96, 37, 0.3);
+      padding-bottom: 5px;
+    }
+
+    .showcase-header span {
+      font-size: 9px;
+      color: var(--poe-text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .square-btn-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 6px 0;
+    }
+
+    .square-btn-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .square-btn-label {
+      font-size: 9px;
+      color: var(--poe-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    /* Standard Square Button with Gothic Ornamental Elements */
+    .poe-square-button {
+      position: relative;
+      background: #0f0c09;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+      transition: filter 0.15s ease, transform 0.05s ease;
+      user-select: none;
+    }
+
+    .poe-square-button:hover {
+      filter: brightness(1.22) drop-shadow(0 0 6px rgba(255, 215, 0, 0.35));
+    }
+
+    .poe-square-button:active {
+      transform: scale(0.97);
+      filter: brightness(0.95);
+    }
+
+    .poe-square-button.active {
+      filter: brightness(1.3) drop-shadow(0 0 8px rgba(255, 180, 0, 0.6));
+    }
+
+    .poe-square-button.active .poe-btn-bg {
+      fill: #22160a;
+    }
+
+    .poe-square-button svg {
+      display: block;
+    }
+
+    /* Right Input Sidebar Column */
+    .inputs-column {
+      width: 170px;
+      background: var(--poe-bg);
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 4px;
+      height: 24px;
+      align-items: center;
+    }
+
+    .poe-input {
+      width: 100%;
+      height: 20px;
+      background: var(--poe-input-bg);
+      border: 1px solid var(--poe-input-border);
+      color: #a0a5b5;
+      font-size: 10px;
+      text-align: center;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .poe-input:focus {
+      border-color: var(--poe-gold);
+      color: var(--poe-gold);
+    }
+
+    /* Virtual Numpad Flyout */
+    .numpad-overlay {
+      position: absolute;
+      right: 180px;
+      top: 60px;
+      background: #0f1115;
+      border: 1px solid var(--poe-gold);
+      border-radius: 4px;
+      padding: 8px;
+      width: 160px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+      display: none;
+      z-index: 200;
+    }
+
+    .numpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      margin-top: 6px;
+    }
+
+    .num-btn {
+      background: #181b22;
+      border: 1px solid #2d313b;
+      color: #e0e2e8;
+      padding: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    .num-btn:hover {
+      background: #282d38;
+      color: var(--poe-gold);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div>PoE Overlay - Evaluate (Awakened Style)</div>
+    <div class="preset-selector">
+      <button class="preset-btn" onclick="loadPreset('chambers')">Chambers of Inscription</button>
+      <button class="preset-btn" onclick="loadPreset('doryani')">Doryani's Prototype</button>
+      <button class="preset-btn" onclick="loadPreset('gem')">Skill Gem</button>
+      <button class="preset-btn" onclick="loadPreset('rare')">Rare Weapon</button>
+    </div>
+  </div>
+
+  <div class="evaluate-container">
+    <!-- Left: Item Tooltip Card -->
+    <div class="item-column">
+      <div class="item-banner" id="itemBanner">
+        <img src="VisualAssets/08_left_endcap_trimmed.png" class="banner-endcap left" id="endcapLeft" alt="" />
+        <img src="VisualAssets/08_right_endcap_trimmed.png" class="banner-endcap right" id="endcapRight" alt="" />
+        <img src="VisualAssets/02_right_ornament.png" class="banner-ornament left" id="ornamentLeft" alt="" />
+        <img src="VisualAssets/01_left_ornament.png" class="banner-ornament right" id="ornamentRight" alt="" />
+        <img src="VisualAssets/04_straight_backing_bar.png" class="banner-bar-bottom" id="backingBar" alt="" />
+        <div class="banner-center-diamond" id="centerDiamond">
+          <img src="VisualAssets/03_center_diamond_with_mount.png" class="diamond-mount" id="diamondMount" alt="" />
+          <div class="diamond-core" id="diamondCore">
+            <img src="VisualAssets/03_center_diamond_with_mount.png" class="gem-texture-img" id="gemTextureImg" alt="" />
+          </div>
+        </div>
+        <div class="item-name" id="itemName">CHAMBERS OF INSCRIPTION</div>
+        <div class="item-base" id="itemBase">TEMPLE OF ATZOATL - TIER 3</div>
+      </div>
+
+      <div id="propertyContainer" style="width: calc(100% - 16px); display: flex; flex-direction: column; align-items: flex-start;"></div>
+      <div id="modifierContainer" style="width: calc(100% - 16px); margin-top: 6px; display: flex; flex-direction: column; align-items: flex-start;"></div>
+
+      <div class="ninja-box">
+        <div>Disenchants For: <span style="color: var(--poe-text-stat);">44.3K</span></div>
+        <div class="ninja-val" id="ninjaPrice">1 -> 10 Divine (-44.9%)</div>
+        <div style="font-size: 8.5px; margin-top: 3px;">PRICE VALUES BASED ON POE.NINJA</div>
+      </div>
+    </div>
+
+
+
+    <!-- Virtual Numpad Flyout -->
+    <div class="numpad-overlay" id="numpadFlyout">
+      <div style="font-size: 9px; font-weight: 700; color: var(--poe-gold); text-align: center;">QUICK NUMPAD</div>
+      <div class="numpad-grid">
+        <div class="num-btn" onclick="pressNum('7')">7</div>
+        <div class="num-btn" onclick="pressNum('8')">8</div>
+        <div class="num-btn" onclick="pressNum('9')">9</div>
+        <div class="num-btn" onclick="pressNum('4')">4</div>
+        <div class="num-btn" onclick="pressNum('5')">5</div>
+        <div class="num-btn" onclick="pressNum('6')">6</div>
+        <div class="num-btn" onclick="pressNum('1')">1</div>
+        <div class="num-btn" onclick="pressNum('2')">2</div>
+        <div class="num-btn" onclick="pressNum('3')">3</div>
+        <div class="num-btn" onclick="pressNum('0')">0</div>
+        <div class="num-btn" onclick="clearNum()" style="color: #ff6b6b;">C</div>
+        <div class="num-btn" onclick="closeNumpad()" style="color: var(--poe-gold);">OK</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="search-btn">Search Market</button>
+
+
+
+
+
+  <script>
+    let activeBox = null;
+
+    const dataPresets = {
+      chambers: {
+        name: "CHAMBERS OF INSCRIPTION",
+        base: "TEMPLE OF ATZOATL - TIER 3",
+        bannerBg: "linear-gradient(180deg, #1d0f04 0%, #2e1806 45%, #201004 75%, #0f0701 100%)",
+        bannerBorder: "#a86d26",
+        nameColor: "#e6a243",
+        endcapFilter: "sepia(100%) hue-rotate(5deg) saturate(320%) brightness(0.9) contrast(1.15)",
+        ninja: "Room Value: 2.5 -> 3.8 Divine",
+        props: [
+          { label: "Room Tier:", val: "Tier III (Inscribed)", min: "3", max: "3" },
+          { label: "Architect:", val: "Guatelitzi, Architect of Flesh", min: "", max: "" },
+          { label: "Inscribed Altar:", val: "Active", min: "1", max: "" },
+          { label: "Item Quantity:", val: "+25%", min: "25", max: "" }
+        ],
+        mods: [
+          { roll: "T3", text: "CONTAINS THE MONOLITH OF SACRIFICIAL INSCRIPTION", min: "null", max: "" },
+          { roll: "100%", text: "SACRIFICE A UNIQUE ITEM FOR ANOTHER RANDOM UNIQUE OF SAME CLASS", min: "null", max: "" },
+          { roll: "+25%", text: "MONSTERS IN THIS ROOM HAVE 25% INCREASED ITEM QUANTITY", min: "25", max: "" },
+          { roll: "+15%", text: "MONSTERS IN THIS ROOM DEAL 15% INCREASED DAMAGE", min: "15", max: "" }
+        ]
+      },
+      doryani: {
+        name: "DORYANI'S PROTOTYPE",
+        base: "SAINT'S HAUBERK",
+        bannerBg: "linear-gradient(180deg, #180903 0%, #290f05 45%, #1c0a03 75%, #0c0401 100%)",
+        bannerBorder: "#a34918",
+        nameColor: "#d86a22",
+        endcapFilter: "sepia(100%) hue-rotate(-25deg) saturate(450%) brightness(0.75) contrast(1.2)",
+        ninja: "1 -> 10 Divine (-44.9%)",
+        props: [
+          { label: "Item Level:", val: "70", min: "70", max: "67" },
+          { label: "Sockets:", val: "6", min: "6", max: "" },
+          { label: "Links:", val: "5", min: "5", max: "" },
+          { label: "Quality:", val: "+9%", min: "9", max: "" },
+          { label: "Armour:", val: "1638", min: "1638", max: "" },
+          { label: "Energy Shield:", val: "280", min: "280", max: "" }
+        ],
+        mods: [
+          { roll: "100%", text: "200% INCREASED ARMOUR AND ENERGY SHIELD", min: "196", max: "" },
+          { roll: "17%", text: "65 TO MAXIMUM LIFE", min: "65", max: "" },
+          { roll: "", text: "DEAL NO NON-LIGHTNING DAMAGE", min: "null", max: "" },
+          { roll: "", text: "ARMOUR ALSO APPLIES TO LIGHTNING DAMAGE TAKEN FROM HITS", min: "null", max: "" },
+          { roll: "", text: "LIGHTNING RESISTANCE DOES NOT AFFECT LIGHTNING DAMAGE TAKEN", min: "null", max: "" },
+          { roll: "", text: "NEARBY ENEMIES HAVE LIGHTNING RESISTANCE EQUAL TO YOURS", min: "null", max: "" }
+        ]
+      },
+      gem: {
+        name: "FLAMEBLAST OF CINDER",
+        base: "TRANSFIGURED GEM",
+        bannerBg: "linear-gradient(180deg, #041416 0%, #092225 45%, #051618 75%, #020b0d 100%)",
+        bannerBorder: "#198c86",
+        nameColor: "#22baba",
+        endcapFilter: "sepia(100%) hue-rotate(135deg) saturate(380%) brightness(0.85) contrast(1.15)",
+        ninja: "1.8 Divine (approx 270 C)",
+        props: [
+          { label: "Gem Level:", val: "20", min: "20", max: "20" },
+          { label: "Quality:", val: "+20%", min: "20", max: "" }
+        ],
+        mods: [
+          { roll: "100%", text: "EXPANDS RADIUS PER STAGE", min: "null", max: "" },
+          { roll: "100%", text: "DEALS 120% MORE DAMAGE PER STAGE", min: "null", max: "" }
+        ]
+      },
+      rare: {
+        name: "DEMON SLAYER SWORD",
+        base: "TWO HANDED SWORD",
+        bannerBg: "linear-gradient(180deg, #1b1704 0%, #292407 45%, #1c1804 75%, #0e0c01 100%)",
+        bannerBorder: "#a89022",
+        nameColor: "#e0c548",
+        endcapFilter: "sepia(100%) hue-rotate(15deg) saturate(350%) brightness(1.0) contrast(1.15)",
+        ninja: "5.0 Divine (approx 750 C)",
+        props: [
+          { label: "Item Level:", val: "85", min: "85", max: "" },
+          { label: "Sockets:", val: "6", min: "6", max: "" },
+          { label: "Quality:", val: "+20%", min: "20", max: "" },
+          { label: "Physical DPS:", val: "840", min: "800", max: "" }
+        ],
+        mods: [
+          { roll: "92%", text: "165% INCREASED PHYSICAL DAMAGE", min: "160", max: "" },
+          { roll: "88%", text: "18% INCREASED ATTACK SPEED", min: "17", max: "" }
+        ]
+      }
+    };
+
+    function loadPreset(key) {
+      const p = dataPresets[key];
+      document.documentElement.style.setProperty('--poe-input-border', p.bannerBorder);
+      const bannerEl = document.getElementById('itemBanner');
+      if (bannerEl) {
+        bannerEl.style.background = p.bannerBg;
+        bannerEl.style.borderColor = p.bannerBorder;
+      }
+      const ornLeft = document.getElementById('ornamentLeft');
+      const ornRight = document.getElementById('ornamentRight');
+      const endcapLeft = document.getElementById('endcapLeft');
+      const endcapRight = document.getElementById('endcapRight');
+      const backingBar = document.getElementById('backingBar');
+      const diamondMount = document.getElementById('diamondMount');
+      const diamondCore = document.getElementById('diamondCore');
+      const filterVal = p.endcapFilter || 'none';
+
+      const ornFilter = `contrast(0) brightness(1.2) ${filterVal}`;
+      if (ornLeft) ornLeft.style.filter = ornFilter;
+      if (ornRight) ornRight.style.filter = ornFilter;
+
+      const shapeOutline = `drop-shadow(1px 0 0 ${p.bannerBorder}) drop-shadow(-1px 0 0 ${p.bannerBorder}) drop-shadow(0 1px 0 ${p.bannerBorder}) drop-shadow(0 -1px 0 ${p.bannerBorder})`;
+      if (endcapLeft) {
+        endcapLeft.style.filter = `${filterVal} ${shapeOutline}`;
+      }
+      if (endcapRight) {
+        endcapRight.style.filter = `${filterVal} ${shapeOutline}`;
+      }
+      if (backingBar) backingBar.style.filter = filterVal;
+
+      if (diamondMount) {
+        diamondMount.style.filter = filterVal + ' drop-shadow(0 3px 6px rgba(0,0,0,0.95))';
+      }
+
+      const gemTextureImg = document.getElementById('gemTextureImg');
+      if (gemTextureImg) {
+        if (key === 'chambers') {
+          // Chambers: Vibrant Emerald Green Faceted Gem
+          gemTextureImg.style.filter = 'sepia(100%) hue-rotate(85deg) saturate(450%) brightness(1.05) contrast(1.15)';
+        } else if (key === 'doryani') {
+          // Doryani: Ruby Red Faceted Gem
+          gemTextureImg.style.filter = 'sepia(100%) hue-rotate(-25deg) saturate(450%) brightness(0.85) contrast(1.2)';
+        } else if (key === 'gem') {
+          // Skill Gem: Brilliant White Faceted Gem
+          gemTextureImg.style.filter = 'grayscale(100%) brightness(1.75) contrast(1.25)';
+        } else if (key === 'rare') {
+          // Rare Weapon: Teal Blue Faceted Gem
+          gemTextureImg.style.filter = 'sepia(100%) hue-rotate(150deg) saturate(420%) brightness(1.05) contrast(1.15)';
+        }
+      }
+
+      if (diamondCore) {
+        diamondCore.style.border = 'none';
+        diamondCore.style.background = 'transparent';
+        diamondCore.style.boxShadow = 'inset 0 0 2px rgba(255, 255, 255, 0.4), 0 0 3px rgba(0, 0, 0, 0.8)';
+      }
+      document.getElementById('itemName').innerText = p.name;
+      document.getElementById('itemName').style.color = p.nameColor;
+      document.getElementById('itemBase').innerText = p.base;
+      document.getElementById('itemBase').style.color = p.nameColor;
+      document.getElementById('ninjaPrice').innerText = p.ninja;
+
+      const propCont = document.getElementById('propertyContainer');
+      const modCont = document.getElementById('modifierContainer');
+
+      propCont.innerHTML = '';
+      modCont.innerHTML = '';
+
+      p.props.forEach(pr => {
+        const pLine = document.createElement('div');
+        pLine.className = 'property-line';
+        pLine.innerHTML = `
+          <div class="prop-label-wrap">
+            <span>${pr.label}</span> <span class="property-value">${pr.val}</span>
+          </div>
+          <div class="input-pair">
+            <input type="text" class="poe-input" value="${pr.min}" oncontextmenu="openNumpad(event, this)" />
+            <input type="text" class="poe-input" value="${pr.max || 'max'}" oncontextmenu="openNumpad(event, this)" />
+          </div>
+        `;
+        propCont.appendChild(pLine);
+      });
+
+      p.mods.forEach(m => {
+        const mLine = document.createElement('div');
+        mLine.className = 'stat-line';
+        mLine.innerHTML = `
+          <div class="stat-label-wrap">
+            <span class="roll-quality">${m.roll}</span>
+            <span class="stat-text">${m.text}</span>
+          </div>
+          <div class="input-pair">
+            <input type="text" class="poe-input" value="${m.min}" oncontextmenu="openNumpad(event, this)" />
+            <input type="text" class="poe-input" value="${m.max || 'max'}" oncontextmenu="openNumpad(event, this)" />
+          </div>
+        `;
+        modCont.appendChild(mLine);
+      });
+    }
+
+    function openNumpad(e, el) {
+      e.preventDefault();
+      activeBox = el;
+      document.getElementById('numpadFlyout').style.display = 'block';
+    }
+
+    function closeNumpad() {
+      document.getElementById('numpadFlyout').style.display = 'none';
+      activeBox = null;
+    }
+
+    function pressNum(digit) {
+      if (activeBox) {
+        if (activeBox.value === 'max' || activeBox.value === 'null') activeBox.value = '';
+        activeBox.value += digit;
+      }
+    }
+
+    function clearNum() {
+      if (activeBox) activeBox.value = '';
+    }
+
+    loadPreset('chambers');
+  </script>
+</body>
+</html>
