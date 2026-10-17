@@ -156,13 +156,19 @@
   white-space: nowrap;
 }
 
+.banner-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  padding: 0 2px;
+  box-sizing: border-box;
+}
+
 .banner-corrupted-text {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  transform: translateY(-50%);
-  z-index: 6;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -170,11 +176,14 @@
   user-select: none;
   background: transparent;
   border: none;
-  padding: 0;
+  padding: 0 4px;
   color: #94a3b8;
   transition: all 0.2s ease;
   font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   text-shadow: 0 1px 2px #000000;
+  pointer-events: auto;
+  z-index: 10;
+  white-space: nowrap;
 }
 
 .banner-corrupted-text:hover {

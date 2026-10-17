@@ -39,6 +39,15 @@
     // Initialize View
     viewController.init();
 
+    // Corrupted filter text toggle
+    var corruptedBadge = document.getElementById('corruptedBadge');
+    if (corruptedBadge) {
+      corruptedBadge.addEventListener('click', function(e) {
+        e.stopPropagation();
+        corruptedBadge.classList.toggle('is-selected');
+      });
+    }
+
     // Global Web-to-C# Hover Sync
     var overlayEl = document.getElementById('overlayWrapper') || document.body;
     var lastHoverState = false;
