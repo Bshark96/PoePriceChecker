@@ -209,6 +209,7 @@ namespace GameBarWidget.Services
                             var pObj = new JsonObject();
                             pObj["label"] = JsonValue.CreateStringValue(kvp.Key);
                             pObj["val"] = JsonValue.CreateStringValue(kvp.Value?.ToString() ?? string.Empty);
+                            pObj["active"] = JsonValue.CreateBooleanValue(true);
                             propArray.Add(pObj);
                         }
                     }
@@ -225,6 +226,7 @@ namespace GameBarWidget.Services
                             mObj["max"] = JsonValue.CreateStringValue(m.Value.ToString(CultureInfo.InvariantCulture));
                             mObj["roll"] = JsonValue.CreateStringValue(m.Tier != null ? $"T{m.Tier}" : string.Empty);
                             mObj["isUnscalable"] = JsonValue.CreateBooleanValue(m.IsUnscalable);
+                            mObj["active"] = JsonValue.CreateBooleanValue(!string.IsNullOrEmpty(m.StatId));
                             modArray.Add(mObj);
                         }
                     }
