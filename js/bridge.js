@@ -139,6 +139,8 @@ var PoeBridge = {
     var isWebMinimized = !!(wrapper && wrapper.classList.contains('is-minimized'));
     if ((listing.openAlarm === true || isWebMinimized) && window.alarmController) {
       window.alarmController.triggerLiveAlert(listing);
+    } else if (window.alarmController && !listing.soundPlayedByHost && typeof window.alarmController.playAlertSound === 'function') {
+      window.alarmController.playAlertSound();
     }
   },
 

@@ -346,6 +346,14 @@ html, body {
 .alert-banner {
   width: calc(100% - 20px);
   margin: 2px auto 6px auto;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.top-bar.is-hidden,
+.overlay-wrapper.is-alarm-view .top-bar {
+  display: none !important;
 }
 
 .alert-scroll-card {

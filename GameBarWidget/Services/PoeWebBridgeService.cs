@@ -744,6 +744,7 @@ namespace GameBarWidget.Services
                     obj["hideoutToken"] = JsonValue.CreateStringValue(listing.HideoutToken ?? string.Empty);
                     obj["whisper"] = JsonValue.CreateStringValue(listing.WhisperString ?? string.Empty);
                     obj["openAlarm"] = JsonValue.CreateBooleanValue(openAlarmView);
+                    obj["soundPlayedByHost"] = JsonValue.CreateBooleanValue(true);
 
                     string json = obj.Stringify();
                     string script = $"if (window.PoeBridge && window.PoeBridge.onLiveSearchResult) {{ window.PoeBridge.onLiveSearchResult({json}); }}";
@@ -1059,8 +1060,20 @@ if (inp) {
   if (!document.getElementById('poeInputFixStyle')) {
     var st = document.createElement('style');
     st.id = 'poeInputFixStyle';
-    st.textContent = 'input, textarea, select { user-select: text !important; -webkit-user-select: text !important; -ms-user-select: text !important; pointer-events: auto !important; cursor: text !important; } input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; display: none !important; }';
+    st.textContent = 'input, textarea, select { user-select: text !important; -webkit-user-select: text !important; -ms-user-select: text !important; pointer-events: auto !important; cursor: text !important; } input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; display: none !important; } .item-banner, .alert-banner { align-items: center !important; justify-content: center !important; text-align: center !important; } .item-name, .item-base, #alertItemName, #alertItemBase { text-align: center !important; width: 100% !important; } .top-bar.is-hidden, .overlay-wrapper.is-alarm-view .top-bar { display: none !important; }';
     (document.head || document.documentElement).appendChild(st);
+  }
+
+  if (window.viewController && !window.viewController.__poeAlarmNavPatched) {
+    window.viewController.__poeAlarmNavPatched = true;
+    var origSwitchView = window.viewController.switchView;
+    window.viewController.switchView = function(mode) {
+      origSwitchView.call(this, mode);
+      var tb = document.querySelector('.top-bar');
+      if (tb) tb.classList.toggle('is-hidden', mode === 'alarm');
+      var wr = document.getElementById('overlayWrapper');
+      if (wr) wr.classList.toggle('is-alarm-view', mode === 'alarm');
+    };
   }
 
   function getTargetInput() {

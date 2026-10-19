@@ -178,6 +178,46 @@ AlarmController.prototype.triggerLiveAlert = function(listing) {
   if (window.viewController) {
     window.viewController.switchView('alarm');
   }
+
+  if (!listing.soundPlayedByHost) {
+    this.playAlertSound();
+  }
+};
+
+AlarmController.prototype.playAlertSound = function() {
+  try {
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    if (!this._audioCtx) {
+      this._audioCtx = new AudioCtx();
+    }
+    var ctx = this._audioCtx;
+    if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+      ctx.resume();
+    }
+
+    var now = ctx.currentTime;
+    var notes = [
+      { freq: 587.33, start: 0.0, dur: 0.12 },
+      { freq: 880.00, start: 0.11, dur: 0.26 }
+    ];
+
+    notes.forEach(function(n) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(n.freq, now + n.start);
+
+      gain.gain.setValueAtTime(0.0001, now + n.start);
+      gain.gain.exponentialRampToValueAtTime(0.28, now + n.start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + n.start + n.dur);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + n.start);
+      osc.stop(now + n.start + n.dur + 0.02);
+    });
+  } catch (e) {}
 };
 
 AlarmController.prototype.toHideoutFromAlert = function() {

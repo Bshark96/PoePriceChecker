@@ -27,6 +27,16 @@ ViewController.prototype.switchView = function(mode) {
     window.PoeBridge.notifyHost({ action: 'view_changed', mode: mode });
   }
 
+  // Hide top navigation bar in Alarm view only
+  var topBar = document.querySelector('.top-bar');
+  if (topBar) {
+    topBar.classList.toggle('is-hidden', mode === 'alarm');
+  }
+  var wrapper = document.getElementById('overlayWrapper');
+  if (wrapper) {
+    wrapper.classList.toggle('is-alarm-view', mode === 'alarm');
+  }
+
   // Toggle active tab buttons
   if (this.tabEval) this.tabEval.classList.toggle('active', mode === 'evaluate');
   if (this.tabLive) this.tabLive.classList.toggle('active', mode === 'live');

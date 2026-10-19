@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Data.Json;
 using Windows.Foundation.Collections;
+using Windows.Media.Core;
+using Windows.Media.Playback;
+using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -39,6 +43,8 @@ namespace GameBarWidget
         private double _remainingSeconds = 12.0;
         private bool _isOverlayVisible = true;
         private DateTime _settingsOpenedTime = DateTime.MinValue;
+        private MediaPlayer _alertMediaPlayer;
+        private byte[] _cachedAlertWavBytes;
 
         public Widget1()
         {
@@ -969,6 +975,9 @@ namespace GameBarWidget
 
                 bool wasMinimized = IsWidgetMinimized();
 
+                // Play alert chime when live search item is received
+                _ = PlayLiveAlertSoundAsync();
+
                 // Push real-time listing into Web UI; only open Alarm view automatically if widget was minimized
                 if (_bridgeService != null)
                 {
@@ -981,6 +990,95 @@ namespace GameBarWidget
                     await RestoreWidgetAsync();
                 }
             });
+        }
+
+        private async Task PlayLiveAlertSoundAsync()
+        {
+            try
+            {
+                if (_alertMediaPlayer == null)
+                {
+                    _alertMediaPlayer = new MediaPlayer
+                    {
+                        AudioCategory = MediaPlayerAudioCategory.Alerts,
+                        Volume = 1.0
+                    };
+                }
+
+                if (_cachedAlertWavBytes == null)
+                {
+                    _cachedAlertWavBytes = GenerateAlertChimeWav();
+                }
+
+                var stream = new InMemoryRandomAccessStream();
+                using (var writer = new DataWriter(stream.GetOutputStreamAt(0)))
+                {
+                    writer.WriteBytes(_cachedAlertWavBytes);
+                    await writer.StoreAsync();
+                    await writer.FlushAsync();
+                    writer.DetachStream();
+                }
+
+                stream.Seek(0);
+                _alertMediaPlayer.Source = MediaSource.CreateFromStream(stream, "audio/wav");
+                _alertMediaPlayer.Play();
+            }
+            catch (Exception ex)
+            {
+                await BridgeLogger.LogBridgeMessageAsync($"[Widget1] PlayLiveAlertSoundAsync note: {ex.Message}");
+            }
+        }
+
+        private static byte[] GenerateAlertChimeWav()
+        {
+            const int sampleRate = 44100;
+            const double durationSeconds = 0.38;
+            int totalSamples = (int)(sampleRate * durationSeconds);
+            int dataBytes = totalSamples * 2; // 16-bit mono
+
+            using (var ms = new MemoryStream(44 + dataBytes))
+            using (var bw = new BinaryWriter(ms))
+            {
+                // RIFF header
+                bw.Write(new char[] { 'R', 'I', 'F', 'F' });
+                bw.Write(36 + dataBytes);
+                bw.Write(new char[] { 'W', 'A', 'V', 'E' });
+
+                // fmt subchunk
+                bw.Write(new char[] { 'f', 'm', 't', ' ' });
+                bw.Write(16);
+                bw.Write((short)1); // PCM
+                bw.Write((short)1); // Mono
+                bw.Write(sampleRate);
+                bw.Write(sampleRate * 2);
+                bw.Write((short)2);
+                bw.Write((short)16);
+
+                // data subchunk
+                bw.Write(new char[] { 'd', 'a', 't', 'a' });
+                bw.Write(dataBytes);
+
+                int splitSample = (int)(sampleRate * 0.115);
+                for (int i = 0; i < totalSamples; i++)
+                {
+                    double t = (double)i / sampleRate;
+                    double freq = i < splitSample ? 587.33 : 880.00; // D5 -> A5 chime
+                    double localT = i < splitSample ? t : (t - 0.115);
+                    double noteDur = i < splitSample ? 0.115 : (durationSeconds - 0.115);
+
+                    double attack = Math.Min(1.0, localT / 0.008);
+                    double decay = Math.Exp(-localT / (noteDur * 0.55));
+                    double env = attack * decay;
+
+                    double wave = 0.75 * Math.Sin(2.0 * Math.PI * freq * t)
+                                + 0.25 * Math.Sin(2.0 * Math.PI * (freq * 2.0) * t);
+
+                    short sample = (short)Math.Max(-32767, Math.Min(32767, wave * env * 18500));
+                    bw.Write(sample);
+                }
+
+                return ms.ToArray();
+            }
         }
 
         private void OnLiveStatusChanged(object sender, LiveSearchStatusEventArgs e)
