@@ -241,6 +241,7 @@ namespace GameBarWidget
 
             PoeLiveSearchClient.Instance.ItemReceived += OnLiveItemReceived;
             PoeLiveSearchClient.Instance.StatusChanged += OnLiveStatusChanged;
+            PoeLiveSearchClient.Instance.QueryNameResolved += OnLiveQueryNameResolved;
 
             // Load full official stat database and canonical item dictionary in background
             _ = Task.Run(async () =>
@@ -387,6 +388,7 @@ namespace GameBarWidget
 
             PoeLiveSearchClient.Instance.ItemReceived -= OnLiveItemReceived;
             PoeLiveSearchClient.Instance.StatusChanged -= OnLiveStatusChanged;
+            PoeLiveSearchClient.Instance.QueryNameResolved -= OnLiveQueryNameResolved;
 
             Window.Current.CoreWindow.KeyDown -= CoreWindow_KeyDown;
             Window.Current.CoreWindow.CharacterReceived -= CoreWindow_CharacterReceived;
@@ -936,10 +938,20 @@ namespace GameBarWidget
                 string defaultLeague = PoeSettingsManager.Instance.SelectedLeague;
                 if (string.IsNullOrWhiteSpace(defaultLeague)) defaultLeague = "Standard";
 
+                string resolvedTitle = trimmed;
+                if (urlInfo.IsValid && !string.IsNullOrWhiteSpace(urlInfo.SearchId))
+                {
+                    string extracted = PoeOfficialTradeClient.TryExtractSearchNameFromState(urlInfo.SearchId);
+                    if (!string.IsNullOrWhiteSpace(extracted))
+                    {
+                        resolvedTitle = extracted;
+                    }
+                }
+
                 var query = new PoeLiveSearchQuery
                 {
                     Id = !string.IsNullOrWhiteSpace(id) ? id : Guid.NewGuid().ToString("N"),
-                    Title = trimmed,
+                    Title = resolvedTitle,
                     MaxPrice = maxPrice,
                     Currency = currency ?? "Chaos",
                     League = urlInfo.IsValid && !string.IsNullOrWhiteSpace(urlInfo.League) ? urlInfo.League : defaultLeague,
@@ -947,9 +959,22 @@ namespace GameBarWidget
                     SearchId = urlInfo.IsValid ? urlInfo.SearchId : trimmed
                 };
 
+                if (!string.Equals(resolvedTitle, trimmed, StringComparison.Ordinal) && _bridgeService != null)
+                {
+                    await _bridgeService.UpdateMonitoredSearchNameInWebAsync(query.Id, resolvedTitle);
+                }
+
                 await PoeLiveSearchClient.Instance.AddQueryAsync(query);
             }
             catch { }
+        }
+
+        private async void OnLiveQueryNameResolved(object sender, (string QueryId, string ItemName) e)
+        {
+            if (_bridgeService != null && !string.IsNullOrWhiteSpace(e.ItemName))
+            {
+                await _bridgeService.UpdateMonitoredSearchNameInWebAsync(e.QueryId, e.ItemName);
+            }
         }
 
         private bool IsWidgetMinimized()
@@ -981,7 +1006,12 @@ namespace GameBarWidget
                 // Push real-time listing into Web UI; only open Alarm view automatically if widget was minimized
                 if (_bridgeService != null)
                 {
-                    await _bridgeService.PushLiveListingToWebAsync(e.Listing, wasMinimized);
+                    string itemTitle = !string.IsNullOrWhiteSpace(e.Listing.ItemName) ? e.Listing.ItemName : e.Listing.ItemBaseType;
+                    if (!string.IsNullOrWhiteSpace(itemTitle) && e.Query != null)
+                    {
+                        await _bridgeService.UpdateMonitoredSearchNameInWebAsync(e.Query.Id, itemTitle);
+                    }
+                    await _bridgeService.PushLiveListingToWebAsync(e.Listing, wasMinimized, e.Query?.Id);
                 }
 
                 // Restore/activate widget when minimized so user sees the automatic live search alarm

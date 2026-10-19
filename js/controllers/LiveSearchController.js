@@ -220,6 +220,32 @@ LiveSearchController.prototype.removeMonitoredSearch = function(id) {
   this.renderMonitoredSearches();
 };
 
+LiveSearchController.prototype.updateMonitoredSearchName = function(id, newName) {
+  if (!newName) return;
+  var upper = String(newName).trim().toUpperCase();
+  if (!upper) return;
+
+  var updated = false;
+  for (var i = 0; i < this.monitoredSearches.length; i++) {
+    var m = this.monitoredSearches[i];
+    if (id && m.id === id) {
+      if (m.queryText !== upper) {
+        m.queryText = upper;
+        updated = true;
+      }
+      break;
+    } else if (!id && m.queryText && m.queryText.indexOf('TRADE #') === 0) {
+      m.queryText = upper;
+      updated = true;
+      break;
+    }
+  }
+
+  if (updated) {
+    this.renderMonitoredSearches();
+  }
+};
+
 LiveSearchController.prototype.clearHistory = function(fromHost) {
   this.foundItems = [];
   var listEl = document.getElementById('liveResultsList');

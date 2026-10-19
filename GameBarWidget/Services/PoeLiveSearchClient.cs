@@ -52,6 +52,7 @@ namespace GameBarWidget.Services
 
         public event EventHandler<LiveItemEventArgs> ItemReceived;
         public event EventHandler<LiveSearchStatusEventArgs> StatusChanged;
+        public event EventHandler<(string QueryId, string ItemName)> QueryNameResolved;
         public event EventHandler HistoryCleared;
 
         private PoeLiveSearchClient() { }
@@ -88,7 +89,7 @@ namespace GameBarWidget.Services
 
             StopQuery(query.Id);
 
-            var session = new LiveSearchSession(query, OnItemParsed, OnStatusUpdate);
+            var session = new LiveSearchSession(query, OnItemParsed, OnStatusUpdate, OnQueryNameResolved);
             _sessions[query.Id] = session;
             session.Start();
         }
@@ -145,24 +146,36 @@ namespace GameBarWidget.Services
             StatusChanged?.Invoke(this, new LiveSearchStatusEventArgs(queryId, status, connected));
         }
 
+        private void OnQueryNameResolved(string queryId, string itemName)
+        {
+            if (!string.IsNullOrWhiteSpace(queryId) && !string.IsNullOrWhiteSpace(itemName))
+            {
+                QueryNameResolved?.Invoke(this, (queryId, itemName));
+            }
+        }
+
         private sealed class LiveSearchSession
         {
             private readonly PoeLiveSearchQuery _query;
             private readonly Action<PoeLiveSearchQuery, TradeListing> _onItem;
             private readonly Action<string, string, bool> _onStatus;
+            private readonly Action<string, string> _onNameResolved;
             private CancellationTokenSource _cts;
             private ClientWebSocket _ws;
+            private bool _nameResolved;
 
             public bool IsConnected { get; private set; }
 
             public LiveSearchSession(
                 PoeLiveSearchQuery query,
                 Action<PoeLiveSearchQuery, TradeListing> onItem,
-                Action<string, string, bool> onStatus)
+                Action<string, string, bool> onStatus,
+                Action<string, string> onNameResolved)
             {
                 _query = query;
                 _onItem = onItem;
                 _onStatus = onStatus;
+                _onNameResolved = onNameResolved;
             }
 
             public void Start()
@@ -181,6 +194,14 @@ namespace GameBarWidget.Services
                 catch { }
             }
 
+            private void NotifyNameIfResolved(string candidateName)
+            {
+                if (_nameResolved || string.IsNullOrWhiteSpace(candidateName)) return;
+                _nameResolved = true;
+                _query.Label = candidateName.Trim();
+                _onNameResolved?.Invoke(_query.Id, candidateName.Trim());
+            }
+
             private async Task ConnectionLoopAsync(CancellationToken ct)
             {
                 int attempt = 0;
@@ -190,6 +211,12 @@ namespace GameBarWidget.Services
                     {
                         string effectiveId = _query.SearchId;
                         LiveSearchLogger.Log($"Starting Live Search Query Session [{_query.Label}] | Search ID: '{effectiveId}' | League: '{_query.League}'");
+
+                        string extractedFromQuery = PoeOfficialTradeClient.TryExtractSearchNameFromState(effectiveId);
+                        if (!string.IsNullOrWhiteSpace(extractedFromQuery))
+                        {
+                            NotifyNameIfResolved(extractedFromQuery);
+                        }
 
                         if (effectiveId.Length > 20 || effectiveId.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
                         {
@@ -202,6 +229,25 @@ namespace GameBarWidget.Services
                                 LiveSearchLogger.Log($"Discarding {initialHashes?.Count ?? 0} existing item hashes from initial snapshot (listening exclusively for NEW items).");
                                 _query.SearchId = resolved;
                                 effectiveId = resolved;
+
+                                if (!_nameResolved && initialHashes != null && initialHashes.Count > 0)
+                                {
+                                    string firstHash = initialHashes[0];
+                                    string resolvedIdCopy = effectiveId;
+                                    _ = Task.Run(async () =>
+                                    {
+                                        try
+                                        {
+                                            var sample = await PoeOfficialTradeClient.Instance.FetchListingsAsync(new List<string> { firstHash }, _query.League, resolvedIdCopy);
+                                            if (sample != null && sample.Count > 0)
+                                            {
+                                                string sampleName = !string.IsNullOrWhiteSpace(sample[0].ItemName) ? sample[0].ItemName : sample[0].ItemBaseType;
+                                                NotifyNameIfResolved(sampleName);
+                                            }
+                                        }
+                                        catch { }
+                                    });
+                                }
                             }
                             else
                             {
@@ -210,6 +256,27 @@ namespace GameBarWidget.Services
                                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
                                 continue;
                             }
+                        }
+                        else if (!_nameResolved)
+                        {
+                            string shortIdCopy = effectiveId;
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    var (resolved, initialHashes) = await PoeOfficialTradeClient.Instance.ResolveSearchIdAndHashesAsync(_query.League, shortIdCopy);
+                                    if (!_nameResolved && initialHashes != null && initialHashes.Count > 0)
+                                    {
+                                        var sample = await PoeOfficialTradeClient.Instance.FetchListingsAsync(new List<string> { initialHashes[0] }, _query.League, resolved ?? shortIdCopy);
+                                        if (sample != null && sample.Count > 0)
+                                        {
+                                            string sampleName = !string.IsNullOrWhiteSpace(sample[0].ItemName) ? sample[0].ItemName : sample[0].ItemBaseType;
+                                            NotifyNameIfResolved(sampleName);
+                                        }
+                                    }
+                                }
+                                catch { }
+                            });
                         }
 
                         _onStatus(_query.Id, "Connecting...", false);
@@ -413,6 +480,8 @@ namespace GameBarWidget.Services
                             LiveSearchLogger.Log($"Successfully hydrated {realListings.Count} item listing(s). Displaying in UI live stream...");
                             foreach (var listing in realListings)
                             {
+                                string resolvedItemName = !string.IsNullOrWhiteSpace(listing.ItemName) ? listing.ItemName : listing.ItemBaseType;
+                                NotifyNameIfResolved(resolvedItemName);
                                 LiveSearchLogger.Log($"STREAM ITEM DISPATCH: '{listing.ItemName}' | Price: {listing.PriceAmount} {listing.PriceCurrency} | Seller: {listing.AccountName}");
                                 _onItem(_query, listing);
                             }

@@ -1697,6 +1697,81 @@ namespace GameBarWidget.Services
             return null;
         }
 
+        public static string TryExtractSearchNameFromState(string base64OrUrl)
+        {
+            if (string.IsNullOrWhiteSpace(base64OrUrl)) return null;
+            try
+            {
+                string candidate = base64OrUrl.Trim();
+                var urlInfo = PoeUrlParser.Parse(candidate);
+                if (urlInfo != null && urlInfo.IsValid && !string.IsNullOrWhiteSpace(urlInfo.SearchId))
+                {
+                    candidate = urlInfo.SearchId;
+                }
+
+                if (candidate.Length > 20 || candidate.StartsWith("H4sI", StringComparison.OrdinalIgnoreCase))
+                {
+                    string json = TryDecompressSearchState(candidate);
+                    if (!string.IsNullOrWhiteSpace(json))
+                    {
+                        return TryExtractSearchNameFromJson(json);
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        public static string TryExtractSearchNameFromJson(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            try
+            {
+                if (!JsonObject.TryParse(json, out var root)) return null;
+                JsonObject q = (root.ContainsKey("query") && root.GetNamedValue("query").ValueType == JsonValueType.Object)
+                    ? root.GetNamedObject("query")
+                    : root;
+
+                string name = ExtractStringOrOption(q, "name");
+                string type = ExtractStringOrOption(q, "type");
+                string term = ExtractStringOrOption(q, "term");
+
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    return name;
+                }
+                if (!string.IsNullOrWhiteSpace(type))
+                {
+                    return type;
+                }
+                if (!string.IsNullOrWhiteSpace(term))
+                {
+                    return term;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private static string ExtractStringOrOption(JsonObject obj, string key)
+        {
+            if (obj == null || !obj.ContainsKey(key)) return null;
+            var val = obj.GetNamedValue(key);
+            if (val.ValueType == JsonValueType.String)
+            {
+                return val.GetString()?.Trim();
+            }
+            if (val.ValueType == JsonValueType.Object)
+            {
+                var sub = val.GetObject();
+                if (sub.ContainsKey("option") && sub.GetNamedValue("option").ValueType == JsonValueType.String)
+                {
+                    return sub.GetNamedString("option")?.Trim();
+                }
+            }
+            return null;
+        }
+
         public async Task<string> ResolveSearchIdAsync(string league, string rawSearchId)
         {
             var (id, _) = await ResolveSearchIdAndHashesAsync(league, rawSearchId);
@@ -1767,6 +1842,18 @@ namespace GameBarWidget.Services
                             if (obj.ContainsKey("id") && obj.GetNamedValue("id").ValueType == JsonValueType.String)
                             {
                                 id = obj.GetNamedString("id");
+                            }
+
+                            if (obj.ContainsKey("result") && obj.GetNamedValue("result").ValueType == JsonValueType.Array)
+                            {
+                                foreach (var elem in obj.GetNamedArray("result"))
+                                {
+                                    if (elem.ValueType == JsonValueType.String)
+                                    {
+                                        hashes.Add(elem.GetString());
+                                        if (hashes.Count >= 5) break;
+                                    }
+                                }
                             }
 
                             if (string.IsNullOrWhiteSpace(id))

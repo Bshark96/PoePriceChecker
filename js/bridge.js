@@ -133,6 +133,9 @@ var PoeBridge = {
   onLiveSearchResult: function(listing) {
     if (!listing) return;
     if (window.liveSearchController) {
+      if (listing.name && typeof window.liveSearchController.updateMonitoredSearchName === 'function') {
+        window.liveSearchController.updateMonitoredSearchName(listing.queryId || '', listing.name);
+      }
       window.liveSearchController.pushLiveListing(listing);
     }
     var wrapper = document.getElementById('overlayWrapper');
@@ -141,6 +144,12 @@ var PoeBridge = {
       window.alarmController.triggerLiveAlert(listing);
     } else if (window.alarmController && !listing.soundPlayedByHost && typeof window.alarmController.playAlertSound === 'function') {
       window.alarmController.playAlertSound();
+    }
+  },
+
+  onLiveSearchNameUpdated: function(queryId, itemName) {
+    if (window.liveSearchController && typeof window.liveSearchController.updateMonitoredSearchName === 'function') {
+      window.liveSearchController.updateMonitoredSearchName(queryId, itemName);
     }
   },
 

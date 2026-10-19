@@ -704,7 +704,7 @@ namespace GameBarWidget.Services
         /// Pushes a real-time live alert listing to WebView2 and optionally opens the Alarm view
         /// when the notification arrives while the widget is minimized.
         /// </summary>
-        public async Task PushLiveListingToWebAsync(TradeListing listing, bool openAlarmView)
+        public async Task PushLiveListingToWebAsync(TradeListing listing, bool openAlarmView, string queryId = null)
         {
             if (_webView == null || listing == null) return;
 
@@ -729,6 +729,7 @@ namespace GameBarWidget.Services
                         approxStr = $"(~{chaosEquiv.ToString("0", CultureInfo.InvariantCulture)}c)";
                     }
 
+                    obj["queryId"] = JsonValue.CreateStringValue(queryId ?? string.Empty);
                     obj["name"] = JsonValue.CreateStringValue(itemName);
                     obj["baseType"] = JsonValue.CreateStringValue(baseType);
                     obj["rarity"] = JsonValue.CreateStringValue((listing.FlyoutItem?.Rarity ?? PoeRarity.Unique).ToString().ToLowerInvariant());
@@ -999,6 +1000,45 @@ if (inp) {
                 try
                 {
                     string script = "if (window.PoeBridge && window.PoeBridge.onLiveSearchHistoryCleared) { window.PoeBridge.onLiveSearchHistoryCleared(); }";
+                    await _webView.ExecuteScriptAsync(script);
+                }
+                catch { }
+            });
+        }
+
+        public async Task UpdateMonitoredSearchNameInWebAsync(string queryId, string itemName)
+        {
+            if (_webView == null || string.IsNullOrWhiteSpace(itemName)) return;
+
+            await _dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            {
+                try
+                {
+                    string jsonId = JsonValue.CreateStringValue(queryId ?? string.Empty).Stringify();
+                    string jsonName = JsonValue.CreateStringValue(itemName.Trim()).Stringify();
+                    string script = $@"
+(function(qId, name) {{
+    if (!name) return;
+    var upper = name.toUpperCase();
+    if (window.liveSearchController && typeof window.liveSearchController.updateMonitoredSearchName === 'function') {{
+        window.liveSearchController.updateMonitoredSearchName(qId, upper);
+        return;
+    }}
+    if (window.liveSearchController && Array.isArray(window.liveSearchController.monitoredSearches)) {{
+        var updated = false;
+        for (var i = 0; i < window.liveSearchController.monitoredSearches.length; i++) {{
+            var m = window.liveSearchController.monitoredSearches[i];
+            if ((qId && m.id === qId) || (!qId && m.queryText && m.queryText.indexOf('TRADE #') === 0)) {{
+                m.queryText = upper;
+                updated = true;
+                if (qId) break;
+            }}
+        }}
+        if (updated && typeof window.liveSearchController.renderMonitoredSearches === 'function') {{
+            window.liveSearchController.renderMonitoredSearches();
+        }}
+    }}
+}})({jsonId}, {jsonName});";
                     await _webView.ExecuteScriptAsync(script);
                 }
                 catch { }
