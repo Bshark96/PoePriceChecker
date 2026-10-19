@@ -1,0 +1,338 @@
+/* Live Search Menu & Feed */
+.live-unified-menu {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.live-top-section {
+  background: #090b10;
+  border: 1px solid #1c202c;
+  border-radius: 4px 4px 0 0;
+  padding: 10px 14px 12px 14px;
+  margin-bottom: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.live-unified-menu .live-add-search-card {
+  background: #0b0d13;
+  border: none;
+  border-radius: 2px;
+  margin: 0;
+  padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.live-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.live-search-input {
+  flex: 1;
+  height: 24px;
+  background: #141720;
+  border: 1px solid #283042;
+  color: #e2e8f0;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 2px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.live-search-input:focus {
+  border-color: var(--poe-gold);
+}
+
+.live-add-search-btn {
+  background: #1b2838;
+  border: 1px solid #385072;
+  color: #79a2d8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.live-add-search-btn:hover {
+  background: #253952;
+  color: #ffffff;
+}
+
+.live-paste-btn {
+  background: #141923;
+  border: 1px solid #3a465e;
+  color: #e2b35c;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.live-paste-btn:hover {
+  background: #1f2737;
+  border-color: #e2b35c;
+  color: #fff3d1;
+}
+
+.live-limit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 10px;
+  color: #8b92a5;
+}
+
+.live-limit-label {
+  font-size: 10px;
+  color: #8b92a5;
+}
+
+.live-price-input {
+  width: 50px;
+  height: 20px;
+  background: #141720;
+  border: 1px solid #283042;
+  color: var(--poe-gold);
+  font-weight: 700;
+  padding: 2px 4px;
+  font-size: 10px;
+  text-align: center;
+  border-radius: 2px;
+  outline: none;
+}
+
+.live-currency-select {
+  height: 20px;
+  background: #141720;
+  border: 1px solid #283042;
+  color: var(--poe-gold);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 2px;
+  padding: 0 4px;
+  outline: none;
+}
+
+.monitored-searches-card {
+  background: #08090e;
+  border: none;
+  border-radius: 2px;
+  margin: 0;
+  padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.monitored-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.monitored-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-clear-history-btn {
+  background: transparent;
+  border: 1px solid #2c3446;
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.live-clear-history-btn:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: #ef4444;
+  color: #fecaca;
+}
+
+.monitored-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: #838a9a;
+  letter-spacing: 0.5px;
+}
+
+.monitored-badge {
+  font-size: 8px;
+  font-weight: 700;
+  color: #e2b35c;
+  background: rgba(226, 179, 92, 0.15);
+  border: 1px solid rgba(226, 179, 92, 0.3);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.monitored-chips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 70px;
+  overflow-y: auto;
+}
+
+.monitored-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0d0f16;
+  border: 1px solid #1c2130;
+  border-left: 3px solid #e2b35c;
+  border-radius: 2px;
+  padding: 4px 8px;
+  transition: all 0.15s ease;
+}
+
+.monitored-item-row.paused {
+  border-left-color: #4b5563;
+  opacity: 0.65;
+  background: #080a0e;
+}
+
+.monitored-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.monitored-checkbox {
+  cursor: pointer;
+  width: 12px;
+  height: 12px;
+  accent-color: #e2b35c;
+  flex-shrink: 0;
+}
+
+.monitored-item-details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.monitored-item-name {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f7d070;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+.monitored-item-filter {
+  font-size: 8.5px;
+  color: #8b93a7;
+  font-weight: 600;
+}
+
+.monitored-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.monitored-status-tag {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.3px;
+}
+
+.monitored-status-tag.active {
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.15);
+  border: 1px solid rgba(0, 230, 118, 0.4);
+}
+
+.monitored-status-tag.paused {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.monitored-del-btn {
+  background: transparent;
+  border: none;
+  color: #798296;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.monitored-del-btn:hover {
+  color: #ff6b6b;
+}
+
+.live-feed-container {
+  background: #050608;
+  border: 1px solid var(--poe-input-border, #a34918);
+  border-top: none;
+  border-bottom: none !important;
+  border-radius: 0;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 10px;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.live-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: pulse-green 1.5s infinite;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}

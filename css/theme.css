@@ -1,0 +1,70 @@
+/* PoE 1 Theme Styles */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&display=swap');
+
+:root {
+  --poe-bg: #090a0c;
+  --poe-card-bg: #0c0d10;
+  --poe-border-unique: #af6025;
+  --poe-border-rare: #f7d070;
+  --poe-border-subtle: #24221f;
+  --poe-text-unique: #af6025;
+  --poe-text-rare: #f7d070;
+  --poe-text-gem: #1ba29b;
+  --poe-text-stat: #7f96ff;
+  --poe-text-muted: #7f7f7f;
+  --poe-text-value: #d0c8b0;
+  --poe-input-bg: #14161b;
+  --poe-input-border: #2d313b;
+  --poe-btn-bg: #1a1714;
+  --poe-gold: #e2b35c;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+button, input, select, textarea {
+  font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Custom PoE 1 Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-track {
+  background: #07080b;
+  border-left: 1px solid #141720;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1d160e 0%, #3a2714 50%, #1d160e 100%);
+  border: 1px solid var(--poe-input-border, #8e3d16);
+  border-radius: 3px;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.85);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2b2014 0%, #593b1d 50%, #2b2014 100%);
+  border-color: var(--poe-gold, #e2b35c);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #3a2a19 0%, #754e26 50%, #3a2a19 100%);
+  border-color: #f7d070;
+}
+
+::-webkit-scrollbar-corner {
+  background: #07080b;
+}
+

@@ -1,0 +1,44 @@
+## Ignore Visual Studio / MSBuild / C# temporary and compiled artifacts
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][搁g][Mm]/
+[Aa][搁g][Mm]64/
+bld/
+[Bb]in/
+[Ob]j/
+[Lg]og/
+[Lg]ogs/
+
+# Visual Studio files
+.vs/
+*.user
+*.userosmat
+*.suo
+*.userlibraries
+*.cache
+*.pc
+*.pdb
+
+# NuGet
+node_modules/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.assets.json
+
+# UWP / AppX Package outputs
+AppPackages/
+BundleArtifacts/
+PackageLayout/
+_pkg/
+
+# Temporary files
+*.tmp
+*.log
+.env
