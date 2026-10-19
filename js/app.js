@@ -207,6 +207,12 @@
           case 'paste-live':
             liveSearchController.pasteFromClipboard();
             break;
+          case 'price-step-up':
+            liveSearchController.stepMaxPrice(1);
+            break;
+          case 'price-step-down':
+            liveSearchController.stepMaxPrice(-1);
+            break;
           case 'clear-live-history':
             liveSearchController.clearHistory(false);
             break;
@@ -267,10 +273,28 @@
       }
     });
 
+    // Mouse wheel stepping on Max Price Limit stepper
+    var priceStepper = document.querySelector('.live-price-stepper');
+    if (priceStepper) {
+      priceStepper.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        var delta = e.deltaY < 0 ? 1 : -1;
+        liveSearchController.stepMaxPrice(delta);
+      });
+    }
+
     // Keydown Delegation
     overlay.addEventListener('keydown', function(e) {
       if (e.target && e.target.id === 'liveSearchInput' && (e.key === 'Enter' || e.keyCode === 13)) {
         liveSearchController.addNewLiveSearch();
+      } else if (e.target && e.target.id === 'liveMaxPriceInput') {
+        if (e.key === 'ArrowUp' || e.keyCode === 38) {
+          e.preventDefault();
+          liveSearchController.stepMaxPrice(1);
+        } else if (e.key === 'ArrowDown' || e.keyCode === 40) {
+          e.preventDefault();
+          liveSearchController.stepMaxPrice(-1);
+        }
       }
     });
 

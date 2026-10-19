@@ -1059,7 +1059,7 @@ if (inp) {
   if (!document.getElementById('poeInputFixStyle')) {
     var st = document.createElement('style');
     st.id = 'poeInputFixStyle';
-    st.textContent = 'input, textarea, select { user-select: text !important; -webkit-user-select: text !important; -ms-user-select: text !important; pointer-events: auto !important; cursor: text !important; }';
+    st.textContent = 'input, textarea, select { user-select: text !important; -webkit-user-select: text !important; -ms-user-select: text !important; pointer-events: auto !important; cursor: text !important; } input[type=\"number\"]::-webkit-outer-spin-button, input[type=\"number\"]::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; display: none !important; }';
     (document.head || document.documentElement).appendChild(st);
   }
 
@@ -1150,6 +1150,14 @@ if (inp) {
     } else if (keyName === 'Enter') {
       if (el.id === 'liveSearchInput' && window.liveSearchController && typeof window.liveSearchController.addNewLiveSearch === 'function') {
         window.liveSearchController.addNewLiveSearch();
+      }
+    } else if (keyName === 'ArrowUp' && el.id === 'liveMaxPriceInput') {
+      if (window.liveSearchController && typeof window.liveSearchController.stepMaxPrice === 'function') {
+        window.liveSearchController.stepMaxPrice(1);
+      }
+    } else if (keyName === 'ArrowDown' && el.id === 'liveMaxPriceInput') {
+      if (window.liveSearchController && typeof window.liveSearchController.stepMaxPrice === 'function') {
+        window.liveSearchController.stepMaxPrice(-1);
       }
     }
   };

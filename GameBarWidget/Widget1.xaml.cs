@@ -173,6 +173,16 @@ namespace GameBarWidget
                     _hoverDetector.OnUserInteraction();
                     _ = _bridgeService?.SendSpecialKeyToWebInputAsync("Enter");
                 }
+                else if (args.VirtualKey == VirtualKey.Up)
+                {
+                    _hoverDetector.OnUserInteraction();
+                    _ = _bridgeService?.SendSpecialKeyToWebInputAsync("ArrowUp");
+                }
+                else if (args.VirtualKey == VirtualKey.Down)
+                {
+                    _hoverDetector.OnUserInteraction();
+                    _ = _bridgeService?.SendSpecialKeyToWebInputAsync("ArrowDown");
+                }
             }
         }
 

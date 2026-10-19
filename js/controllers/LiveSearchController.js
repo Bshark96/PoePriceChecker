@@ -117,6 +117,19 @@ LiveSearchController.prototype.onClipboardPasted = function(text) {
   }
 };
 
+LiveSearchController.prototype.stepMaxPrice = function(delta) {
+  var priceEl = document.getElementById('liveMaxPriceInput');
+  if (!priceEl) return;
+
+  var raw = (priceEl.value || '').trim();
+  var current = raw === '' ? 0 : parseFloat(raw);
+  if (isNaN(current)) current = 0;
+
+  var next = Math.max(0, Math.round((current + delta) * 100) / 100);
+  priceEl.value = String(next);
+  window.__lastFocusedInput = priceEl;
+};
+
 LiveSearchController.prototype.addNewLiveSearch = function() {
   var inputEl = document.getElementById('liveSearchInput');
   var priceEl = document.getElementById('liveMaxPriceInput');
