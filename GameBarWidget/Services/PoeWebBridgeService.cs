@@ -741,6 +741,46 @@ namespace GameBarWidget.Services
             });
         }
 
+        private static string FormatCurrencyDisplay(string currency)
+        {
+            if (string.IsNullOrWhiteSpace(currency))
+            {
+                return "Chaos";
+            }
+
+            string lower = currency.Trim().ToLowerInvariant();
+            if (lower.Contains("divine") || lower == "div")
+            {
+                return "Divine";
+            }
+            if (lower.Contains("chaos") || lower == "c")
+            {
+                return "Chaos";
+            }
+            if (lower.Contains("exalt") || lower == "ex")
+            {
+                return "Exalted";
+            }
+            if (lower.Contains("mirror") || lower == "mir")
+            {
+                return "Mirror";
+            }
+            if (lower.Contains("alch"))
+            {
+                return "Alchemy";
+            }
+            if (lower.Contains("alter") || lower == "alt")
+            {
+                return "Alteration";
+            }
+            if (lower.Contains("vaal"))
+            {
+                return "Vaal";
+            }
+
+            return char.ToUpperInvariant(lower[0]) + (lower.Length > 1 ? lower.Substring(1) : string.Empty);
+        }
+
         public async Task PushLiveListingToWebAsync(string itemName, string seller, string character, string price, string currency, string age, int goldCost, bool openAlarmView = false)
         {
             if (_webView == null) return;
