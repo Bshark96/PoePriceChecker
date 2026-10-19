@@ -1059,7 +1059,7 @@ if (inp) {
   if (!document.getElementById('poeInputFixStyle')) {
     var st = document.createElement('style');
     st.id = 'poeInputFixStyle';
-    st.textContent = 'input, textarea, select { user-select: text !important; -webkit-user-select: text !important; -ms-user-select: text !important; pointer-events: auto !important; cursor: text !important; } input[type=\"number\"]::-webkit-outer-spin-button, input[type=\"number\"]::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; display: none !important; }';
+    st.textContent = 'input, textarea, select { user-select: text !important; -webkit-user-select: text !important; -ms-user-select: text !important; pointer-events: auto !important; cursor: text !important; } input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; display: none !important; }';
     (document.head || document.documentElement).appendChild(st);
   }
 
