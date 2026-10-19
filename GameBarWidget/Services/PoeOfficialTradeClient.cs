@@ -1083,18 +1083,18 @@ namespace GameBarWidget.Services
                         var valueParts = new List<string>();
                         if (pseudo.MinRoll.HasValue && pseudo.MaxRoll.HasValue)
                         {
-                            double p1 = pseudo.MinRoll.Value;
-                            double p2 = pseudo.MaxRoll.Value;
+                            double p1 = Math.Abs(pseudo.MinRoll.Value);
+                            double p2 = Math.Abs(pseudo.MaxRoll.Value);
                             valueParts.Add($"\"min\":{Math.Min(p1, p2).ToString(CultureInfo.InvariantCulture)}");
                             valueParts.Add($"\"max\":{Math.Max(p1, p2).ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (pseudo.MinRoll.HasValue)
                         {
-                            valueParts.Add($"\"min\":{pseudo.MinRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"min\":{Math.Abs(pseudo.MinRoll.Value).ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (pseudo.MaxRoll.HasValue)
                         {
-                            valueParts.Add($"\"max\":{pseudo.MaxRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"max\":{Math.Abs(pseudo.MaxRoll.Value).ToString(CultureInfo.InvariantCulture)}");
                         }
 
                         if (valueParts.Count > 0)
@@ -1117,18 +1117,18 @@ namespace GameBarWidget.Services
                         var valueParts = new List<string>();
                         if (mod.MinRoll.HasValue && mod.MaxRoll.HasValue)
                         {
-                            double m1 = mod.MinRoll.Value;
-                            double m2 = mod.MaxRoll.Value;
+                            double m1 = Math.Abs(mod.MinRoll.Value);
+                            double m2 = Math.Abs(mod.MaxRoll.Value);
                             valueParts.Add($"\"min\":{Math.Min(m1, m2).ToString(CultureInfo.InvariantCulture)}");
                             valueParts.Add($"\"max\":{Math.Max(m1, m2).ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (mod.MinRoll.HasValue)
                         {
-                            valueParts.Add($"\"min\":{mod.MinRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"min\":{Math.Abs(mod.MinRoll.Value).ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (mod.MaxRoll.HasValue)
                         {
-                            valueParts.Add($"\"max\":{mod.MaxRoll.Value.ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"max\":{Math.Abs(mod.MaxRoll.Value).ToString(CultureInfo.InvariantCulture)}");
                         }
 
                         if (!mod.IsUnscalable && valueParts.Count > 0)
