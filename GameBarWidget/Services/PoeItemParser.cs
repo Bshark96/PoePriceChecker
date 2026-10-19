@@ -178,7 +178,6 @@ namespace GameBarWidget.Services
                             {
                                 pendingTier = "CORRUPT";
                                 item.IsCorrupted = true;
-                                item.CorruptedFilterOption = "true";
                             }
                             else
                             {
@@ -200,7 +199,7 @@ namespace GameBarWidget.Services
                         if (ilvl > 0)
                         {
                             item.FilterItemLevelMin = ilvl;
-                            item.FilterItemLevelActive = true;
+                            item.FilterItemLevelActive = false;
                         }
                     }
                     else if (line.StartsWith("Quality:", StringComparison.OrdinalIgnoreCase) && PoeModifierParser.NumberRegex.Match(line).Success && int.TryParse(PoeModifierParser.NumberRegex.Match(line).Groups[1].Value, out int q)) item.Quality = q;
@@ -208,7 +207,6 @@ namespace GameBarWidget.Services
                     else if (line.Equals("Corrupted", StringComparison.OrdinalIgnoreCase))
                     {
                         item.IsCorrupted = true;
-                        item.CorruptedFilterOption = "true";
                     }
                     else if (line.Equals("Mirrored", StringComparison.OrdinalIgnoreCase)) item.IsMirrored = true;
                     else if (line.Equals("Unidentified", StringComparison.OrdinalIgnoreCase)) item.IsUnidentified = true;

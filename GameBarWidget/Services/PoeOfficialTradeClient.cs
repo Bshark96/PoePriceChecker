@@ -572,12 +572,55 @@ namespace GameBarWidget.Services
             }
             catch { }
 
+            // Fallback to poe.ninja PoE 1 index-state economyLeagues
+            try
+            {
+                using (var ninjaReq = new HttpRequestMessage(HttpMethod.Get, "https://poe.ninja/poe1/api/data/index-state"))
+                {
+                    var ninjaResp = await _httpClient.SendAsync(ninjaReq);
+                    if (ninjaResp.IsSuccessStatusCode)
+                    {
+                        string ninjaJson = await ninjaResp.Content.ReadAsStringAsync();
+                        if (JsonObject.TryParse(ninjaJson, out var root) &&
+                            root.ContainsKey("economyLeagues") &&
+                            root.GetNamedValue("economyLeagues").ValueType == JsonValueType.Array)
+                        {
+                            var leagues = new List<string>();
+                            foreach (var el in root.GetNamedArray("economyLeagues"))
+                            {
+                                if (el.ValueType == JsonValueType.Object)
+                                {
+                                    var lObj = el.GetObject();
+                                    string name = lObj.ContainsKey("name") && lObj.GetNamedValue("name").ValueType == JsonValueType.String
+                                        ? lObj.GetNamedString("name")
+                                        : string.Empty;
+                                    if (!string.IsNullOrWhiteSpace(name) && !leagues.Contains(name))
+                                    {
+                                        leagues.Add(name);
+                                    }
+                                }
+                            }
+                            if (leagues.Count > 0)
+                            {
+                                return leagues;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
             return defaultLeagues;
         }
 
         private static string MapCurrencyToTradeId(string currencyName)
         {
             if (string.IsNullOrWhiteSpace(currencyName)) return "divine";
+            if (Parsing.PoeItemsDatabase.TryGetEntry(currencyName.Trim(), out var dbEntry) &&
+                !string.IsNullOrWhiteSpace(dbEntry.TradeTag))
+            {
+                return dbEntry.TradeTag;
+            }
             string name = currencyName.Trim().ToLowerInvariant();
             if (name.Contains("divine")) return "divine";
             if (name.Contains("chaos")) return "chaos";
@@ -597,7 +640,7 @@ namespace GameBarWidget.Services
             if (name.Contains("veiled")) return "veiled-orb";
             if (name.Contains("ancient")) return "ancient";
             if (name.Contains("sacred")) return "sacred";
-            return name.Replace(" ", "-");
+            return name.Replace("'", "").Replace(" ", "-");
         }
 
         public async Task<TradeSearchResult> SearchExchangeAsync(PoeItem item, string league, string? poesessid, double divineRate)
@@ -743,9 +786,8 @@ namespace GameBarWidget.Services
                 catch { }
                 result.DivinePriceChaosRate = divineRate;
 
-                bool isCurrencyItem = item.Namespace == ItemNamespace.Currency || 
-                                       item.Rarity == PoeRarity.Currency || 
-                                       (!string.IsNullOrEmpty(item.Name) && (item.Name.EndsWith("Orb", StringComparison.OrdinalIgnoreCase) || item.Name.Contains("Mirror of Kalandra") || item.Name.Contains("Divine") || item.Name.Contains("Chaos")));
+                bool isCurrencyItem = item.Namespace == ItemNamespace.Currency ||
+                                       item.Rarity == PoeRarity.Currency;
 
                 if (isCurrencyItem)
                 {
@@ -1041,18 +1083,18 @@ namespace GameBarWidget.Services
                         var valueParts = new List<string>();
                         if (pseudo.MinRoll.HasValue && pseudo.MaxRoll.HasValue)
                         {
-                            double p1 = Math.Abs(pseudo.MinRoll.Value);
-                            double p2 = Math.Abs(pseudo.MaxRoll.Value);
+                            double p1 = pseudo.MinRoll.Value;
+                            double p2 = pseudo.MaxRoll.Value;
                             valueParts.Add($"\"min\":{Math.Min(p1, p2).ToString(CultureInfo.InvariantCulture)}");
                             valueParts.Add($"\"max\":{Math.Max(p1, p2).ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (pseudo.MinRoll.HasValue)
                         {
-                            valueParts.Add($"\"min\":{Math.Abs(pseudo.MinRoll.Value).ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"min\":{pseudo.MinRoll.Value.ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (pseudo.MaxRoll.HasValue)
                         {
-                            valueParts.Add($"\"max\":{Math.Abs(pseudo.MaxRoll.Value).ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"max\":{pseudo.MaxRoll.Value.ToString(CultureInfo.InvariantCulture)}");
                         }
 
                         if (valueParts.Count > 0)
@@ -1075,18 +1117,18 @@ namespace GameBarWidget.Services
                         var valueParts = new List<string>();
                         if (mod.MinRoll.HasValue && mod.MaxRoll.HasValue)
                         {
-                            double m1 = Math.Abs(mod.MinRoll.Value);
-                            double m2 = Math.Abs(mod.MaxRoll.Value);
+                            double m1 = mod.MinRoll.Value;
+                            double m2 = mod.MaxRoll.Value;
                             valueParts.Add($"\"min\":{Math.Min(m1, m2).ToString(CultureInfo.InvariantCulture)}");
                             valueParts.Add($"\"max\":{Math.Max(m1, m2).ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (mod.MinRoll.HasValue)
                         {
-                            valueParts.Add($"\"min\":{Math.Abs(mod.MinRoll.Value).ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"min\":{mod.MinRoll.Value.ToString(CultureInfo.InvariantCulture)}");
                         }
                         else if (mod.MaxRoll.HasValue)
                         {
-                            valueParts.Add($"\"max\":{Math.Abs(mod.MaxRoll.Value).ToString(CultureInfo.InvariantCulture)}");
+                            valueParts.Add($"\"max\":{mod.MaxRoll.Value.ToString(CultureInfo.InvariantCulture)}");
                         }
 
                         if (!mod.IsUnscalable && valueParts.Count > 0)

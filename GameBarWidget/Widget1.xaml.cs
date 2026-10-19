@@ -728,6 +728,13 @@ namespace GameBarWidget
             _currentItem = item;
             await BridgeLogger.LogBridgeMessageAsync($"[Widget1] Evaluating item: '{item.Name ?? item.BaseType}' (Rarity: {item.Rarity})");
 
+            try
+            {
+                string league = PoeSettingsManager.Instance.SelectedLeague;
+                await PoeNinjaClient.Instance.EnsureItemOverviewLoadedAsync(item, league);
+            }
+            catch { }
+
             // Push parsed item directly into Web UI
             if (_bridgeService != null)
             {

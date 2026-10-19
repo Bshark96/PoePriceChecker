@@ -25,21 +25,11 @@ namespace GameBarWidget.Services.Parsing
             if (PoeItemsDatabase.TryGetEntry(gemFullName, out var entry))
             {
                 item.Category = entry.Name.IndexOf("Support", StringComparison.OrdinalIgnoreCase) >= 0 ? "gem.supportgem" : "gem.activegem";
-                if (entry.IsTransfigured)
+                if (entry.IsTransfigured && !string.IsNullOrWhiteSpace(entry.TradeDisc))
                 {
                     item.IsTransfiguredGem = true;
                     item.NormalGemVariant = entry.NormalGemVariant;
                     item.TradeDiscriminator = entry.TradeDisc;
-                }
-            }
-            else
-            {
-                int ofIdx = gemFullName.IndexOf(" of ", StringComparison.OrdinalIgnoreCase);
-                if (ofIdx > 0)
-                {
-                    item.IsTransfiguredGem = true;
-                    item.NormalGemVariant = gemFullName.Substring(0, ofIdx).Trim();
-                    item.TradeDiscriminator = "alt_x";
                 }
             }
 
