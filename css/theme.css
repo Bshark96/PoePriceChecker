@@ -29,6 +29,13 @@ button, input, select, textarea {
   font-family: Fontin, "Fontin Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
+input, textarea, select {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -ms-user-select: text !important;
+  pointer-events: auto !important;
+}
+
 /* Custom PoE 1 Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

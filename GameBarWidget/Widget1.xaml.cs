@@ -61,8 +61,9 @@ namespace GameBarWidget
             // (which falsely fires when the pointer enters the child WebView2 HWND airspace).
             this.PointerPressed += (s, e) => _hoverDetector.OnUserInteraction();
 
-            // Bind CoreWindow events for reliable restoration
+            // Bind CoreWindow events for reliable restoration and keyboard input forwarding
             Window.Current.CoreWindow.KeyDown += CoreWindow_KeyDown;
+            Window.Current.CoreWindow.CharacterReceived += CoreWindow_CharacterReceived;
             Window.Current.VisibilityChanged += Window_VisibilityChanged;
             Window.Current.Activated += Window_Activated;
         }
@@ -78,6 +79,7 @@ namespace GameBarWidget
             {
                 PreviewWebView.Visibility = Visibility.Visible;
                 PreviewWebView.RenderTransform = new TranslateTransform { X = 0, Y = 0 };
+                try { PreviewWebView.Focus(FocusState.Programmatic); } catch { }
                 if (!_isOverlayVisible)
                 {
                     _isOverlayVisible = true;
@@ -99,6 +101,7 @@ namespace GameBarWidget
             {
                 PreviewWebView.Visibility = Visibility.Visible;
                 PreviewWebView.RenderTransform = new TranslateTransform { X = 0, Y = 0 };
+                try { PreviewWebView.Focus(FocusState.Programmatic); } catch { }
                 if (!_isOverlayVisible)
                 {
                     _isOverlayVisible = true;
@@ -124,12 +127,66 @@ namespace GameBarWidget
             }
 
             bool isAltDown = (sender.GetKeyState(VirtualKey.Menu) & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
-            if (isAltDown && args.VirtualKey == VirtualKey.A)
+            bool isCtrlDown = (sender.GetKeyState(VirtualKey.Control) & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+
+            if (isAltDown && !isCtrlDown && args.VirtualKey == VirtualKey.A)
             {
                 args.Handled = true;
                 PoeSettingsManager.Instance.IsSettingsOpen = false;
                 _ = _bridgeService?.ShowLiveSearchViewAsync();
                 _ = RestoreWidgetAsync();
+                return;
+            }
+
+            if (isCtrlDown && !isAltDown)
+            {
+                if (args.VirtualKey == VirtualKey.V)
+                {
+                    args.Handled = true;
+                    _hoverDetector.OnUserInteraction();
+                    _ = _bridgeService?.PasteClipboardToLiveSearchAsync();
+                    return;
+                }
+                if (args.VirtualKey == VirtualKey.A)
+                {
+                    args.Handled = true;
+                    _hoverDetector.OnUserInteraction();
+                    _ = _bridgeService?.SendSpecialKeyToWebInputAsync("SelectAll");
+                    return;
+                }
+            }
+
+            if (!isCtrlDown && !isAltDown)
+            {
+                if (args.VirtualKey == VirtualKey.Back)
+                {
+                    _hoverDetector.OnUserInteraction();
+                    _ = _bridgeService?.SendSpecialKeyToWebInputAsync("Back");
+                }
+                else if (args.VirtualKey == VirtualKey.Delete)
+                {
+                    _hoverDetector.OnUserInteraction();
+                    _ = _bridgeService?.SendSpecialKeyToWebInputAsync("Delete");
+                }
+                else if (args.VirtualKey == VirtualKey.Enter)
+                {
+                    _hoverDetector.OnUserInteraction();
+                    _ = _bridgeService?.SendSpecialKeyToWebInputAsync("Enter");
+                }
+            }
+        }
+
+        private void CoreWindow_CharacterReceived(CoreWindow sender, CharacterReceivedEventArgs args)
+        {
+            bool isAltDown = (sender.GetKeyState(VirtualKey.Menu) & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+            bool isCtrlDown = (sender.GetKeyState(VirtualKey.Control) & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+            if (isAltDown || isCtrlDown) return;
+
+            char ch = (char)args.KeyCode;
+            if (ch >= 32 && ch != 127)
+            {
+                _hoverDetector.OnUserInteraction();
+                _ = _bridgeService?.SendCharToWebInputAsync(ch);
             }
         }
 
@@ -230,6 +287,17 @@ namespace GameBarWidget
                     _hoverDetector.OnUserInteraction();
                 };
 
+                _bridgeService.OnInputFocusRequested += async (inputId) =>
+                {
+                    _hoverDetector.OnUserInteraction();
+                    try
+                    {
+                        PreviewWebView?.Focus(FocusState.Programmatic);
+                    }
+                    catch { }
+                    await AppServiceManager.Instance.RequestFocusWidgetUnderCursorAsync();
+                };
+
                 _bridgeService.OnOpenBrowserRequested += async (url) =>
                 {
                     if (!string.IsNullOrWhiteSpace(url))
@@ -305,6 +373,7 @@ namespace GameBarWidget
             PoeLiveSearchClient.Instance.StatusChanged -= OnLiveStatusChanged;
 
             Window.Current.CoreWindow.KeyDown -= CoreWindow_KeyDown;
+            Window.Current.CoreWindow.CharacterReceived -= CoreWindow_CharacterReceived;
 
             if (_widget != null)
             {
@@ -372,6 +441,12 @@ namespace GameBarWidget
                     PreviewWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
                 }
 
+                try
+                {
+                    await PreviewWebView.CoreWebView2.CallDevToolsProtocolMethodAsync("Network.setCacheDisabled", "{\"cacheDisabled\":true}");
+                }
+                catch { }
+
                 PreviewWebView.CoreWebView2.NavigationCompleted += CoreWebView2_NavigationCompleted;
                 PreviewWebView.CoreWebView2.NewWindowRequested += CoreWebView2_NewWindowRequested;
 
@@ -385,8 +460,9 @@ namespace GameBarWidget
                         installedPath,
                         Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
 
-                    await BridgeLogger.LogBridgeMessageAsync("Navigating to https://poe.local/index.html");
-                    PreviewWebView.Source = new Uri("https://poe.local/index.html");
+                    string navUrl = $"https://poe.local/index.html?t={DateTime.UtcNow.Ticks}";
+                    await BridgeLogger.LogBridgeMessageAsync($"Navigating to {navUrl}");
+                    PreviewWebView.Source = new Uri(navUrl);
                 }
                 catch (Exception exMapping)
                 {
@@ -926,6 +1002,7 @@ namespace GameBarWidget
             _isOverlayVisible = true;
             PreviewWebView.Visibility = Visibility.Visible;
             PreviewWebView.RenderTransform = new TranslateTransform { X = 0, Y = 0 };
+            try { PreviewWebView.Focus(FocusState.Programmatic); } catch { }
             StartAutoMinimizeCountdown();
 
             if (_widgetControl != null)
@@ -983,7 +1060,6 @@ namespace GameBarWidget
 
             if (_hoverDetector.IsHovered)
             {
-                _bridgeService?.SendTimerTickToWebAsync(_remainingSeconds, _totalDurationSeconds, true);
                 return;
             }
 

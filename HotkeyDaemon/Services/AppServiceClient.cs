@@ -283,10 +283,12 @@ namespace HotkeyDaemon.Services
 
             try
             {
+                string clipText = GameInputSimulator.GetClipboardTextSafe() ?? string.Empty;
                 var message = new ValueSet
                 {
                     { "Command", "ShowLiveSearch" },
                     { "Hotkey", hotkeyName },
+                    { "ClipboardText", clipText },
                     { "Timestamp", DateTime.UtcNow.ToString("o") }
                 };
 
@@ -301,15 +303,37 @@ namespace HotkeyDaemon.Services
             }
         }
 
-        private void OnConnectionRequestReceived(AppServiceConnection sender, AppServiceRequestReceivedEventArgs args)
+        private async void OnConnectionRequestReceived(AppServiceConnection sender, AppServiceRequestReceivedEventArgs args)
         {
+            var deferral = args.GetDeferral();
             try
             {
                 var message = args.Request.Message;
                 if (message.ContainsKey("Command"))
                 {
                     string command = message["Command"]?.ToString() ?? string.Empty;
-                    if (string.Equals(command, "Shutdown", StringComparison.OrdinalIgnoreCase) ||
+                    if (string.Equals(command, "GetClipboardText", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string clipText = GameInputSimulator.GetClipboardTextSafe() ?? string.Empty;
+                        var response = new ValueSet
+                        {
+                            { "Status", "Success" },
+                            { "ClipboardText", clipText }
+                        };
+                        await args.Request.SendResponseAsync(response);
+                        return;
+                    }
+                    else if (string.Equals(command, "FocusWidgetUnderCursor", StringComparison.OrdinalIgnoreCase))
+                    {
+                        GameInputSimulator.FocusWindowUnderCursor();
+                        var response = new ValueSet
+                        {
+                            { "Status", "Success" }
+                        };
+                        await args.Request.SendResponseAsync(response);
+                        return;
+                    }
+                    else if (string.Equals(command, "Shutdown", StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(command, "Exit", StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(command, "Close", StringComparison.OrdinalIgnoreCase))
                     {
@@ -338,6 +362,10 @@ namespace HotkeyDaemon.Services
             catch (Exception ex)
             {
                 LogMessage?.Invoke(this, $"[AppService] Request handling note: {ex.Message}");
+            }
+            finally
+            {
+                deferral.Complete();
             }
         }
 

@@ -16,6 +16,8 @@ namespace GameBarWidget.Services
         private AppServiceConnection _connection;
         private BackgroundTaskDeferral _deferral;
 
+        public string LastKnownClipboardText { get; set; } = string.Empty;
+
         public event EventHandler<ValueSet> MessageReceived;
         public event EventHandler<string> StatusChanged;
 
@@ -43,6 +45,14 @@ namespace GameBarWidget.Services
                 var message = args.Request.Message;
                 string cmd = message.ContainsKey("Command") ? message["Command"]?.ToString() : "Unknown";
                 string hotkey = message.ContainsKey("Hotkey") ? message["Hotkey"]?.ToString() : "";
+                if (message.ContainsKey("ClipboardText"))
+                {
+                    string clip = message["ClipboardText"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(clip))
+                    {
+                        LastKnownClipboardText = clip;
+                    }
+                }
                 await BridgeLogger.LogBridgeMessageAsync($"[AppServiceManager] Request received: Command={cmd}, Hotkey={hotkey}");
 
                 MessageReceived?.Invoke(this, message);
@@ -87,6 +97,48 @@ namespace GameBarWidget.Services
             {
                 return false;
             }
+        }
+
+        public async Task<string> GetClipboardTextFromDaemonAsync()
+        {
+            if (_connection == null)
+            {
+                return LastKnownClipboardText ?? string.Empty;
+            }
+
+            try
+            {
+                var msg = new ValueSet { { "Command", "GetClipboardText" } };
+                var response = await _connection.SendMessageAsync(msg);
+                if (response.Status == AppServiceResponseStatus.Success &&
+                    response.Message != null &&
+                    response.Message.ContainsKey("ClipboardText"))
+                {
+                    string clip = response.Message["ClipboardText"]?.ToString()?.Trim() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(clip))
+                    {
+                        LastKnownClipboardText = clip;
+                    }
+                    return clip;
+                }
+            }
+            catch (Exception ex)
+            {
+                await BridgeLogger.LogBridgeMessageAsync($"[AppServiceManager] GetClipboardTextFromDaemonAsync note: {ex.Message}");
+            }
+
+            return LastKnownClipboardText ?? string.Empty;
+        }
+
+        public async Task RequestFocusWidgetUnderCursorAsync()
+        {
+            if (_connection == null) return;
+            try
+            {
+                var msg = new ValueSet { { "Command", "FocusWidgetUnderCursor" } };
+                await _connection.SendMessageAsync(msg);
+            }
+            catch { }
         }
 
         public async Task NotifyDaemonToCloseAsync()

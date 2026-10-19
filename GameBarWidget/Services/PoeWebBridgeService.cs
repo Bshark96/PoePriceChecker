@@ -34,6 +34,7 @@ namespace GameBarWidget.Services
         public event Func<Task> OnEvaluateRequested;
         public event Action<bool, string, double, double> OnHoverStateChanged;
         public event Action OnUserInteracted;
+        public event Action<string> OnInputFocusRequested;
         public event Action OnWebReady;
 
         public PoeWebBridgeService(WebView2 webView)
@@ -181,7 +182,18 @@ namespace GameBarWidget.Services
                         case "live_paste":
                         case "paste_live":
                             OnUserInteracted?.Invoke();
-                            await PasteClipboardToLiveSearchAsync();
+                            string pasteTargetId = json.ContainsKey("targetId") && json.GetNamedValue("targetId").ValueType == JsonValueType.String
+                                ? json.GetNamedString("targetId")
+                                : "liveSearchInput";
+                            await PasteClipboardToLiveSearchAsync(pasteTargetId);
+                            break;
+
+                        case "focus_input":
+                            OnUserInteracted?.Invoke();
+                            string focusId = json.ContainsKey("id") && json.GetNamedValue("id").ValueType == JsonValueType.String
+                                ? json.GetNamedString("id")
+                                : string.Empty;
+                            OnInputFocusRequested?.Invoke(focusId);
                             break;
 
                         case "live_clear_history":
@@ -836,14 +848,116 @@ namespace GameBarWidget.Services
             {
                 try
                 {
-                    string script = "if (window.viewController) { window.viewController.switchView('live'); }";
+                    string script = @"
+if (window.viewController) { window.viewController.switchView('live'); }
+var inp = document.getElementById('liveSearchInput');
+if (inp) {
+    window.__lastFocusedInput = inp;
+    inp.focus();
+}";
                     await _webView.ExecuteScriptAsync(script);
                 }
                 catch { }
             });
         }
 
-        public async Task PasteClipboardToLiveSearchAsync()
+        public async Task<string> GetClipboardTextReliableAsync()
+        {
+            string clipboardText = string.Empty;
+
+            // 1. Try UWP Clipboard API first inside isolated try/catch (throws UnauthorizedAccessException if GameBar isn't foreground)
+            try
+            {
+                var tcs = new TaskCompletionSource<string>();
+                await _dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+                {
+                    try
+                    {
+                        var content = Clipboard.GetContent();
+                        if (content != null && content.Contains(StandardDataFormats.Text))
+                        {
+                            string txt = await content.GetTextAsync();
+                            tcs.TrySetResult(txt?.Trim() ?? string.Empty);
+                            return;
+                        }
+                    }
+                    catch { }
+                    tcs.TrySetResult(string.Empty);
+                });
+                clipboardText = await tcs.Task;
+            }
+            catch { }
+
+            // 2. Fallback to Win32 HotkeyDaemon clipboard reader via AppService (immune to UWP foreground window restrictions)
+            if (string.IsNullOrWhiteSpace(clipboardText))
+            {
+                try
+                {
+                    clipboardText = (await AppServiceManager.Instance.GetClipboardTextFromDaemonAsync())?.Trim() ?? string.Empty;
+                }
+                catch { }
+            }
+
+            // 3. Fallback to last known clipboard cached from daemon
+            if (string.IsNullOrWhiteSpace(clipboardText) && !string.IsNullOrWhiteSpace(AppServiceManager.Instance.LastKnownClipboardText))
+            {
+                clipboardText = AppServiceManager.Instance.LastKnownClipboardText.Trim();
+            }
+
+            return clipboardText ?? string.Empty;
+        }
+
+        public async Task PasteClipboardToLiveSearchAsync(string targetInputId = "liveSearchInput")
+        {
+            if (_webView == null) return;
+
+            string clipboardText = await GetClipboardTextReliableAsync();
+            await BridgeLogger.LogBridgeMessageAsync($"[Bridge] PasteClipboardToLiveSearchAsync: target='{targetInputId}', length={clipboardText.Length}");
+
+            await _dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            {
+                try
+                {
+                    string jsonVal = JsonValue.CreateStringValue(clipboardText ?? string.Empty).Stringify();
+                    string jsonId = JsonValue.CreateStringValue(string.IsNullOrWhiteSpace(targetInputId) ? "liveSearchInput" : targetInputId).Stringify();
+
+                    string script = $@"
+(function(text, targetId) {{
+    var trimmed = (text || '').trim();
+    var el = (targetId && document.getElementById(targetId)) ||
+             (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') ? document.activeElement : null) ||
+             window.__lastFocusedInput ||
+             document.getElementById('liveSearchInput');
+    if (!trimmed) {{
+        if (window.PoeBridge && typeof window.PoeBridge.showToast === 'function') {{
+            window.PoeBridge.showToast('Clipboard is empty.');
+        }}
+        return;
+    }}
+    if (el) {{
+        el.value = trimmed;
+        window.__lastFocusedInput = el;
+        try {{ el.focus(); }} catch (e) {{}}
+        try {{
+            var ev = document.createEvent('Event');
+            ev.initEvent('input', true, true);
+            el.dispatchEvent(ev);
+        }} catch (e2) {{}}
+    }}
+    if (window.PoeBridge && typeof window.PoeBridge.showToast === 'function') {{
+        window.PoeBridge.showToast('Pasted link from clipboard');
+    }}
+}})({jsonVal}, {jsonId});";
+                    await _webView.ExecuteScriptAsync(script);
+                }
+                catch (Exception ex)
+                {
+                    await BridgeLogger.LogBridgeMessageAsync($"[Bridge] PasteClipboardToLiveSearchAsync script error: {ex.Message}");
+                }
+            });
+        }
+
+        public async Task SendCharToWebInputAsync(char ch)
         {
             if (_webView == null) return;
 
@@ -851,15 +965,24 @@ namespace GameBarWidget.Services
             {
                 try
                 {
-                    string clipboardText = string.Empty;
-                    var content = Clipboard.GetContent();
-                    if (content != null && content.Contains(StandardDataFormats.Text))
-                    {
-                        clipboardText = (await content.GetTextAsync())?.Trim() ?? string.Empty;
-                    }
+                    string jsonChar = JsonValue.CreateStringValue(ch.ToString()).Stringify();
+                    string script = $"if (window.__poeHandleHostChar) {{ window.__poeHandleHostChar({jsonChar}); }}";
+                    await _webView.ExecuteScriptAsync(script);
+                }
+                catch { }
+            });
+        }
 
-                    string jsonVal = JsonValue.CreateStringValue(clipboardText).Stringify();
-                    string script = $"if (window.PoeBridge && window.PoeBridge.onLiveSearchClipboardPasted) {{ window.PoeBridge.onLiveSearchClipboardPasted({jsonVal}); }}";
+        public async Task SendSpecialKeyToWebInputAsync(string keyName)
+        {
+            if (_webView == null || string.IsNullOrEmpty(keyName)) return;
+
+            await _dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            {
+                try
+                {
+                    string jsonKey = JsonValue.CreateStringValue(keyName).Stringify();
+                    string script = $"if (window.__poeHandleHostKey) {{ window.__poeHandleHostKey({jsonKey}); }}";
                     await _webView.ExecuteScriptAsync(script);
                 }
                 catch { }
@@ -921,8 +1044,7 @@ namespace GameBarWidget.Services
         }
 
         /// <summary>
-        /// Injects C#-managed pointer hover and interaction listeners into WebView2 so hover detection
-        /// remains synchronized with the C# countdown state and never locks on stale JS flags.
+        /// Injects C#-managed pointer hover, input focus, paste, and keyboard listeners into WebView2.
         /// </summary>
         public async Task InjectHoverTrackerScriptAsync()
         {
@@ -934,8 +1056,132 @@ namespace GameBarWidget.Services
                 {
                     string script = @"
 (function() {
-  if (window.__poeHoverTrackerInstalled) return;
-  window.__poeHoverTrackerInstalled = true;
+  if (!document.getElementById('poeInputFixStyle')) {
+    var st = document.createElement('style');
+    st.id = 'poeInputFixStyle';
+    st.textContent = 'input, textarea, select { user-select: text !important; -webkit-user-select: text !important; -ms-user-select: text !important; pointer-events: auto !important; cursor: text !important; }';
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  function getTargetInput() {
+    var active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') && active.type !== 'checkbox' && active.type !== 'button') {
+      return active;
+    }
+    if (window.__lastFocusedInput && document.body.contains(window.__lastFocusedInput)) {
+      return window.__lastFocusedInput;
+    }
+    var livePanel = document.getElementById('viewLivePanel');
+    if (livePanel && !livePanel.classList.contains('is-hidden')) {
+      return document.getElementById('liveSearchInput');
+    }
+    return null;
+  }
+
+  window.__poeHandleHostChar = function(ch) {
+    if (!ch) return;
+    if (Date.now() - (window.__lastNativeKeyTime || 0) < 45) return;
+    var el = getTargetInput();
+    if (!el) return;
+    try { el.focus(); } catch (e) {}
+    var val = el.value || '';
+    try {
+      if (typeof el.selectionStart === 'number' && typeof el.selectionEnd === 'number') {
+        var start = el.selectionStart;
+        var end = el.selectionEnd;
+        el.value = val.substring(0, start) + ch + val.substring(end);
+        el.selectionStart = el.selectionEnd = start + ch.length;
+      } else {
+        el.value = val + ch;
+      }
+    } catch (e2) {
+      el.value = val + ch;
+    }
+    try {
+      var ev = document.createEvent('Event');
+      ev.initEvent('input', true, true);
+      el.dispatchEvent(ev);
+    } catch (e3) {}
+  };
+
+  window.__poeHandleHostKey = function(keyName) {
+    if (!keyName) return;
+    if (Date.now() - (window.__lastNativeKeyTime || 0) < 45) return;
+    var el = getTargetInput();
+    if (!el) return;
+    try { el.focus(); } catch (e) {}
+    var val = el.value || '';
+    if (keyName === 'Back') {
+      try {
+        if (typeof el.selectionStart === 'number' && typeof el.selectionEnd === 'number') {
+          var s = el.selectionStart;
+          var e = el.selectionEnd;
+          if (s !== e) {
+            el.value = val.substring(0, s) + val.substring(e);
+            el.selectionStart = el.selectionEnd = s;
+          } else if (s > 0) {
+            el.value = val.substring(0, s - 1) + val.substring(s);
+            el.selectionStart = el.selectionEnd = s - 1;
+          }
+        } else if (val.length > 0) {
+          el.value = val.substring(0, val.length - 1);
+        }
+      } catch (ex) {
+        if (val.length > 0) el.value = val.substring(0, val.length - 1);
+      }
+    } else if (keyName === 'Delete') {
+      try {
+        if (typeof el.selectionStart === 'number' && typeof el.selectionEnd === 'number') {
+          var s2 = el.selectionStart;
+          var e2 = el.selectionEnd;
+          if (s2 !== e2) {
+            el.value = val.substring(0, s2) + val.substring(e2);
+            el.selectionStart = el.selectionEnd = s2;
+          } else if (s2 < val.length) {
+            el.value = val.substring(0, s2) + val.substring(s2 + 1);
+            el.selectionStart = el.selectionEnd = s2;
+          }
+        } else {
+          el.value = '';
+        }
+      } catch (ex2) {}
+    } else if (keyName === 'SelectAll') {
+      try { el.select(); } catch (ex3) {}
+    } else if (keyName === 'Enter') {
+      if (el.id === 'liveSearchInput' && window.liveSearchController && typeof window.liveSearchController.addNewLiveSearch === 'function') {
+        window.liveSearchController.addNewLiveSearch();
+      }
+    }
+  };
+
+  var pasteBtn = document.getElementById('livePasteBtn');
+  if (pasteBtn && !pasteBtn.__poeBound) {
+    pasteBtn.__poeBound = true;
+    pasteBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      if (window.PoeBridge && typeof window.PoeBridge.notifyHost === 'function') {
+        window.PoeBridge.notifyHost({ action: 'live_paste', targetId: 'liveSearchInput' });
+      }
+    });
+  }
+
+  var clearBtn = document.getElementById('liveClearHistoryBtn');
+  if (clearBtn && !clearBtn.__poeBound) {
+    clearBtn.__poeBound = true;
+    clearBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      if (window.liveSearchController && typeof window.liveSearchController.clearHistory === 'function') {
+        window.liveSearchController.clearHistory(false);
+      } else if (window.PoeBridge && typeof window.PoeBridge.notifyHost === 'function') {
+        var listEl = document.getElementById('liveResultsList');
+        if (listEl) listEl.innerHTML = '';
+        window.PoeBridge.notifyHost({ action: 'live_clear_history' });
+      }
+    });
+  }
+
+  if (window.__poeInputTrackerInstalled) return;
+  window.__poeInputTrackerInstalled = true;
 
   var lastMoveSent = 0;
   var lastX = -1;
@@ -979,6 +1225,28 @@ namespace GameBarWidget.Services
   document.addEventListener('pointerdown', function(e) {
     isPointerInside = true;
     postHover(true, 'interact', e.clientX, e.clientY);
+
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
+      if (t.type !== 'checkbox' && t.type !== 'button') {
+        window.__lastFocusedInput = t;
+      }
+      try { t.focus(); } catch (err) {}
+      if (window.PoeBridge && typeof window.PoeBridge.notifyHost === 'function') {
+        window.PoeBridge.notifyHost({ action: 'focus_input', id: t.id || '' });
+      }
+    }
+  }, true);
+
+  document.addEventListener('focusin', function(e) {
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') && t.type !== 'checkbox' && t.type !== 'button') {
+      window.__lastFocusedInput = t;
+    }
+  }, true);
+
+  document.addEventListener('input', function() {
+    window.__lastNativeKeyTime = Date.now();
   }, true);
 
   document.addEventListener('wheel', function(e) {
@@ -990,18 +1258,24 @@ namespace GameBarWidget.Services
     if (e.key !== 'Escape') {
       postHover(true, 'interact', lastX >= 0 ? lastX : 0, lastY >= 0 ? lastY : 0);
     }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'v' || e.key === 'V' || e.keyCode === 86)) {
+      var targetInp = getTargetInput();
+      if (targetInp && window.PoeBridge && typeof window.PoeBridge.notifyHost === 'function') {
+        e.preventDefault();
+        window.__lastNativeKeyTime = Date.now();
+        window.PoeBridge.notifyHost({ action: 'live_paste', targetId: targetInp.id || 'liveSearchInput' });
+        return;
+      }
+    }
+    if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+      window.__lastNativeKeyTime = Date.now();
+    }
   }, true);
 
   document.documentElement.addEventListener('mouseleave', function(e) {
     if (e.relatedTarget === null) {
       isPointerInside = false;
       postHover(false, 'leave', e.clientX, e.clientY);
-    }
-  });
-
-  window.addEventListener('blur', function() {
-    if (!isPointerInside) {
-      postHover(false, 'leave', 0, 0);
     }
   });
 })();";

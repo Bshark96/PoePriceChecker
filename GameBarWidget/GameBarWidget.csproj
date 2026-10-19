@@ -158,15 +158,15 @@
     <Content Include="Assets\items.ndjson" />
     <Content Include="..\index.html">
       <Link>index.html</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\css\**\*.*">
       <Link>css\%(RecursiveDir)%(FileName)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\js\**\*.*">
       <Link>js\%(RecursiveDir)%(FileName)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\VisualAssets\**\*.*">
       <Link>VisualAssets\%(RecursiveDir)%(FileName)%(Extension)</Link>
@@ -216,10 +216,21 @@
         <Link>HotkeyDaemon\%(RecursiveDir)%(FileName)%(Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <_WebJsFiles Include="..\js\**\*.*" />
+      <_WebCssFiles Include="..\css\**\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(_DaemonBinaries)"
           DestinationFolder="$(TargetDir)HotkeyDaemon\%(RecursiveDir)"
           SkipUnchangedFiles="true" />
+    <Copy SourceFiles="..\index.html"
+          DestinationFolder="$(TargetDir)"
+          SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(_WebJsFiles)"
+          DestinationFolder="$(TargetDir)js\%(RecursiveDir)"
+          SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(_WebCssFiles)"
+          DestinationFolder="$(TargetDir)css\%(RecursiveDir)"
+          SkipUnchangedFiles="false" />
   </Target>
 
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

@@ -67,9 +67,66 @@ namespace HotkeyDaemon.Services
         private static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport("user32.dll")]
+        private static extern IntPtr SetFocus(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
+        [DllImport("user32.dll")]
+        private static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll")]
+        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr WindowFromPoint(System.Drawing.Point p);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
+
+        private const uint GA_ROOT = 2;
+
         private static IntPtr _lastGameHwnd = IntPtr.Zero;
+
+        public static void FocusWindowUnderCursor()
+        {
+            try
+            {
+                var pt = Cursor.Position;
+                IntPtr childHwnd = WindowFromPoint(pt);
+                if (childHwnd == IntPtr.Zero) return;
+
+                IntPtr rootHwnd = GetAncestor(childHwnd, GA_ROOT);
+                IntPtr targetMain = rootHwnd != IntPtr.Zero ? rootHwnd : childHwnd;
+
+                uint fgThread = GetWindowThreadProcessId(GetForegroundWindow(), out _);
+                uint targetThread = GetWindowThreadProcessId(childHwnd, out _);
+                uint curThread = GetCurrentThreadId();
+
+                keybd_event(VK_MENU, 0, 0, UIntPtr.Zero);
+                SetForegroundWindow(targetMain);
+                keybd_event(VK_MENU, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+                if (fgThread != targetThread && fgThread != 0 && targetThread != 0)
+                {
+                    AttachThreadInput(fgThread, targetThread, true);
+                    SetForegroundWindow(targetMain);
+                    AttachThreadInput(fgThread, targetThread, false);
+                }
+
+                if (curThread != targetThread && targetThread != 0)
+                {
+                    AttachThreadInput(curThread, targetThread, true);
+                    SetFocus(childHwnd);
+                    AttachThreadInput(curThread, targetThread, false);
+                }
+                else
+                {
+                    SetFocus(childHwnd);
+                }
+            }
+            catch { }
+        }
 
         public static void RememberGameWindow()
         {
@@ -170,7 +227,7 @@ Corrupted
             return GetClipboardTextSafe();
         }
 
-        private static string? GetClipboardTextSafe()
+        public static string? GetClipboardTextSafe()
         {
             string? text = null;
             var thread = new Thread(() =>
@@ -186,7 +243,7 @@ Corrupted
             });
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
-            thread.Join(50);
+            thread.Join(250);
             return text;
         }
 

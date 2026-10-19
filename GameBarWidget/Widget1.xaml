@@ -14,6 +14,8 @@
     <Grid x:Name="RootGrid" Background="#050506">
         <controls:WebView2 x:Name="PreviewWebView" 
                            HorizontalAlignment="Stretch" 
-                           VerticalAlignment="Stretch" />
+                           VerticalAlignment="Stretch"
+                           IsTabStop="True"
+                           AllowFocusOnInteraction="True" />
     </Grid>
 </Page>

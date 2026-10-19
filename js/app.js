@@ -93,6 +93,16 @@
       document.addEventListener('pointerdown', function(e) {
         isPointerInside = true;
         notifyHover(true, 'interact', e.clientX, e.clientY);
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
+          if (t.type !== 'checkbox' && t.type !== 'button') {
+            window.__lastFocusedInput = t;
+          }
+          try { t.focus(); } catch (err) {}
+          if (window.PoeBridge) {
+            window.PoeBridge.notifyHost({ action: 'focus_input', id: t.id || '' });
+          }
+        }
       }, true);
 
       document.addEventListener('wheel', function(e) {
@@ -103,6 +113,19 @@
       document.addEventListener('keydown', function(e) {
         if (e.key !== 'Escape') {
           notifyHover(true, 'interact', lastX >= 0 ? lastX : 0, lastY >= 0 ? lastY : 0);
+        }
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'v' || e.key === 'V' || e.keyCode === 86)) {
+          var activeEl = document.activeElement;
+          var targetInp = (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) ? activeEl : window.__lastFocusedInput;
+          if (targetInp && window.PoeBridge && window.PoeBridge.isGameBarHost()) {
+            e.preventDefault();
+            window.__lastNativeKeyTime = Date.now();
+            window.PoeBridge.notifyHost({ action: 'live_paste', targetId: targetInp.id || 'liveSearchInput' });
+            return;
+          }
+        }
+        if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+          window.__lastNativeKeyTime = Date.now();
         }
       }, true);
 
